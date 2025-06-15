@@ -1,0 +1,601 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type DeviceHeartbeats {
+  heartbeatId: String!
+  meterId: String!
+  timestamp: String!
+  uptimeSeconds: String
+  freeHeapBytes: String
+  signalStrength: Int
+  additionalMetrics: JSON
+  smartmeters: SmartMeters
+}
+
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
+type DeviceStatusSnapshots {
+  snapshotId: String!
+  meterId: String!
+  timestamp: String!
+  wifiStatus: JSON
+  mqttStatus: JSON
+  gridMode: String
+  systemStatus: JSON
+  componentStatus: JSON
+  rawPayload: JSON!
+  smartmeters: SmartMeters
+}
+
+type EnergyReadings {
+  readingId: String!
+  meterId: String!
+  timestamp: String!
+  voltage: Float
+  currentAmp: Float
+  powerKw: Float
+  flowDirection: String!
+  smartmeters: SmartMeters
+}
+
+type EnergyReadingsDetailed {
+  readingId: String!
+  meterId: String!
+  timestamp: String!
+  subsystem: String!
+  dailyEnergyWh: Float
+  totalEnergyWh: Float
+  settlementEnergyWh: Float
+  currentPowerW: Float
+  voltage: Float
+  currentAmp: Float
+  subsystemData: JSON
+  rawPayload: JSON!
+  smartmeters: SmartMeters
+}
+
+type MqttMessageLogs {
+  logId: String!
+  meterId: String!
+  topicType: String!
+  direction: String!
+  mqttTopic: String!
+  payload: JSON!
+  rawMessage: String
+  messageTimestamp: String!
+  processedAt: String
+  processingStatus: String
+  errorMessage: String
+  correlationId: String
+  energysettlementsList: [EnergySettlements!]
+  smartmeters: SmartMeters
+}
+
+type IdrsConversions {
+  conversionId: String!
+  prosumerId: String!
+  walletAddress: String!
+  conversionType: String!
+  idrAmount: Float
+  idrsAmount: Float!
+  exchangeRate: Float
+  blockchainTxHash: String
+  status: String!
+  simulationNote: String
+  createdAt: String!
+  confirmedAt: String
+  prosumers: Prosumers
+  wallets: Wallets
+}
+
+type MarketTrades {
+  tradeId: String!
+  buyerOrderId: String!
+  sellerOrderId: String!
+  buyerProsumerId: String!
+  sellerProsumerId: String!
+  buyerWalletAddress: String!
+  sellerWalletAddress: String!
+  tradedEtkAmount: Float!
+  priceIdrsPerEtk: Float!
+  totalIdrsValue: Float!
+  blockchainTxHash: String
+  tradeTimestamp: String!
+  gasFeeWei: Float
+  createdAt: String!
+  prosumers: Prosumers
+  wallets: Wallets
+  prosumers2: Prosumers
+  wallets2: Wallets
+}
+
+type Wallets {
+  walletAddress: String!
+  prosumerId: String!
+  walletName: String
+  encryptedPrivateKey: String
+  createdAt: String!
+  importMethod: String!
+  isActive: String!
+  lastUsedAt: String
+  blockchainapprovalsList: [BlockchainApprovals!]
+  idrsconversionsList: [IdrsConversions!]
+  markettradesList: [MarketTrades!]
+  markettradesList2: [MarketTrades!]
+  tradeorderscacheList: [TradeOrdersCache!]
+  prosumers: Prosumers
+}
+
+type TradeOrdersCache {
+  orderId: String!
+  prosumerId: String!
+  walletAddress: String!
+  orderType: String!
+  pair: String!
+  amountEtk: Float!
+  priceIdrsPerEtk: Float!
+  totalIdrsValue: Float
+  statusOnChain: String!
+  createdAtOnChain: String!
+  updatedAtCache: String!
+  blockchainTxHashPlaced: String
+  blockchainTxHashFilled: String
+  prosumers: Prosumers
+  wallets: Wallets
+  transactionlogsList: [TransactionLogs!]
+}
+
+type TransactionLogs {
+  logId: String!
+  prosumerId: String!
+  relatedOrderId: String
+  relatedSettlementId: String
+  transactionType: String!
+  description: String
+  amountPrimary: Float!
+  currencyPrimary: String!
+  amountSecondary: Float
+  currencySecondary: String
+  blockchainTxHash: String
+  transactionTimestamp: String!
+  tradeorderscache: TradeOrdersCache
+  prosumers: Prosumers
+  energysettlements: EnergySettlements
+}
+
+type EnergySettlements {
+  settlementId: String!
+  meterId: String!
+  periodStartTime: String!
+  periodEndTime: String!
+  netKwhFromGrid: Float!
+  etkAmountCredited: Float
+  blockchainTxHash: String
+  status: String!
+  createdAtBackend: String!
+  confirmedAtOnChain: String
+  settlementTrigger: String!
+  rawExportKwh: Float
+  rawImportKwh: Float
+  validationStatus: String
+  settlementDataSource: String
+  detailedEnergyBreakdown: JSON
+  mqttMessageId: String
+  smartmeters: SmartMeters
+  mqttmessagelogs: MqttMessageLogs
+  transactionlogsList: [TransactionLogs!]
+}
+
+type SmartMeters {
+  meterId: String!
+  prosumerId: String!
+  meterBlockchainAddress: String
+  location: String
+  status: String
+  createdAt: String!
+  lastSeen: String
+  updatedAt: String!
+  mqttTopicRealtime: String
+  mqttTopicSettlement: String
+  settlementIntervalMinutes: Int
+  firmwareVersion: String
+  lastSettlementAt: String
+  deviceConfiguration: JSON
+  lastHeartbeatAt: String
+  deviceModel: String
+  deviceVersion: String
+  capabilities: JSON
+  devicecommandsList: [DeviceCommands!]
+  deviceheartbeatsList: [DeviceHeartbeats!]
+  devicestatussnapshotsList: [DeviceStatusSnapshots!]
+  energyreadingsList: [EnergyReadings!]
+  energyreadingsdetailedList: [EnergyReadingsDetailed!]
+  energysettlementsList: [EnergySettlements!]
+  mqttmessagelogsList: [MqttMessageLogs!]
+  prosumers: Prosumers
+}
+
+type DeviceCommands {
+  commandId: String!
+  meterId: String!
+  commandType: String!
+  commandPayload: JSON!
+  correlationId: String!
+  status: String!
+  sentAt: String!
+  acknowledgedAt: String
+  timeoutAt: String
+  responsePayload: JSON
+  errorDetails: String
+  sentByUser: String
+  smartmeters: SmartMeters
+  prosumers: Prosumers
+}
+
+type Prosumers {
+  prosumerId: String!
+  email: String!
+  passwordHash: String!
+  name: String
+  createdAt: String!
+  updatedAt: String!
+  blockchainapprovalsList: [BlockchainApprovals!]
+  devicecommandsList: [DeviceCommands!]
+  idrsconversionsList: [IdrsConversions!]
+  markettradesList: [MarketTrades!]
+  markettradesList2: [MarketTrades!]
+  smartmetersList: [SmartMeters!]
+  tradeorderscacheList: [TradeOrdersCache!]
+  transactionlogsList: [TransactionLogs!]
+  walletsList: [Wallets!]
+}
+
+type BlockchainApprovals {
+  approvalId: String!
+  prosumerId: String!
+  walletAddress: String!
+  spenderContractAddress: String!
+  tokenContractAddress: String!
+  approvedAmount: Float!
+  approvalTxHash: String
+  status: String!
+  expiresAt: String
+  createdAt: String!
+  confirmedAt: String
+  prosumers: Prosumers
+  wallets: Wallets
+}
+
+type SystemConfig {
+  configKey: String!
+  configValue: String!
+  description: String
+  updatedAt: String!
+  updatedBy: String
+}
+
+type Query {
+  BlockchainApprovalsAll(approvalId: String, prosumerId: String, walletAddress: String, spenderContractAddress: String, tokenContractAddress: String, approvedAmount: Float, approvalTxHash: String, status: String, expiresAt: String, createdAt: String, confirmedAt: String): [BlockchainApprovals!]!
+  BlockchainApprovals(approvalId: Int!): BlockchainApprovals!
+  ProsumersAll(prosumerId: String, email: String, passwordHash: String, name: String, createdAt: String, updatedAt: String): [Prosumers!]!
+  Prosumers(prosumerId: String!): Prosumers!
+  WalletsAll(walletAddress: String, prosumerId: String, walletName: String, encryptedPrivateKey: String, createdAt: String, importMethod: String, isActive: String, lastUsedAt: String): [Wallets!]!
+  Wallets(walletAddress: String!): Wallets!
+  IdrsConversionsAll(conversionId: String, prosumerId: String, walletAddress: String, conversionType: String, idrAmount: Float, idrsAmount: Float, exchangeRate: Float, blockchainTxHash: String, status: String, simulationNote: String, createdAt: String, confirmedAt: String): [IdrsConversions!]!
+  IdrsConversions(conversionId: Int!): IdrsConversions!
+  DeviceCommandsAll(commandId: String, meterId: String, commandType: String, commandPayload: JSON, correlationId: String, status: String, sentAt: String, acknowledgedAt: String, timeoutAt: String, responsePayload: JSON, errorDetails: String, sentByUser: String): [DeviceCommands!]!
+  DeviceCommands(commandId: Int!): DeviceCommands!
+  SmartMetersAll(meterId: String, prosumerId: String, meterBlockchainAddress: String, location: String, status: String, createdAt: String, lastSeen: String, updatedAt: String, mqttTopicRealtime: String, mqttTopicSettlement: String, settlementIntervalMinutes: Int, firmwareVersion: String, lastSettlementAt: String, deviceConfiguration: JSON, lastHeartbeatAt: String, deviceModel: String, deviceVersion: String, capabilities: JSON): [SmartMeters!]!
+  SmartMeters(meterId: String!): SmartMeters!
+  MarketTradesAll(tradeId: String, buyerOrderId: String, sellerOrderId: String, buyerProsumerId: String, sellerProsumerId: String, buyerWalletAddress: String, sellerWalletAddress: String, tradedEtkAmount: Float, priceIdrsPerEtk: Float, totalIdrsValue: Float, blockchainTxHash: String, tradeTimestamp: String, gasFeeWei: Float, createdAt: String): [MarketTrades!]!
+  MarketTrades(tradeId: Int!): MarketTrades!
+  TradeOrdersCacheAll(orderId: String, prosumerId: String, walletAddress: String, orderType: String, pair: String, amountEtk: Float, priceIdrsPerEtk: Float, totalIdrsValue: Float, statusOnChain: String, createdAtOnChain: String, updatedAtCache: String, blockchainTxHashPlaced: String, blockchainTxHashFilled: String): [TradeOrdersCache!]!
+  TradeOrdersCache(orderId: String!): TradeOrdersCache!
+  DeviceHeartbeatsAll(heartbeatId: String, meterId: String, timestamp: String, uptimeSeconds: String, freeHeapBytes: String, signalStrength: Int, additionalMetrics: JSON): [DeviceHeartbeats!]!
+  DeviceHeartbeats(heartbeatId: Int!): DeviceHeartbeats!
+  DeviceStatusSnapshotsAll(snapshotId: String, meterId: String, timestamp: String, wifiStatus: JSON, mqttStatus: JSON, gridMode: String, systemStatus: JSON, componentStatus: JSON, rawPayload: JSON): [DeviceStatusSnapshots!]!
+  DeviceStatusSnapshots(snapshotId: Int!): DeviceStatusSnapshots!
+  EnergyReadingsAll(readingId: String, meterId: String, timestamp: String, voltage: Float, currentAmp: Float, powerKw: Float, flowDirection: String): [EnergyReadings!]!
+  EnergyReadings(readingId: Int!): EnergyReadings!
+  EnergyReadingsDetailedAll(readingId: String, meterId: String, timestamp: String, subsystem: String, dailyEnergyWh: Float, totalEnergyWh: Float, settlementEnergyWh: Float, currentPowerW: Float, voltage: Float, currentAmp: Float, subsystemData: JSON, rawPayload: JSON): [EnergyReadingsDetailed!]!
+  EnergyReadingsDetailed(readingId: Int!): EnergyReadingsDetailed!
+  EnergySettlementsAll(settlementId: String, meterId: String, periodStartTime: String, periodEndTime: String, netKwhFromGrid: Float, etkAmountCredited: Float, blockchainTxHash: String, status: String, createdAtBackend: String, confirmedAtOnChain: String, settlementTrigger: String, rawExportKwh: Float, rawImportKwh: Float, validationStatus: String, settlementDataSource: String, detailedEnergyBreakdown: JSON, mqttMessageId: String): [EnergySettlements!]!
+  EnergySettlements(settlementId: Int!): EnergySettlements!
+  MqttMessageLogsAll(logId: String, meterId: String, topicType: String, direction: String, mqttTopic: String, payload: JSON, rawMessage: String, messageTimestamp: String, processedAt: String, processingStatus: String, errorMessage: String, correlationId: String): [MqttMessageLogs!]!
+  MqttMessageLogs(logId: Int!): MqttMessageLogs!
+  TransactionLogsAll(logId: String, prosumerId: String, relatedOrderId: String, relatedSettlementId: String, transactionType: String, description: String, amountPrimary: Float, currencyPrimary: String, amountSecondary: Float, currencySecondary: String, blockchainTxHash: String, transactionTimestamp: String): [TransactionLogs!]!
+  TransactionLogs(logId: Int!): TransactionLogs!
+  SystemConfigAll(configKey: String, configValue: String, description: String, updatedAt: String, updatedBy: String): [SystemConfig!]!
+  SystemConfig(configKey: String!): SystemConfig!
+}
+
+type Mutation {
+  createBlockchainApprovals(input: CreateBlockchainApprovalsInput!): BlockchainApprovals!
+  updateBlockchainApprovals(approvalId: Int!, input: CreateBlockchainApprovalsInput!): BlockchainApprovals!
+  removeBlockchainApprovals(approvalId: Int!): Boolean!
+  createProsumers(input: CreateProsumersInput!): Prosumers!
+  updateProsumers(prosumerId: String!, input: CreateProsumersInput!): Prosumers!
+  removeProsumers(prosumerId: String!): Boolean!
+  createWallets(input: CreateWalletsInput!): Wallets!
+  updateWallets(walletAddress: String!, input: CreateWalletsInput!): Wallets!
+  removeWallets(walletAddress: String!): Boolean!
+  createIdrsConversions(input: CreateIdrsConversionsInput!): IdrsConversions!
+  updateIdrsConversions(conversionId: Int!, input: CreateIdrsConversionsInput!): IdrsConversions!
+  removeIdrsConversions(conversionId: Int!): Boolean!
+  createDeviceCommands(input: CreateDeviceCommandsInput!): DeviceCommands!
+  updateDeviceCommands(commandId: Int!, input: CreateDeviceCommandsInput!): DeviceCommands!
+  removeDeviceCommands(commandId: Int!): Boolean!
+  createSmartMeters(input: CreateSmartMetersInput!): SmartMeters!
+  updateSmartMeters(meterId: String!, input: CreateSmartMetersInput!): SmartMeters!
+  removeSmartMeters(meterId: String!): Boolean!
+  createMarketTrades(input: CreateMarketTradesInput!): MarketTrades!
+  updateMarketTrades(tradeId: Int!, input: CreateMarketTradesInput!): MarketTrades!
+  removeMarketTrades(tradeId: Int!): Boolean!
+  createTradeOrdersCache(input: CreateTradeOrdersCacheInput!): TradeOrdersCache!
+  updateTradeOrdersCache(orderId: String!, input: CreateTradeOrdersCacheInput!): TradeOrdersCache!
+  removeTradeOrdersCache(orderId: String!): Boolean!
+  createDeviceHeartbeats(input: CreateDeviceHeartbeatsInput!): DeviceHeartbeats!
+  updateDeviceHeartbeats(heartbeatId: Int!, input: CreateDeviceHeartbeatsInput!): DeviceHeartbeats!
+  removeDeviceHeartbeats(heartbeatId: Int!): Boolean!
+  createDeviceStatusSnapshots(input: CreateDeviceStatusSnapshotsInput!): DeviceStatusSnapshots!
+  updateDeviceStatusSnapshots(snapshotId: Int!, input: CreateDeviceStatusSnapshotsInput!): DeviceStatusSnapshots!
+  removeDeviceStatusSnapshots(snapshotId: Int!): Boolean!
+  createEnergyReadings(input: CreateEnergyReadingsInput!): EnergyReadings!
+  updateEnergyReadings(readingId: Int!, input: CreateEnergyReadingsInput!): EnergyReadings!
+  removeEnergyReadings(readingId: Int!): Boolean!
+  createEnergyReadingsDetailed(input: CreateEnergyReadingsDetailedInput!): EnergyReadingsDetailed!
+  updateEnergyReadingsDetailed(readingId: Int!, input: CreateEnergyReadingsDetailedInput!): EnergyReadingsDetailed!
+  removeEnergyReadingsDetailed(readingId: Int!): Boolean!
+  createEnergySettlements(input: CreateEnergySettlementsInput!): EnergySettlements!
+  updateEnergySettlements(settlementId: Int!, input: CreateEnergySettlementsInput!): EnergySettlements!
+  removeEnergySettlements(settlementId: Int!): Boolean!
+  createMqttMessageLogs(input: CreateMqttMessageLogsInput!): MqttMessageLogs!
+  updateMqttMessageLogs(logId: Int!, input: CreateMqttMessageLogsInput!): MqttMessageLogs!
+  removeMqttMessageLogs(logId: Int!): Boolean!
+  createTransactionLogs(input: CreateTransactionLogsInput!): TransactionLogs!
+  updateTransactionLogs(logId: Int!, input: CreateTransactionLogsInput!): TransactionLogs!
+  removeTransactionLogs(logId: Int!): Boolean!
+  createSystemConfig(input: CreateSystemConfigInput!): SystemConfig!
+  updateSystemConfig(configKey: String!, input: CreateSystemConfigInput!): SystemConfig!
+  removeSystemConfig(configKey: String!): Boolean!
+}
+
+input CreateBlockchainApprovalsInput {
+  prosumerId: String!
+  walletAddress: String!
+  spenderContractAddress: String!
+  tokenContractAddress: String!
+  approvedAmount: Float!
+  approvalTxHash: String
+  status: String!
+  expiresAt: String
+  createdAt: String!
+  confirmedAt: String
+  prosumersIds: [Int!]
+  walletsIds: [Int!]
+}
+
+input CreateProsumersInput {
+  prosumerId: String!
+  email: String!
+  passwordHash: String!
+  name: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+input CreateWalletsInput {
+  walletAddress: String!
+  prosumerId: String!
+  walletName: String
+  encryptedPrivateKey: String
+  createdAt: String!
+  importMethod: String!
+  isActive: String!
+  lastUsedAt: String
+  prosumersIds: [Int!]
+}
+
+input CreateIdrsConversionsInput {
+  prosumerId: String!
+  walletAddress: String!
+  conversionType: String!
+  idrAmount: Float
+  idrsAmount: Float!
+  exchangeRate: Float
+  blockchainTxHash: String
+  status: String!
+  simulationNote: String
+  createdAt: String!
+  confirmedAt: String
+  prosumersIds: [Int!]
+  walletsIds: [Int!]
+}
+
+input CreateDeviceCommandsInput {
+  meterId: String!
+  commandType: String!
+  commandPayload: JSON!
+  correlationId: String!
+  status: String!
+  sentAt: String!
+  acknowledgedAt: String
+  timeoutAt: String
+  responsePayload: JSON
+  errorDetails: String
+  sentByUser: String
+  smartmetersIds: [Int!]
+  prosumersIds: [Int!]
+}
+
+input CreateSmartMetersInput {
+  meterId: String!
+  prosumerId: String!
+  meterBlockchainAddress: String
+  location: String
+  status: String
+  createdAt: String!
+  lastSeen: String
+  updatedAt: String!
+  mqttTopicRealtime: String
+  mqttTopicSettlement: String
+  settlementIntervalMinutes: Int
+  firmwareVersion: String
+  lastSettlementAt: String
+  deviceConfiguration: JSON
+  lastHeartbeatAt: String
+  deviceModel: String
+  deviceVersion: String
+  capabilities: JSON
+  prosumersIds: [Int!]
+}
+
+input CreateMarketTradesInput {
+  buyerOrderId: String!
+  sellerOrderId: String!
+  buyerProsumerId: String!
+  sellerProsumerId: String!
+  buyerWalletAddress: String!
+  sellerWalletAddress: String!
+  tradedEtkAmount: Float!
+  priceIdrsPerEtk: Float!
+  totalIdrsValue: Float!
+  blockchainTxHash: String
+  tradeTimestamp: String!
+  gasFeeWei: Float
+  createdAt: String!
+  prosumersIds: [Int!]
+  walletsIds: [Int!]
+  prosumers2Ids: [Int!]
+  wallets2Ids: [Int!]
+}
+
+input CreateTradeOrdersCacheInput {
+  orderId: String!
+  prosumerId: String!
+  walletAddress: String!
+  orderType: String!
+  pair: String!
+  amountEtk: Float!
+  priceIdrsPerEtk: Float!
+  totalIdrsValue: Float
+  statusOnChain: String!
+  createdAtOnChain: String!
+  updatedAtCache: String!
+  blockchainTxHashPlaced: String
+  blockchainTxHashFilled: String
+  prosumersIds: [Int!]
+  walletsIds: [Int!]
+}
+
+input CreateDeviceHeartbeatsInput {
+  meterId: String!
+  timestamp: String!
+  uptimeSeconds: String
+  freeHeapBytes: String
+  signalStrength: Int
+  additionalMetrics: JSON
+  smartmetersIds: [Int!]
+}
+
+input CreateDeviceStatusSnapshotsInput {
+  meterId: String!
+  timestamp: String!
+  wifiStatus: JSON
+  mqttStatus: JSON
+  gridMode: String
+  systemStatus: JSON
+  componentStatus: JSON
+  rawPayload: JSON!
+  smartmetersIds: [Int!]
+}
+
+input CreateEnergyReadingsInput {
+  meterId: String!
+  timestamp: String!
+  voltage: Float
+  currentAmp: Float
+  powerKw: Float
+  flowDirection: String!
+  smartmetersIds: [Int!]
+}
+
+input CreateEnergyReadingsDetailedInput {
+  meterId: String!
+  timestamp: String!
+  subsystem: String!
+  dailyEnergyWh: Float
+  totalEnergyWh: Float
+  settlementEnergyWh: Float
+  currentPowerW: Float
+  voltage: Float
+  currentAmp: Float
+  subsystemData: JSON
+  rawPayload: JSON!
+  smartmetersIds: [Int!]
+}
+
+input CreateEnergySettlementsInput {
+  meterId: String!
+  periodStartTime: String!
+  periodEndTime: String!
+  netKwhFromGrid: Float!
+  etkAmountCredited: Float
+  blockchainTxHash: String
+  status: String!
+  createdAtBackend: String!
+  confirmedAtOnChain: String
+  settlementTrigger: String!
+  rawExportKwh: Float
+  rawImportKwh: Float
+  validationStatus: String
+  settlementDataSource: String
+  detailedEnergyBreakdown: JSON
+  mqttMessageId: String
+  smartmetersIds: [Int!]
+  mqttmessagelogsIds: [Int!]
+}
+
+input CreateMqttMessageLogsInput {
+  meterId: String!
+  topicType: String!
+  direction: String!
+  mqttTopic: String!
+  payload: JSON!
+  rawMessage: String
+  messageTimestamp: String!
+  processedAt: String
+  processingStatus: String
+  errorMessage: String
+  correlationId: String
+  smartmetersIds: [Int!]
+}
+
+input CreateTransactionLogsInput {
+  prosumerId: String!
+  relatedOrderId: String
+  relatedSettlementId: String
+  transactionType: String!
+  description: String
+  amountPrimary: Float!
+  currencyPrimary: String!
+  amountSecondary: Float
+  currencySecondary: String
+  blockchainTxHash: String
+  transactionTimestamp: String!
+  tradeorderscacheIds: [Int!]
+  prosumersIds: [Int!]
+  energysettlementsIds: [Int!]
+}
+
+input CreateSystemConfigInput {
+  configKey: String!
+  configValue: String!
+  description: String
+  updatedAt: String!
+  updatedBy: String
+}

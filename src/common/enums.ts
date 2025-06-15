@@ -1,0 +1,93 @@
+// Common enums used throughout the application
+
+export enum FlowDirection {
+  IMPORT = 'IMPORT',
+  EXPORT = 'EXPORT',
+  CONSUMPTION = 'CONSUMPTION',
+  GENERATION = 'GENERATION',
+}
+
+export enum TransactionStatus {
+  PENDING = 'PENDING',
+  SUCCESS = 'SUCCESS',
+  FAILED = 'FAILED',
+}
+
+export enum TransactionType {
+  ENERGY_SETTLEMENT = 'ENERGY_SETTLEMENT',
+  TOKEN_MINT = 'TOKEN_MINT',
+  TOKEN_BURN = 'TOKEN_BURN',
+  MARKET_ORDER = 'MARKET_ORDER',
+  ORDER_PLACED = 'ORDER_PLACED',
+  TRADE_EXECUTION = 'TRADE_EXECUTION',
+  WALLET_CREATED = 'WALLET_CREATED',
+  WALLET_IMPORTED = 'WALLET_IMPORTED',
+  IDRS_CONVERSION = 'IDRS_CONVERSION',
+  TOKEN_APPROVAL = 'TOKEN_APPROVAL',
+  DEVICE_COMMAND = 'DEVICE_COMMAND',
+}
+
+export enum OrderStatus {
+  OPEN = 'OPEN',
+  PARTIALLY_FILLED = 'PARTIALLY_FILLED',
+  FILLED = 'FILLED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum OrderType {
+  BID = 'BID',
+  ASK = 'ASK',
+}
+
+export enum DeviceSubsystem {
+  GRID = 'GRID',
+  BATTERY = 'BATTERY',
+  SOLAR = 'SOLAR',
+  LOAD = 'LOAD',
+  SYSTEM = 'SYSTEM',
+}
+
+export enum DeviceCommandType {
+  GRID_CONTROL = 'GRID_CONTROL',
+  ENERGY_RESET = 'ENERGY_RESET',
+  SETTLEMENT_RESET = 'SETTLEMENT_RESET',
+  CONFIGURATION = 'CONFIGURATION',
+  COMPONENT_CONTROL = 'COMPONENT_CONTROL',
+}
+
+export enum DeviceCommandStatus {
+  SENT = 'SENT',
+  ACKNOWLEDGED = 'ACKNOWLEDGED',
+  FAILED = 'FAILED',
+  TIMEOUT = 'TIMEOUT',
+}
+
+export enum MqttTopicType {
+  SENSORS = 'SENSORS',
+  HEARTBEAT = 'HEARTBEAT',
+  STATUS = 'STATUS',
+  COMMAND = 'COMMAND',
+  RESPONSE = 'RESPONSE',
+}
+
+export enum MqttDirection {
+  INBOUND = 'INBOUND',
+  OUTBOUND = 'OUTBOUND',
+}
+
+export enum SettlementTrigger {
+  PERIODIC = 'PERIODIC',
+  MANUAL = 'MANUAL',
+  THRESHOLD = 'THRESHOLD',
+}
+
+export enum ConversionType {
+  ON_RAMP = 'ON_RAMP', // IDR to IDRS
+  OFF_RAMP = 'OFF_RAMP', // IDRS to IDR
+}
+
+export enum WalletImportMethod {
+  GENERATED = 'GENERATED',
+  IMPORTED_PRIVATE_KEY = 'IMPORTED_PRIVATE_KEY',
+  IMPORTED_MNEMONIC = 'IMPORTED_MNEMONIC',
+}
