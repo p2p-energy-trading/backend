@@ -34,29 +34,50 @@ export interface JwtConfig {
 }
 
 export interface SensorData {
-  timestamp: string;
-  export: {
-    daily_energy_wh: number;
-    total_energy_wh: number;
-    settlement_energy_wh: number;
-  };
-  import: {
-    daily_energy_wh: number;
-    total_energy_wh: number;
-    settlement_energy_wh: number;
-  };
+  timestamp: number;
   battery: {
-    daily_energy_wh: number;
-    soc: number;
+    voltage: number;
+    current: number;
     power: number;
-  };
-  solar: {
     daily_energy_wh: number;
-    power: number;
+    total_energy_wh: number;
+    settlement_energy_wh: number;
+    state: string;
   };
   load: {
-    daily_energy_wh: number;
+    voltage: number;
+    current: number;
     power: number;
+    daily_energy_wh: number;
+    total_energy_wh: number;
+    settlement_energy_wh: number;
+  };
+  solar: {
+    voltage: number;
+    current: number;
+    power: number;
+    daily_energy_wh: number;
+    total_energy_wh: number;
+    settlement_energy_wh: number;
+    generating: boolean;
+  };
+  import: {
+    voltage: number;
+    current: number;
+    power: number;
+    daily_energy_wh: number;
+    total_energy_wh: number;
+    settlement_energy_wh: number;
+    active: boolean;
+  };
+  export: {
+    voltage: number;
+    current: number;
+    power: number;
+    daily_energy_wh: number;
+    total_energy_wh: number;
+    settlement_energy_wh: number;
+    active: boolean;
   };
 }
 
@@ -69,12 +90,44 @@ export interface DeviceHeartbeat {
 }
 
 export interface DeviceStatus {
-  timestamp: string;
-  wifi_status: string;
-  mqtt_status: string;
-  grid_mode: string;
-  system_status: string;
-  error_codes?: string[];
+  timestamp: number;
+  wifi: {
+    connected: boolean;
+    rssi: number;
+    ip: string;
+  };
+  motor1: {
+    duty: number;
+    percent: number;
+    direction: string;
+  };
+  motor2: {
+    duty: number;
+    percent: number;
+    direction: string;
+  };
+  motor: {
+    duty: number;
+    percent: number;
+    max_pwm: number;
+    direction: string;
+  };
+  pwm: {
+    led_duty: number;
+    max_pwm: number;
+  };
+  grid: {
+    mode: string;
+    importing: boolean;
+    exporting: boolean;
+  };
+  mqtt: {
+    connected: boolean;
+    attempts: number;
+  };
+  system: {
+    free_heap: number;
+  };
 }
 
 export interface DeviceCommandPayload {
@@ -118,4 +171,11 @@ export interface IdrsConversionData {
   conversionType: 'ON_RAMP' | 'OFF_RAMP';
   amount: number;
   exchangeRate: number;
+}
+
+export interface GridSettlementData {
+  meterId: string;
+  timestamp: string;
+  importEnergyWh: number;
+  exportEnergyWh: number;
 }

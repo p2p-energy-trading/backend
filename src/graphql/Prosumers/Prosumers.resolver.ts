@@ -48,58 +48,70 @@ export class ProsumersResolver {
   }
 
   @Mutation(() => Boolean)
-  removeProsumers(
-    @Args('prosumerId', { type: () => String }) prosumerId: string,
-  ) {
+  removeProsumers(@Args('prosumerId', { type: () => String }) prosumerId: string) {
     return this.ProsumersService.remove(prosumerId);
   }
 
   @ResolveField(() => [BlockchainApprovals])
-  async blockchainapprovalsList(
-    @Parent() Prosumers: Prosumers,
-  ): Promise<any[]> {
+  async blockchainapprovalsList(@Parent() Prosumers: Prosumers): Promise<any[]> {
     return this.ProsumersService.findBlockchainapprovalsList(
-      Prosumers.prosumerId,
+      Prosumers.prosumerId
     );
   }
 
   @ResolveField(() => [DeviceCommands])
   async devicecommandsList(@Parent() Prosumers: Prosumers): Promise<any[]> {
-    return this.ProsumersService.findDevicecommandsList(Prosumers.prosumerId);
+    return this.ProsumersService.findDevicecommandsList(
+      Prosumers.prosumerId
+    );
   }
 
   @ResolveField(() => [IdrsConversions])
   async idrsconversionsList(@Parent() Prosumers: Prosumers): Promise<any[]> {
-    return this.ProsumersService.findIdrsconversionsList(Prosumers.prosumerId);
+    return this.ProsumersService.findIdrsconversionsList(
+      Prosumers.prosumerId
+    );
   }
 
   @ResolveField(() => [MarketTrades])
   async markettradesList(@Parent() Prosumers: Prosumers): Promise<any[]> {
-    return this.ProsumersService.findMarkettradesList(Prosumers.prosumerId);
+    return this.ProsumersService.findMarkettradesList(
+      Prosumers.prosumerId
+    );
   }
 
   @ResolveField(() => [MarketTrades])
   async markettradesList2(@Parent() Prosumers: Prosumers): Promise<any[]> {
-    return this.ProsumersService.findMarkettradesList2(Prosumers.prosumerId);
+    return this.ProsumersService.findMarkettradesList2(
+      Prosumers.prosumerId
+    );
   }
 
   @ResolveField(() => [SmartMeters])
   async smartmetersList(@Parent() Prosumers: Prosumers): Promise<any[]> {
-    return this.ProsumersService.findSmartmetersList(Prosumers.prosumerId);
+    return this.ProsumersService.findSmartmetersList(
+      Prosumers.prosumerId
+    );
   }
 
   @ResolveField(() => [TradeOrdersCache])
   async tradeorderscacheList(@Parent() Prosumers: Prosumers): Promise<any[]> {
-    return this.ProsumersService.findTradeorderscacheList(Prosumers.prosumerId);
+    return this.ProsumersService.findTradeorderscacheList(
+      Prosumers.prosumerId
+    );
   }
 
   @ResolveField(() => [TransactionLogs])
   async transactionlogsList(@Parent() Prosumers: Prosumers): Promise<any[]> {
-    return this.ProsumersService.findTransactionlogsList(Prosumers.prosumerId);
+    return this.ProsumersService.findTransactionlogsList(
+      Prosumers.prosumerId
+    );
   }
 
   @ResolveField(() => [Wallets])
   async walletsList(@Parent() Prosumers: Prosumers): Promise<any[]> {
-    return this.ProsumersService.findWalletsList(Prosumers.prosumerId);
+    return this.ProsumersService.findWalletsList(
+      Prosumers.prosumerId
+    );
   }
 }

@@ -4,7 +4,7 @@ import {
   PrimaryGeneratedColumn,
   ManyToOne,
   JoinColumn,
-} from 'typeorm';
+  } from 'typeorm';
 import { TradeOrdersCache } from '../../TradeOrdersCache/entities/TradeOrdersCache.entity';
 import { Prosumers } from '../../Prosumers/entities/Prosumers.entity';
 import { EnergySettlements } from '../../EnergySettlements/entities/EnergySettlements.entity';

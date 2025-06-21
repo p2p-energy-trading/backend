@@ -9,8 +9,6 @@ import { IdrsConversions } from '../IdrsConversions/entities/IdrsConversions.ent
 import { MarketTrades } from '../MarketTrades/entities/MarketTrades.entity';
 import { TradeOrdersCache } from '../TradeOrdersCache/entities/TradeOrdersCache.entity';
 import { Prosumers } from '../Prosumers/entities/Prosumers.entity';
-import { TransactionLogsService } from '../TransactionLogs/TransactionLogs.service';
-import { TransactionType, TransactionStatus } from '../../common/enums';
 
 @Injectable()
 export class WalletsService {
@@ -48,15 +46,7 @@ export class WalletsService {
     if (args && args.lastUsedAt !== undefined)
       where['lastUsedAt'] = args.lastUsedAt;
 
-    const relations = [
-      'blockchainapprovalsList',
-      'idrsconversionsList',
-      'markettradesList',
-      'markettradesList2',
-      'tradeorderscacheList',
-      'prosumers',
-    ];
-    return this.repo.find({ where, relations });
+    return this.repo.find({ where });
   }
 
   async findOne(walletAddress: any): Promise<Wallets> {

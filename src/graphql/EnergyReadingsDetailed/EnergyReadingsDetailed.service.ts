@@ -1,19 +1,60 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository } from 'typeorm';
 import { EnergyReadingsDetailed } from './entities/EnergyReadingsDetailed.entity';
 import { CreateEnergyReadingsDetailedInput } from './dto/EnergyReadingsDetailed.input';
 import { EnergyReadingsDetailedArgs } from './dto/EnergyReadingsDetailed.args';
 import { SmartMeters } from '../SmartMeters/entities/SmartMeters.entity';
+import { GridSettlementData } from 'src/common/interfaces';
 
 @Injectable()
 export class EnergyReadingsDetailedService {
+  private readonly Logger = new Logger(EnergyReadingsDetailedService.name);
+
   constructor(
     @InjectRepository(EnergyReadingsDetailed)
     private readonly repo: Repository<EnergyReadingsDetailed>,
     @InjectRepository(SmartMeters)
     private readonly SmartMetersRepo: Repository<SmartMeters>,
   ) {}
+
+  // just a simple example of a method that finds the latest reading for a given meterId, no relation, take 2
+  async findLatestGridImportAndExportByMeterId(
+    meterId: string,
+  ): Promise<GridSettlementData | null> {
+    const latestReadingImport = await this.repo
+      .createQueryBuilder('reading')
+      .where('reading.meterId = :meterId', { meterId })
+      .andWhere('(reading.subsystem = :import)', {
+        import: 'GRID_IMPORT',
+      })
+      .orderBy('reading.timestamp', 'DESC')
+      .getOne();
+
+    const latestReadingExport = await this.repo
+      .createQueryBuilder('reading')
+      .where('reading.meterId = :meterId', { meterId })
+      .andWhere('(reading.subsystem = :export)', {
+        export: 'GRID_EXPORT',
+      })
+      .orderBy('reading.timestamp', 'DESC')
+      .getOne();
+
+    const settlementData: GridSettlementData = {
+      meterId: latestReadingImport?.meterId || '',
+      timestamp: latestReadingImport?.timestamp.toISOString() || '',
+      importEnergyWh:
+        latestReadingImport?.subsystem === 'GRID_IMPORT'
+          ? latestReadingImport.settlementEnergyWh || 0
+          : 0,
+      exportEnergyWh:
+        latestReadingExport?.subsystem === 'GRID_EXPORT'
+          ? latestReadingExport.settlementEnergyWh || 0
+          : 0,
+    };
+
+    return settlementData || null;
+  }
 
   async findAll(
     args?: EnergyReadingsDetailedArgs,
@@ -47,7 +88,7 @@ export class EnergyReadingsDetailedService {
     return this.repo.find({ where, relations });
   }
 
-  async findOne(readingId: any): Promise<EnergyReadingsDetailed> {
+  async findOne(readingId: number): Promise<EnergyReadingsDetailed> {
     const relations = ['smartmeters'];
     const entity = await this.repo.findOne({ where: { readingId }, relations });
     if (!entity) {
@@ -67,21 +108,13 @@ export class EnergyReadingsDetailedService {
     if (input.timestamp)
       (createData as any).timestamp = new Date(input.timestamp);
 
-    // Handle smartmeters relation
-    if (input.smartmetersIds && input.smartmetersIds.length > 0) {
-      const smartmetersEntities = await this.SmartMetersRepo.findBy({
-        meterId: In(input.smartmetersIds),
-      });
-      (createData as any).smartmeters = smartmetersEntities;
-    }
-
     const entity = this.repo.create(createData);
     const savedEntity = await this.repo.save(entity);
     return this.findOne(savedEntity.readingId);
   }
 
   async update(
-    readingId: any,
+    readingId: number,
     input: CreateEnergyReadingsDetailedInput,
   ): Promise<EnergyReadingsDetailed> {
     const existing = await this.findOne(readingId);
@@ -92,28 +125,16 @@ export class EnergyReadingsDetailedService {
     if (input.timestamp)
       (updateData as any).timestamp = new Date(input.timestamp);
 
-    // Handle smartmeters relation update
-    if (input.smartmetersIds !== undefined) {
-      if (input.smartmetersIds.length > 0) {
-        const smartmetersEntities = await this.SmartMetersRepo.findBy({
-          meterId: In(input.smartmetersIds),
-        });
-        (updateData as any).smartmeters = smartmetersEntities;
-      } else {
-        (updateData as any).smartmeters = [];
-      }
-    }
-
     await this.repo.save({ ...existing, ...updateData });
     return this.findOne(readingId);
   }
 
-  async remove(readingId: any): Promise<boolean> {
+  async remove(readingId: number): Promise<boolean> {
     const result = await this.repo.delete({ readingId });
     return (result.affected ?? 0) > 0;
   }
 
-  async findSmartmeters(readingId: any): Promise<any[]> {
+  async findSmartmeters(readingId: number): Promise<any[]> {
     const parent = await this.repo.findOne({
       where: { readingId },
       relations: ['smartmeters'],

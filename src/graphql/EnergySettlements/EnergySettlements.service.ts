@@ -75,6 +75,13 @@ export class EnergySettlementsService {
     return entity;
   }
 
+  async findByTxHash(txHash: string): Promise<EnergySettlements | null> {
+    const entity = await this.repo.findOne({
+      where: { blockchainTxHash: txHash },
+    });
+    return entity || null;
+  }
+
   async create(
     input: CreateEnergySettlementsInput,
   ): Promise<EnergySettlements> {

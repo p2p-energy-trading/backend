@@ -5,7 +5,7 @@ import {
   OneToMany,
   ManyToOne,
   JoinColumn,
-} from 'typeorm';
+  } from 'typeorm';
 import { DeviceCommands } from '../../DeviceCommands/entities/DeviceCommands.entity';
 import { DeviceHeartbeats } from '../../DeviceHeartbeats/entities/DeviceHeartbeats.entity';
 import { DeviceStatusSnapshots } from '../../DeviceStatusSnapshots/entities/DeviceStatusSnapshots.entity';
@@ -71,46 +71,25 @@ export class SmartMeters {
   @Column({ type: 'varchar', name: 'capabilities', nullable: true })
   capabilities: string;
 
-  @OneToMany(
-    () => DeviceCommands,
-    (DeviceCommands) => DeviceCommands.smartmeters,
-  )
+  @OneToMany(() => DeviceCommands, (DeviceCommands) => DeviceCommands.smartmeters)
   devicecommandsList: DeviceCommands[];
 
-  @OneToMany(
-    () => DeviceHeartbeats,
-    (DeviceHeartbeats) => DeviceHeartbeats.smartmeters,
-  )
+  @OneToMany(() => DeviceHeartbeats, (DeviceHeartbeats) => DeviceHeartbeats.smartmeters)
   deviceheartbeatsList: DeviceHeartbeats[];
 
-  @OneToMany(
-    () => DeviceStatusSnapshots,
-    (DeviceStatusSnapshots) => DeviceStatusSnapshots.smartmeters,
-  )
+  @OneToMany(() => DeviceStatusSnapshots, (DeviceStatusSnapshots) => DeviceStatusSnapshots.smartmeters)
   devicestatussnapshotsList: DeviceStatusSnapshots[];
 
-  @OneToMany(
-    () => EnergyReadings,
-    (EnergyReadings) => EnergyReadings.smartmeters,
-  )
+  @OneToMany(() => EnergyReadings, (EnergyReadings) => EnergyReadings.smartmeters)
   energyreadingsList: EnergyReadings[];
 
-  @OneToMany(
-    () => EnergyReadingsDetailed,
-    (EnergyReadingsDetailed) => EnergyReadingsDetailed.smartmeters,
-  )
+  @OneToMany(() => EnergyReadingsDetailed, (EnergyReadingsDetailed) => EnergyReadingsDetailed.smartmeters)
   energyreadingsdetailedList: EnergyReadingsDetailed[];
 
-  @OneToMany(
-    () => EnergySettlements,
-    (EnergySettlements) => EnergySettlements.smartmeters,
-  )
+  @OneToMany(() => EnergySettlements, (EnergySettlements) => EnergySettlements.smartmeters)
   energysettlementsList: EnergySettlements[];
 
-  @OneToMany(
-    () => MqttMessageLogs,
-    (MqttMessageLogs) => MqttMessageLogs.smartmeters,
-  )
+  @OneToMany(() => MqttMessageLogs, (MqttMessageLogs) => MqttMessageLogs.smartmeters)
   mqttmessagelogsList: MqttMessageLogs[];
 
   @ManyToOne(() => Prosumers)

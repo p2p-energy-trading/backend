@@ -5,7 +5,7 @@ import {
   OneToMany,
   ManyToOne,
   JoinColumn,
-} from 'typeorm';
+  } from 'typeorm';
 import { BlockchainApprovals } from '../../BlockchainApprovals/entities/BlockchainApprovals.entity';
 import { IdrsConversions } from '../../IdrsConversions/entities/IdrsConversions.entity';
 import { MarketTrades } from '../../MarketTrades/entities/MarketTrades.entity';
@@ -38,16 +38,10 @@ export class Wallets {
   @Column({ type: 'timestamp', name: 'last_used_at', nullable: true })
   lastUsedAt: Date;
 
-  @OneToMany(
-    () => BlockchainApprovals,
-    (BlockchainApprovals) => BlockchainApprovals.wallets,
-  )
+  @OneToMany(() => BlockchainApprovals, (BlockchainApprovals) => BlockchainApprovals.wallets)
   blockchainapprovalsList: BlockchainApprovals[];
 
-  @OneToMany(
-    () => IdrsConversions,
-    (IdrsConversions) => IdrsConversions.wallets,
-  )
+  @OneToMany(() => IdrsConversions, (IdrsConversions) => IdrsConversions.wallets)
   idrsconversionsList: IdrsConversions[];
 
   @OneToMany(() => MarketTrades, (MarketTrades) => MarketTrades.wallets)
@@ -56,10 +50,7 @@ export class Wallets {
   @OneToMany(() => MarketTrades, (MarketTrades) => MarketTrades.wallets)
   markettradesList2: MarketTrades[];
 
-  @OneToMany(
-    () => TradeOrdersCache,
-    (TradeOrdersCache) => TradeOrdersCache.wallets,
-  )
+  @OneToMany(() => TradeOrdersCache, (TradeOrdersCache) => TradeOrdersCache.wallets)
   tradeorderscacheList: TradeOrdersCache[];
 
   @ManyToOne(() => Prosumers)

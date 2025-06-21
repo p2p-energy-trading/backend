@@ -56,4 +56,5 @@ export class CreateEnergySettlementsInput {
 
   @Field(() => [Int], { nullable: true })
   mqttmessagelogsIds?: number[];
+
 }

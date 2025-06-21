@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository } from 'typeorm';
 import { DeviceStatusSnapshots } from './entities/DeviceStatusSnapshots.entity';
 import { CreateDeviceStatusSnapshotsInput } from './dto/DeviceStatusSnapshots.input';
 import { DeviceStatusSnapshotsArgs } from './dto/DeviceStatusSnapshots.args';
@@ -41,7 +41,7 @@ export class DeviceStatusSnapshotsService {
     return this.repo.find({ where, relations });
   }
 
-  async findOne(snapshotId: any): Promise<DeviceStatusSnapshots> {
+  async findOne(snapshotId: number): Promise<DeviceStatusSnapshots> {
     const relations = ['smartmeters'];
     const entity = await this.repo.findOne({
       where: { snapshotId },
@@ -64,21 +64,13 @@ export class DeviceStatusSnapshotsService {
     if (input.timestamp)
       (createData as any).timestamp = new Date(input.timestamp);
 
-    // Handle smartmeters relation
-    if (input.smartmetersIds && input.smartmetersIds.length > 0) {
-      const smartmetersEntities = await this.SmartMetersRepo.findBy({
-        meterId: In(input.smartmetersIds),
-      });
-      (createData as any).smartmeters = smartmetersEntities;
-    }
-
     const entity = this.repo.create(createData);
     const savedEntity = await this.repo.save(entity);
     return this.findOne(savedEntity.snapshotId);
   }
 
   async update(
-    snapshotId: any,
+    snapshotId: number,
     input: CreateDeviceStatusSnapshotsInput,
   ): Promise<DeviceStatusSnapshots> {
     const existing = await this.findOne(snapshotId);
@@ -89,28 +81,16 @@ export class DeviceStatusSnapshotsService {
     if (input.timestamp)
       (updateData as any).timestamp = new Date(input.timestamp);
 
-    // Handle smartmeters relation update
-    if (input.smartmetersIds !== undefined) {
-      if (input.smartmetersIds.length > 0) {
-        const smartmetersEntities = await this.SmartMetersRepo.findBy({
-          meterId: In(input.smartmetersIds),
-        });
-        (updateData as any).smartmeters = smartmetersEntities;
-      } else {
-        (updateData as any).smartmeters = [];
-      }
-    }
-
     await this.repo.save({ ...existing, ...updateData });
     return this.findOne(snapshotId);
   }
 
-  async remove(snapshotId: any): Promise<boolean> {
+  async remove(snapshotId: number): Promise<boolean> {
     const result = await this.repo.delete({ snapshotId });
     return (result.affected ?? 0) > 0;
   }
 
-  async findSmartmeters(snapshotId: any): Promise<any[]> {
+  async findSmartmeters(snapshotId: number): Promise<any[]> {
     const parent = await this.repo.findOne({
       where: { snapshotId },
       relations: ['smartmeters'],

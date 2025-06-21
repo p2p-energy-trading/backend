@@ -16,9 +16,7 @@ import { SmartMeters } from '../SmartMeters/dto/SmartMeters.output';
 
 @Resolver(() => MqttMessageLogs)
 export class MqttMessageLogsResolver {
-  constructor(
-    private readonly MqttMessageLogsService: MqttMessageLogsService,
-  ) {}
+  constructor(private readonly MqttMessageLogsService: MqttMessageLogsService) {}
 
   @Query(() => [MqttMessageLogs], { name: 'MqttMessageLogsAll' })
   findAll(@Args() args: MqttMessageLogsArgs) {
@@ -49,21 +47,15 @@ export class MqttMessageLogsResolver {
   }
 
   @ResolveField(() => [EnergySettlements])
-  async energysettlementsList(
-    @Parent() MqttMessageLogs: MqttMessageLogs,
-  ): Promise<any[]> {
+  async energysettlementsList(@Parent() MqttMessageLogs: MqttMessageLogs): Promise<any[]> {
     return this.MqttMessageLogsService.findEnergysettlementsList(
-      MqttMessageLogs.logId,
+      MqttMessageLogs.logId
     );
   }
 
   @ResolveField(() => SmartMeters, { nullable: true })
-  async smartmeters(
-    @Parent() MqttMessageLogs: MqttMessageLogs,
-  ): Promise<any | null> {
-    const result = await this.MqttMessageLogsService.findSmartmeters(
-      Number(MqttMessageLogs.logId),
-    );
+  async smartmeters(@Parent() MqttMessageLogs: MqttMessageLogs): Promise<any | null> {
+    const result = await this.MqttMessageLogsService.findSmartmeters(Number(MqttMessageLogs.logId));
     return result[0] || null;
   }
 }

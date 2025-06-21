@@ -5,7 +5,7 @@ import {
   OneToMany,
   ManyToOne,
   JoinColumn,
-} from 'typeorm';
+  } from 'typeorm';
 import { SmartMeters } from '../../SmartMeters/entities/SmartMeters.entity';
 import { MqttMessageLogs } from '../../MqttMessageLogs/entities/MqttMessageLogs.entity';
 import { TransactionLogs } from '../../TransactionLogs/entities/TransactionLogs.entity';
@@ -57,11 +57,7 @@ export class EnergySettlements {
   @Column({ type: 'varchar', name: 'settlement_data_source', nullable: true })
   settlementDataSource: string;
 
-  @Column({
-    type: 'varchar',
-    name: 'detailed_energy_breakdown',
-    nullable: true,
-  })
+  @Column({ type: 'varchar', name: 'detailed_energy_breakdown', nullable: true })
   detailedEnergyBreakdown: string;
 
   @Column({ type: 'varchar', name: 'mqtt_message_id', nullable: true })
@@ -75,9 +71,6 @@ export class EnergySettlements {
   @JoinColumn({ name: 'mqtt_message_id' })
   mqttmessagelogs: MqttMessageLogs;
 
-  @OneToMany(
-    () => TransactionLogs,
-    (TransactionLogs) => TransactionLogs.energysettlements,
-  )
+  @OneToMany(() => TransactionLogs, (TransactionLogs) => TransactionLogs.energysettlements)
   transactionlogsList: TransactionLogs[];
 }

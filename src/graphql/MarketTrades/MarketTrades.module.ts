@@ -10,7 +10,11 @@ import { WalletsModule } from '../Wallets/Wallets.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([MarketTrades, Prosumers, Wallets]),
+    TypeOrmModule.forFeature([
+      MarketTrades,
+      Prosumers,
+      Wallets,
+    ]),
     forwardRef(() => ProsumersModule),
     forwardRef(() => WalletsModule),
   ],

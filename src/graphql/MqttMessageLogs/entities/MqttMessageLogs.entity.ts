@@ -5,7 +5,7 @@ import {
   OneToMany,
   ManyToOne,
   JoinColumn,
-} from 'typeorm';
+  } from 'typeorm';
 import { EnergySettlements } from '../../EnergySettlements/entities/EnergySettlements.entity';
 import { SmartMeters } from '../../SmartMeters/entities/SmartMeters.entity';
 
@@ -47,10 +47,7 @@ export class MqttMessageLogs {
   @Column({ type: 'varchar', name: 'correlation_id', nullable: true })
   correlationId: string;
 
-  @OneToMany(
-    () => EnergySettlements,
-    (EnergySettlements) => EnergySettlements.mqttmessagelogs,
-  )
+  @OneToMany(() => EnergySettlements, (EnergySettlements) => EnergySettlements.mqttmessagelogs)
   energysettlementsList: EnergySettlements[];
 
   @ManyToOne(() => SmartMeters)

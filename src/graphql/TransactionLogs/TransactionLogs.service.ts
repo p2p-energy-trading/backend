@@ -48,8 +48,7 @@ export class TransactionLogsService {
     if (args && args.transactionTimestamp !== undefined)
       where['transactionTimestamp'] = args.transactionTimestamp;
 
-    const relations = ['tradeorderscache', 'prosumers', 'energysettlements'];
-    return this.repo.find({ where, relations });
+    return this.repo.find({ where });
   }
 
   async findOne(logId: any): Promise<TransactionLogs> {
@@ -69,28 +68,6 @@ export class TransactionLogsService {
       (createData as any).transactionTimestamp = new Date(
         input.transactionTimestamp,
       );
-
-    // Handle tradeorderscache relation
-    if (input.tradeorderscacheIds && input.tradeorderscacheIds.length > 0) {
-      const tradeorderscacheEntities = await this.TradeOrdersCacheRepo.findBy({
-        orderId: In(input.tradeorderscacheIds),
-      });
-      (createData as any).tradeorderscache = tradeorderscacheEntities;
-    }
-    // Handle prosumers relation
-    if (input.prosumersIds && input.prosumersIds.length > 0) {
-      const prosumersEntities = await this.ProsumersRepo.findBy({
-        prosumerId: In(input.prosumersIds),
-      });
-      (createData as any).prosumers = prosumersEntities;
-    }
-    // Handle energysettlements relation
-    if (input.energysettlementsIds && input.energysettlementsIds.length > 0) {
-      const energysettlementsEntities = await this.EnergySettlementsRepo.findBy(
-        { settlementId: In(input.energysettlementsIds) },
-      );
-      (createData as any).energysettlements = energysettlementsEntities;
-    }
 
     const entity = this.repo.create(createData);
     const savedEntity = await this.repo.save(entity);

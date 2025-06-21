@@ -19,6 +19,7 @@ import { EnergySettlementsModule } from '../graphql/EnergySettlements/EnergySett
 import { SmartMetersModule } from '../graphql/SmartMeters/SmartMeters.module';
 import { CommonModule } from '../common/common.module';
 import { WebSocketModule } from '../websocket/websocket.module';
+import { EnergyReadingsDetailedModule } from 'src/graphql/EnergyReadingsDetailed/EnergyReadingsDetailed.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { WebSocketModule } from '../websocket/websocket.module';
     WebSocketModule,
     MqttMessageLogsModule,
     EnergyReadingsModule,
+    EnergyReadingsDetailedModule,
     DeviceHeartbeatsModule,
     DeviceStatusSnapshotsModule,
     DeviceCommandsModule,

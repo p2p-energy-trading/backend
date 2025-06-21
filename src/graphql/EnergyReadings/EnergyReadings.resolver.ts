@@ -41,19 +41,13 @@ export class EnergyReadingsResolver {
   }
 
   @Mutation(() => Boolean)
-  removeEnergyReadings(
-    @Args('readingId', { type: () => Int }) readingId: number,
-  ) {
+  removeEnergyReadings(@Args('readingId', { type: () => Int }) readingId: number) {
     return this.EnergyReadingsService.remove(Number(readingId));
   }
 
   @ResolveField(() => SmartMeters, { nullable: true })
-  async smartmeters(
-    @Parent() EnergyReadings: EnergyReadings,
-  ): Promise<any | null> {
-    const result = await this.EnergyReadingsService.findSmartmeters(
-      Number(EnergyReadings.readingId),
-    );
+  async smartmeters(@Parent() EnergyReadings: EnergyReadings): Promise<any | null> {
+    const result = await this.EnergyReadingsService.findSmartmeters(Number(EnergyReadings.readingId));
     return result[0] || null;
   }
 }

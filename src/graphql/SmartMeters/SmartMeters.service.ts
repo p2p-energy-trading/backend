@@ -5,9 +5,7 @@ import { SmartMeters } from './entities/SmartMeters.entity';
 import { CreateSmartMetersInput } from './dto/SmartMeters.input';
 import { SmartMetersArgs } from './dto/SmartMeters.args';
 import { DeviceCommands } from '../DeviceCommands/entities/DeviceCommands.entity';
-import { DeviceHeartbeats } from '../DeviceHeartbeats/entities/DeviceHeartbeats.entity';
 import { DeviceStatusSnapshots } from '../DeviceStatusSnapshots/entities/DeviceStatusSnapshots.entity';
-import { EnergyReadings } from '../EnergyReadings/entities/EnergyReadings.entity';
 import { EnergyReadingsDetailed } from '../EnergyReadingsDetailed/entities/EnergyReadingsDetailed.entity';
 import { EnergySettlements } from '../EnergySettlements/entities/EnergySettlements.entity';
 import { MqttMessageLogs } from '../MqttMessageLogs/entities/MqttMessageLogs.entity';
@@ -20,12 +18,8 @@ export class SmartMetersService {
     private readonly repo: Repository<SmartMeters>,
     @InjectRepository(DeviceCommands)
     private readonly DeviceCommandsRepo: Repository<DeviceCommands>,
-    @InjectRepository(DeviceHeartbeats)
-    private readonly DeviceHeartbeatsRepo: Repository<DeviceHeartbeats>,
     @InjectRepository(DeviceStatusSnapshots)
     private readonly DeviceStatusSnapshotsRepo: Repository<DeviceStatusSnapshots>,
-    @InjectRepository(EnergyReadings)
-    private readonly EnergyReadingsRepo: Repository<EnergyReadings>,
     @InjectRepository(EnergyReadingsDetailed)
     private readonly EnergyReadingsDetailedRepo: Repository<EnergyReadingsDetailed>,
     @InjectRepository(EnergySettlements)
@@ -72,25 +66,22 @@ export class SmartMetersService {
     if (args && args.capabilities !== undefined)
       where['capabilities'] = args.capabilities;
 
-    const relations = [
-      'devicecommandsList',
-      'deviceheartbeatsList',
-      'devicestatussnapshotsList',
-      'energyreadingsList',
-      'energyreadingsdetailedList',
-      'energysettlementsList',
-      'mqttmessagelogsList',
-      'prosumers',
-    ];
-    return this.repo.find({ where, relations });
+    // const relations = [
+    //   'devicecommandsList',
+    //   'devicestatussnapshotsList',
+    //   'energyreadingsdetailedList',
+    //   'energysettlementsList',
+    //   'mqttmessagelogsList',
+    //   'prosumers',
+    // ];
+    // return this.repo.find({ where, relations });
+    return this.repo.find({ where });
   }
 
   async findOne(meterId: any): Promise<SmartMeters> {
     const relations = [
       'devicecommandsList',
-      'deviceheartbeatsList',
       'devicestatussnapshotsList',
-      'energyreadingsList',
       'energyreadingsdetailedList',
       'energysettlementsList',
       'mqttmessagelogsList',
@@ -197,46 +188,12 @@ export class SmartMetersService {
     }));
   }
 
-  async findDeviceheartbeatsList(meterId: any): Promise<any[]> {
-    const parent = await this.repo.findOne({
-      where: { meterId },
-      relations: ['deviceheartbeatsList'],
-    });
-    const entities = parent?.deviceheartbeatsList || [];
-    // Convert entities to match GraphQL output format
-    return entities.map((entity) => ({
-      ...entity,
-      timestamp: entity.timestamp
-        ? entity.timestamp instanceof Date
-          ? entity.timestamp.toISOString()
-          : entity.timestamp
-        : null,
-    }));
-  }
-
   async findDevicestatussnapshotsList(meterId: any): Promise<any[]> {
     const parent = await this.repo.findOne({
       where: { meterId },
       relations: ['devicestatussnapshotsList'],
     });
     const entities = parent?.devicestatussnapshotsList || [];
-    // Convert entities to match GraphQL output format
-    return entities.map((entity) => ({
-      ...entity,
-      timestamp: entity.timestamp
-        ? entity.timestamp instanceof Date
-          ? entity.timestamp.toISOString()
-          : entity.timestamp
-        : null,
-    }));
-  }
-
-  async findEnergyreadingsList(meterId: any): Promise<any[]> {
-    const parent = await this.repo.findOne({
-      where: { meterId },
-      relations: ['energyreadingsList'],
-    });
-    const entities = parent?.energyreadingsList || [];
     // Convert entities to match GraphQL output format
     return entities.map((entity) => ({
       ...entity,

@@ -5,7 +5,6 @@ import { SmartMetersService } from './SmartMeters.service';
 import { SmartMeters } from './entities/SmartMeters.entity';
 import { DeviceCommands } from '../DeviceCommands/entities/DeviceCommands.entity';
 import { DeviceCommandsModule } from '../DeviceCommands/DeviceCommands.module';
-import { DeviceHeartbeats } from '../DeviceHeartbeats/entities/DeviceHeartbeats.entity';
 import { DeviceHeartbeatsModule } from '../DeviceHeartbeats/DeviceHeartbeats.module';
 import { DeviceStatusSnapshots } from '../DeviceStatusSnapshots/entities/DeviceStatusSnapshots.entity';
 import { DeviceStatusSnapshotsModule } from '../DeviceStatusSnapshots/DeviceStatusSnapshots.module';
@@ -25,7 +24,6 @@ import { ProsumersModule } from '../Prosumers/Prosumers.module';
     TypeOrmModule.forFeature([
       SmartMeters,
       DeviceCommands,
-      DeviceHeartbeats,
       DeviceStatusSnapshots,
       EnergyReadings,
       EnergyReadingsDetailed,

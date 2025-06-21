@@ -25,6 +25,8 @@ export enum TransactionType {
   IDRS_CONVERSION = 'IDRS_CONVERSION',
   TOKEN_APPROVAL = 'TOKEN_APPROVAL',
   DEVICE_COMMAND = 'DEVICE_COMMAND',
+  ORDER_CANCELLED = 'ORDER_CANCELLED',
+  CONTRACT_INTERACTION = 'CONTRACT_INTERACTION',
 }
 
 export enum OrderStatus {
@@ -40,7 +42,8 @@ export enum OrderType {
 }
 
 export enum DeviceSubsystem {
-  GRID = 'GRID',
+  GRID_IMPORT = 'GRID_IMPORT',
+  GRID_EXPORT = 'GRID_EXPORT',
   BATTERY = 'BATTERY',
   SOLAR = 'SOLAR',
   LOAD = 'LOAD',

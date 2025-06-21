@@ -10,7 +10,11 @@ import { ProsumersModule } from '../Prosumers/Prosumers.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([DeviceCommands, SmartMeters, Prosumers]),
+    TypeOrmModule.forFeature([
+      DeviceCommands,
+      SmartMeters,
+      Prosumers,
+    ]),
     forwardRef(() => SmartMetersModule),
     forwardRef(() => ProsumersModule),
   ],

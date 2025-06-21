@@ -4,7 +4,7 @@ import {
   PrimaryGeneratedColumn,
   ManyToOne,
   JoinColumn,
-} from 'typeorm';
+  } from 'typeorm';
 import { SmartMeters } from '../../SmartMeters/entities/SmartMeters.entity';
 import { Prosumers } from '../../Prosumers/entities/Prosumers.entity';
 

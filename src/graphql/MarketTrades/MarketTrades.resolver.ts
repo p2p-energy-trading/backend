@@ -48,33 +48,25 @@ export class MarketTradesResolver {
 
   @ResolveField(() => Prosumers, { nullable: true })
   async prosumers(@Parent() MarketTrades: MarketTrades): Promise<any | null> {
-    const result = await this.MarketTradesService.findProsumers(
-      Number(MarketTrades.tradeId),
-    );
+    const result = await this.MarketTradesService.findProsumers(Number(MarketTrades.tradeId));
     return result[0] || null;
   }
 
   @ResolveField(() => Wallets, { nullable: true })
   async wallets(@Parent() MarketTrades: MarketTrades): Promise<any | null> {
-    const result = await this.MarketTradesService.findWallets(
-      Number(MarketTrades.tradeId),
-    );
+    const result = await this.MarketTradesService.findWallets(Number(MarketTrades.tradeId));
     return result[0] || null;
   }
 
   @ResolveField(() => Prosumers, { nullable: true })
   async prosumers2(@Parent() MarketTrades: MarketTrades): Promise<any | null> {
-    const result = await this.MarketTradesService.findProsumers2(
-      Number(MarketTrades.tradeId),
-    );
+    const result = await this.MarketTradesService.findProsumers2(Number(MarketTrades.tradeId));
     return result[0] || null;
   }
 
   @ResolveField(() => Wallets, { nullable: true })
   async wallets2(@Parent() MarketTrades: MarketTrades): Promise<any | null> {
-    const result = await this.MarketTradesService.findWallets2(
-      Number(MarketTrades.tradeId),
-    );
+    const result = await this.MarketTradesService.findWallets2(Number(MarketTrades.tradeId));
     return result[0] || null;
   }
 }

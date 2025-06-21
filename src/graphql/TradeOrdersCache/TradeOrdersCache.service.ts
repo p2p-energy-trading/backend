@@ -25,30 +25,19 @@ export class TradeOrdersCacheService {
     // Simple filter: remove undefined keys
     const where = {};
     if (args && args.orderId !== undefined) where['orderId'] = args.orderId;
-    if (args && args.prosumerId !== undefined)
-      where['prosumerId'] = args.prosumerId;
-    if (args && args.walletAddress !== undefined)
-      where['walletAddress'] = args.walletAddress;
-    if (args && args.orderType !== undefined)
-      where['orderType'] = args.orderType;
+    if (args && args.prosumerId !== undefined) where['prosumerId'] = args.prosumerId;
+    if (args && args.walletAddress !== undefined) where['walletAddress'] = args.walletAddress;
+    if (args && args.orderType !== undefined) where['orderType'] = args.orderType;
     if (args && args.pair !== undefined) where['pair'] = args.pair;
-    if (args && args.amountEtk !== undefined)
-      where['amountEtk'] = args.amountEtk;
-    if (args && args.priceIdrsPerEtk !== undefined)
-      where['priceIdrsPerEtk'] = args.priceIdrsPerEtk;
-    if (args && args.totalIdrsValue !== undefined)
-      where['totalIdrsValue'] = args.totalIdrsValue;
-    if (args && args.statusOnChain !== undefined)
-      where['statusOnChain'] = args.statusOnChain;
-    if (args && args.createdAtOnChain !== undefined)
-      where['createdAtOnChain'] = args.createdAtOnChain;
-    if (args && args.updatedAtCache !== undefined)
-      where['updatedAtCache'] = args.updatedAtCache;
-    if (args && args.blockchainTxHashPlaced !== undefined)
-      where['blockchainTxHashPlaced'] = args.blockchainTxHashPlaced;
-    if (args && args.blockchainTxHashFilled !== undefined)
-      where['blockchainTxHashFilled'] = args.blockchainTxHashFilled;
-
+    if (args && args.amountEtk !== undefined) where['amountEtk'] = args.amountEtk;
+    if (args && args.priceIdrsPerEtk !== undefined) where['priceIdrsPerEtk'] = args.priceIdrsPerEtk;
+    if (args && args.totalIdrsValue !== undefined) where['totalIdrsValue'] = args.totalIdrsValue;
+    if (args && args.statusOnChain !== undefined) where['statusOnChain'] = args.statusOnChain;
+    if (args && args.createdAtOnChain !== undefined) where['createdAtOnChain'] = args.createdAtOnChain;
+    if (args && args.updatedAtCache !== undefined) where['updatedAtCache'] = args.updatedAtCache;
+    if (args && args.blockchainTxHashPlaced !== undefined) where['blockchainTxHashPlaced'] = args.blockchainTxHashPlaced;
+    if (args && args.blockchainTxHashFilled !== undefined) where['blockchainTxHashFilled'] = args.blockchainTxHashFilled;
+    
     const relations = ['prosumers', 'wallets', 'transactionlogsList'];
     return this.repo.find({ where, relations });
   }
@@ -57,9 +46,7 @@ export class TradeOrdersCacheService {
     const relations = ['prosumers', 'wallets', 'transactionlogsList'];
     const entity = await this.repo.findOne({ where: { orderId }, relations });
     if (!entity) {
-      throw new Error(
-        `TradeOrdersCache with orderId ${'$'}{orderId} not found`,
-      );
+      throw new Error(`TradeOrdersCache with orderId ${'$'}{orderId} not found`);
     }
     return entity;
   }
@@ -67,24 +54,18 @@ export class TradeOrdersCacheService {
   async create(input: CreateTradeOrdersCacheInput): Promise<TradeOrdersCache> {
     // Convert input types to match entity types
     const createData: Partial<TradeOrdersCache> = { ...input } as any;
-
-    if (input.createdAtOnChain)
-      (createData as any).createdAtOnChain = new Date(input.createdAtOnChain);
-    if (input.updatedAtCache)
-      (createData as any).updatedAtCache = new Date(input.updatedAtCache);
+    
+    if (input.createdAtOnChain) (createData as any).createdAtOnChain = new Date(input.createdAtOnChain);
+    if (input.updatedAtCache) (createData as any).updatedAtCache = new Date(input.updatedAtCache);
 
     // Handle prosumers relation
     if (input.prosumersIds && input.prosumersIds.length > 0) {
-      const prosumersEntities = await this.ProsumersRepo.findBy({
-        prosumerId: In(input.prosumersIds),
-      });
+      const prosumersEntities = await this.ProsumersRepo.findBy({ prosumerId: In(input.prosumersIds) });
       (createData as any).prosumers = prosumersEntities;
     }
     // Handle wallets relation
     if (input.walletsIds && input.walletsIds.length > 0) {
-      const walletsEntities = await this.WalletsRepo.findBy({
-        walletAddress: In(input.walletsIds),
-      });
+      const walletsEntities = await this.WalletsRepo.findBy({ walletAddress: In(input.walletsIds) });
       (createData as any).wallets = walletsEntities;
     }
 
@@ -93,26 +74,19 @@ export class TradeOrdersCacheService {
     return this.findOne(savedEntity.orderId);
   }
 
-  async update(
-    orderId: any,
-    input: CreateTradeOrdersCacheInput,
-  ): Promise<TradeOrdersCache> {
+  async update(orderId: any, input: CreateTradeOrdersCacheInput): Promise<TradeOrdersCache> {
     const existing = await this.findOne(orderId);
-
+    
     // Convert input types to match entity types
     const updateData: Partial<TradeOrdersCache> = { ...input } as any;
-
-    if (input.createdAtOnChain)
-      (updateData as any).createdAtOnChain = new Date(input.createdAtOnChain);
-    if (input.updatedAtCache)
-      (updateData as any).updatedAtCache = new Date(input.updatedAtCache);
+    
+    if (input.createdAtOnChain) (updateData as any).createdAtOnChain = new Date(input.createdAtOnChain);
+    if (input.updatedAtCache) (updateData as any).updatedAtCache = new Date(input.updatedAtCache);
 
     // Handle prosumers relation update
     if (input.prosumersIds !== undefined) {
       if (input.prosumersIds.length > 0) {
-        const prosumersEntities = await this.ProsumersRepo.findBy({
-          prosumerId: In(input.prosumersIds),
-        });
+        const prosumersEntities = await this.ProsumersRepo.findBy({ prosumerId: In(input.prosumersIds) });
         (updateData as any).prosumers = prosumersEntities;
       } else {
         (updateData as any).prosumers = [];
@@ -121,9 +95,7 @@ export class TradeOrdersCacheService {
     // Handle wallets relation update
     if (input.walletsIds !== undefined) {
       if (input.walletsIds.length > 0) {
-        const walletsEntities = await this.WalletsRepo.findBy({
-          walletAddress: In(input.walletsIds),
-        });
+        const walletsEntities = await this.WalletsRepo.findBy({ walletAddress: In(input.walletsIds) });
         (updateData as any).wallets = walletsEntities;
       } else {
         (updateData as any).wallets = [];
@@ -140,69 +112,36 @@ export class TradeOrdersCacheService {
   }
 
   async findProsumers(orderId: any): Promise<any[]> {
-    const parent = await this.repo.findOne({
-      where: { orderId },
-      relations: ['prosumers'],
-    });
+    const parent = await this.repo.findOne({ where: { orderId }, relations: ['prosumers'] });
     const entity = parent?.prosumers;
     if (!entity) return [];
     // Convert entity to match GraphQL output format
-    return [
-      {
-        ...entity,
-        createdAt: entity.createdAt
-          ? entity.createdAt instanceof Date
-            ? entity.createdAt.toISOString()
-            : entity.createdAt
-          : null,
-        updatedAt: entity.updatedAt
-          ? entity.updatedAt instanceof Date
-            ? entity.updatedAt.toISOString()
-            : entity.updatedAt
-          : null,
-      },
-    ];
+    return [{
+      ...entity,
+      createdAt: entity.createdAt ? (entity.createdAt instanceof Date ? entity.createdAt.toISOString() : entity.createdAt) : null,
+      updatedAt: entity.updatedAt ? (entity.updatedAt instanceof Date ? entity.updatedAt.toISOString() : entity.updatedAt) : null,
+    }];
   }
 
   async findWallets(orderId: any): Promise<any[]> {
-    const parent = await this.repo.findOne({
-      where: { orderId },
-      relations: ['wallets'],
-    });
+    const parent = await this.repo.findOne({ where: { orderId }, relations: ['wallets'] });
     const entity = parent?.wallets;
     if (!entity) return [];
     // Convert entity to match GraphQL output format
-    return [
-      {
-        ...entity,
-        createdAt: entity.createdAt
-          ? entity.createdAt instanceof Date
-            ? entity.createdAt.toISOString()
-            : entity.createdAt
-          : null,
-        lastUsedAt: entity.lastUsedAt
-          ? entity.lastUsedAt instanceof Date
-            ? entity.lastUsedAt.toISOString()
-            : entity.lastUsedAt
-          : null,
-      },
-    ];
+    return [{
+      ...entity,
+      createdAt: entity.createdAt ? (entity.createdAt instanceof Date ? entity.createdAt.toISOString() : entity.createdAt) : null,
+      lastUsedAt: entity.lastUsedAt ? (entity.lastUsedAt instanceof Date ? entity.lastUsedAt.toISOString() : entity.lastUsedAt) : null,
+    }];
   }
 
   async findTransactionlogsList(orderId: any): Promise<any[]> {
-    const parent = await this.repo.findOne({
-      where: { orderId },
-      relations: ['transactionlogsList'],
-    });
+    const parent = await this.repo.findOne({ where: { orderId }, relations: ['transactionlogsList'] });
     const entities = parent?.transactionlogsList || [];
     // Convert entities to match GraphQL output format
-    return entities.map((entity) => ({
+    return entities.map(entity => ({
       ...entity,
-      transactionTimestamp: entity.transactionTimestamp
-        ? entity.transactionTimestamp instanceof Date
-          ? entity.transactionTimestamp.toISOString()
-          : entity.transactionTimestamp
-        : null,
+      transactionTimestamp: entity.transactionTimestamp ? (entity.transactionTimestamp instanceof Date ? entity.transactionTimestamp.toISOString() : entity.transactionTimestamp) : null,
     }));
   }
 }

@@ -8,7 +8,10 @@ import { SmartMetersModule } from '../SmartMeters/SmartMeters.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([DeviceHeartbeats, SmartMeters]),
+    TypeOrmModule.forFeature([
+      DeviceHeartbeats,
+      SmartMeters,
+    ]),
     forwardRef(() => SmartMetersModule),
   ],
   providers: [DeviceHeartbeatsResolver, DeviceHeartbeatsService],

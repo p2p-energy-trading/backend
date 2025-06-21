@@ -12,9 +12,7 @@ import { SmartMeters } from './dto/SmartMeters.output';
 import { CreateSmartMetersInput } from './dto/SmartMeters.input';
 import { SmartMetersArgs } from './dto/SmartMeters.args';
 import { DeviceCommands } from '../DeviceCommands/dto/DeviceCommands.output';
-import { DeviceHeartbeats } from '../DeviceHeartbeats/dto/DeviceHeartbeats.output';
 import { DeviceStatusSnapshots } from '../DeviceStatusSnapshots/dto/DeviceStatusSnapshots.output';
-import { EnergyReadings } from '../EnergyReadings/dto/EnergyReadings.output';
 import { EnergyReadingsDetailed } from '../EnergyReadingsDetailed/dto/EnergyReadingsDetailed.output';
 import { EnergySettlements } from '../EnergySettlements/dto/EnergySettlements.output';
 import { MqttMessageLogs } from '../MqttMessageLogs/dto/MqttMessageLogs.output';
@@ -57,15 +55,6 @@ export class SmartMetersResolver {
     return this.SmartMetersService.findDevicecommandsList(SmartMeters.meterId);
   }
 
-  @ResolveField(() => [DeviceHeartbeats])
-  async deviceheartbeatsList(
-    @Parent() SmartMeters: SmartMeters,
-  ): Promise<any[]> {
-    return this.SmartMetersService.findDeviceheartbeatsList(
-      SmartMeters.meterId,
-    );
-  }
-
   @ResolveField(() => [DeviceStatusSnapshots])
   async devicestatussnapshotsList(
     @Parent() SmartMeters: SmartMeters,
@@ -73,11 +62,6 @@ export class SmartMetersResolver {
     return this.SmartMetersService.findDevicestatussnapshotsList(
       SmartMeters.meterId,
     );
-  }
-
-  @ResolveField(() => [EnergyReadings])
-  async energyreadingsList(@Parent() SmartMeters: SmartMeters): Promise<any[]> {
-    return this.SmartMetersService.findEnergyreadingsList(SmartMeters.meterId);
   }
 
   @ResolveField(() => [EnergyReadingsDetailed])

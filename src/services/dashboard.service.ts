@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { EnergyReadingsService } from '../graphql/EnergyReadings/EnergyReadings.service';
+import { EnergyReadingsDetailedService } from '../graphql/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
 import { EnergySettlementsService } from '../graphql/EnergySettlements/EnergySettlements.service';
 import { MarketTradesService } from '../graphql/MarketTrades/MarketTrades.service';
 import { SmartMetersService } from '../graphql/SmartMeters/SmartMeters.service';
@@ -37,7 +37,7 @@ export class DashboardService {
   private readonly logger = new Logger(DashboardService.name);
 
   constructor(
-    private energyReadingsService: EnergyReadingsService,
+    private energyReadingsDetailedService: EnergyReadingsDetailedService,
     private energySettlementsService: EnergySettlementsService,
     private marketTradesService: MarketTradesService,
     private smartMetersService: SmartMetersService,
@@ -110,25 +110,59 @@ export class DashboardService {
       let totalGeneration = 0;
       let totalConsumption = 0;
 
-      // Aggregate stats from all meters
+      // Aggregate stats from all meters using detailed readings
       for (const meterId of meterIds) {
-        const readings = await this.energyReadingsService.findAll({ meterId });
+        const readings = await this.energyReadingsDetailedService.findAll({
+          meterId,
+        });
+
+        // Group readings by timestamp to get complete meter snapshots
+        const readingsByTimestamp = new Map<string, any[]>();
 
         for (const reading of readings) {
-          const readingDate = new Date(reading.timestamp);
-          const powerKw = reading.powerKw || 0;
-          const isExport = reading.flowDirection === 'export';
+          const timestampKey = new Date(reading.timestamp).toISOString();
+          if (!readingsByTimestamp.has(timestampKey)) {
+            readingsByTimestamp.set(timestampKey, []);
+          }
+          readingsByTimestamp.get(timestampKey)!.push(reading);
+        }
 
-          // Separate generation (export) and consumption (import) based on flow direction
-          const exportKwh = isExport ? powerKw : 0;
-          const importKwh = !isExport ? powerKw : 0;
+        // Process each timestamp group
+        for (const [timestampStr, timestampReadings] of readingsByTimestamp) {
+          const readingDate = new Date(timestampStr);
+          let solarEnergyWh = 0;
+          let loadEnergyWh = 0;
 
-          totalGeneration += exportKwh;
-          totalConsumption += importKwh;
+          // Extract generation and consumption from subsystem readings
+          // NOTE: For dashboard stats, we use SOLAR for generation and LOAD for consumption
+          // This is different from settlement which only uses GRID_EXPORT/GRID_IMPORT
+          for (const reading of timestampReadings) {
+            const dailyEnergy = Number(reading.dailyEnergyWh) || 0;
+
+            switch (reading.subsystem) {
+              case 'SOLAR':
+                // Solar panels generate energy
+                solarEnergyWh += dailyEnergy;
+                break;
+              case 'LOAD':
+                // Electrical loads consume energy
+                loadEnergyWh += dailyEnergy;
+                break;
+              // GRID_EXPORT and GRID_IMPORT are not included in generation/consumption stats
+              // as they represent grid transactions, not local generation/consumption
+            }
+          }
+
+          // Convert Wh to kWh
+          const solarEnergyKwh = solarEnergyWh / 1000;
+          const loadEnergyKwh = loadEnergyWh / 1000;
+
+          totalGeneration += solarEnergyKwh;
+          totalConsumption += loadEnergyKwh;
 
           if (readingDate >= today && readingDate < tomorrow) {
-            todayGeneration += exportKwh;
-            todayConsumption += importKwh;
+            todayGeneration += solarEnergyKwh;
+            todayConsumption += loadEnergyKwh;
           }
         }
       }
@@ -260,16 +294,11 @@ export class DashboardService {
 
       for (const meterId of meterIds) {
         try {
-          const heartbeats =
-            await this.smartMetersService.findDeviceheartbeatsList(meterId);
-          if (heartbeats && heartbeats.length > 0) {
-            const latestHeartbeat = heartbeats.sort(
-              (a: any, b: any) =>
-                new Date(b.timestamp).getTime() -
-                new Date(a.timestamp).getTime(),
-            )[0] as { timestamp: string | Date };
+          // Get device info directly from SmartMeters instead of using heartbeats relation
+          const device = await this.smartMetersService.findOne(meterId);
 
-            const heartbeatTime = new Date(latestHeartbeat.timestamp);
+          if (device.lastHeartbeatAt) {
+            const heartbeatTime = new Date(device.lastHeartbeatAt);
             const now = new Date();
             const timeDiff = now.getTime() - heartbeatTime.getTime();
 
@@ -279,7 +308,10 @@ export class DashboardService {
             }
 
             if (!lastHeartbeat || heartbeatTime > new Date(lastHeartbeat)) {
-              lastHeartbeat = latestHeartbeat.timestamp.toString();
+              lastHeartbeat =
+                device.lastHeartbeatAt instanceof Date
+                  ? device.lastHeartbeatAt.toISOString()
+                  : device.lastHeartbeatAt;
             }
           }
         } catch (error) {
@@ -323,6 +355,8 @@ export class DashboardService {
         generation: number;
         consumption: number;
         net: number;
+        gridExport?: number;
+        gridImport?: number;
       }> = [];
 
       for (
@@ -337,9 +371,11 @@ export class DashboardService {
 
         let dayGeneration = 0;
         let dayConsumption = 0;
+        let dayGridExport = 0;
+        let dayGridImport = 0;
 
         for (const meterId of meterIds) {
-          const readings = await this.energyReadingsService.findAll({
+          const readings = await this.energyReadingsDetailedService.findAll({
             meterId,
           });
 
@@ -348,17 +384,48 @@ export class DashboardService {
             return readingDate >= dayStart && readingDate <= dayEnd;
           });
 
-          dayGeneration += dayReadings.reduce((sum, reading) => {
-            const powerKw = reading.powerKw || 0;
-            const isExport = reading.flowDirection === 'export';
-            return sum + (isExport ? powerKw : 0);
-          }, 0);
+          // Group by timestamp and aggregate daily energy
+          const readingsByTimestamp = new Map<string, any[]>();
 
-          dayConsumption += dayReadings.reduce((sum, reading) => {
-            const powerKw = reading.powerKw || 0;
-            const isImport = reading.flowDirection === 'import';
-            return sum + (isImport ? powerKw : 0);
-          }, 0);
+          for (const reading of dayReadings) {
+            const timestampKey = new Date(reading.timestamp).toISOString();
+            if (!readingsByTimestamp.has(timestampKey)) {
+              readingsByTimestamp.set(timestampKey, []);
+            }
+            readingsByTimestamp.get(timestampKey)!.push(reading);
+          }
+
+          // Process each timestamp group for this day
+          for (const [, timestampReadings] of readingsByTimestamp) {
+            let solarEnergyWh = 0;
+            let loadEnergyWh = 0;
+            let gridExportWh = 0;
+            let gridImportWh = 0;
+
+            for (const reading of timestampReadings) {
+              const dailyEnergy = Number(reading.dailyEnergyWh) || 0;
+
+              switch (reading.subsystem) {
+                case 'SOLAR':
+                  solarEnergyWh += dailyEnergy;
+                  break;
+                case 'LOAD':
+                  loadEnergyWh += dailyEnergy;
+                  break;
+                case 'GRID_EXPORT':
+                  gridExportWh += dailyEnergy;
+                  break;
+                case 'GRID_IMPORT':
+                  gridImportWh += dailyEnergy;
+                  break;
+              }
+            }
+
+            dayGeneration += solarEnergyWh / 1000; // Convert to kWh
+            dayConsumption += loadEnergyWh / 1000; // Convert to kWh
+            dayGridExport += gridExportWh / 1000; // Convert to kWh
+            dayGridImport += gridImportWh / 1000; // Convert to kWh
+          }
         }
 
         chartData.push({
@@ -366,6 +433,8 @@ export class DashboardService {
           generation: dayGeneration,
           consumption: dayConsumption,
           net: dayGeneration - dayConsumption,
+          gridExport: dayGridExport,
+          gridImport: dayGridImport,
         });
       }
 

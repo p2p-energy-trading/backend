@@ -17,9 +17,7 @@ import { TransactionLogs } from '../TransactionLogs/dto/TransactionLogs.output';
 
 @Resolver(() => EnergySettlements)
 export class EnergySettlementsResolver {
-  constructor(
-    private readonly EnergySettlementsService: EnergySettlementsService,
-  ) {}
+  constructor(private readonly EnergySettlementsService: EnergySettlementsService) {}
 
   @Query(() => [EnergySettlements], { name: 'EnergySettlementsAll' })
   findAll(@Args() args: EnergySettlementsArgs) {
@@ -45,38 +43,26 @@ export class EnergySettlementsResolver {
   }
 
   @Mutation(() => Boolean)
-  removeEnergySettlements(
-    @Args('settlementId', { type: () => Int }) settlementId: number,
-  ) {
+  removeEnergySettlements(@Args('settlementId', { type: () => Int }) settlementId: number) {
     return this.EnergySettlementsService.remove(Number(settlementId));
   }
 
   @ResolveField(() => SmartMeters, { nullable: true })
-  async smartmeters(
-    @Parent() EnergySettlements: EnergySettlements,
-  ): Promise<any | null> {
-    const result = await this.EnergySettlementsService.findSmartmeters(
-      Number(EnergySettlements.settlementId),
-    );
+  async smartmeters(@Parent() EnergySettlements: EnergySettlements): Promise<any | null> {
+    const result = await this.EnergySettlementsService.findSmartmeters(Number(EnergySettlements.settlementId));
     return result[0] || null;
   }
 
   @ResolveField(() => MqttMessageLogs, { nullable: true })
-  async mqttmessagelogs(
-    @Parent() EnergySettlements: EnergySettlements,
-  ): Promise<any | null> {
-    const result = await this.EnergySettlementsService.findMqttmessagelogs(
-      Number(EnergySettlements.settlementId),
-    );
+  async mqttmessagelogs(@Parent() EnergySettlements: EnergySettlements): Promise<any | null> {
+    const result = await this.EnergySettlementsService.findMqttmessagelogs(Number(EnergySettlements.settlementId));
     return result[0] || null;
   }
 
   @ResolveField(() => [TransactionLogs])
-  async transactionlogsList(
-    @Parent() EnergySettlements: EnergySettlements,
-  ): Promise<any[]> {
+  async transactionlogsList(@Parent() EnergySettlements: EnergySettlements): Promise<any[]> {
     return this.EnergySettlementsService.findTransactionlogsList(
-      EnergySettlements.settlementId,
+      EnergySettlements.settlementId
     );
   }
 }

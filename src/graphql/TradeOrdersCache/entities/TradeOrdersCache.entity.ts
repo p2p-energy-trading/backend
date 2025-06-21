@@ -5,7 +5,7 @@ import {
   OneToMany,
   ManyToOne,
   JoinColumn,
-} from 'typeorm';
+  } from 'typeorm';
 import { Prosumers } from '../../Prosumers/entities/Prosumers.entity';
 import { Wallets } from '../../Wallets/entities/Wallets.entity';
 import { TransactionLogs } from '../../TransactionLogs/entities/TransactionLogs.entity';
@@ -45,18 +45,10 @@ export class TradeOrdersCache {
   @Column({ type: 'timestamp', name: 'updated_at_cache' })
   updatedAtCache: Date;
 
-  @Column({
-    type: 'varchar',
-    name: 'blockchain_tx_hash_placed',
-    nullable: true,
-  })
+  @Column({ type: 'varchar', name: 'blockchain_tx_hash_placed', nullable: true })
   blockchainTxHashPlaced: string;
 
-  @Column({
-    type: 'varchar',
-    name: 'blockchain_tx_hash_filled',
-    nullable: true,
-  })
+  @Column({ type: 'varchar', name: 'blockchain_tx_hash_filled', nullable: true })
   blockchainTxHashFilled: string;
 
   @ManyToOne(() => Prosumers)
@@ -67,9 +59,6 @@ export class TradeOrdersCache {
   @JoinColumn({ name: 'wallet_address' })
   wallets: Wallets;
 
-  @OneToMany(
-    () => TransactionLogs,
-    (TransactionLogs) => TransactionLogs.tradeorderscache,
-  )
+  @OneToMany(() => TransactionLogs, (TransactionLogs) => TransactionLogs.tradeorderscache)
   transactionlogsList: TransactionLogs[];
 }

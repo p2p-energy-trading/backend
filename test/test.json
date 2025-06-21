@@ -1,0 +1,26 @@
+{
+  "readingId": 52,
+  "meterId": "METER001",
+  "timestamp": "2025-06-18T02:06:00.022Z",
+  "subsystem": "GRID_EXPORT",
+  "dailyEnergyWh": "634.5980",
+  "totalEnergyWh": "634.5980",
+  "settlementEnergyWh": "634.5980",
+  "currentPowerW": "2973.0000",
+  "voltage": "3.98",
+  "currentAmp": "747.080",
+  "subsystemData": {
+    "active": true,
+    "backendReceivedAt": "2025-06-18T02:06:00.022Z",
+    "originalTimestamp": 2653404
+  },
+  "rawPayload": {
+    "power": 2973,
+    "active": true,
+    "current": 747.08,
+    "voltage": 3.9772,
+    "daily_energy_wh": 0.634598,
+    "total_energy_wh": 0.634598,
+    "settlement_energy_wh": 0.634598
+  }
+}

@@ -42,29 +42,19 @@ export class DeviceCommandsResolver {
   }
 
   @Mutation(() => Boolean)
-  removeDeviceCommands(
-    @Args('commandId', { type: () => Int }) commandId: number,
-  ) {
+  removeDeviceCommands(@Args('commandId', { type: () => Int }) commandId: number) {
     return this.DeviceCommandsService.remove(Number(commandId));
   }
 
   @ResolveField(() => SmartMeters, { nullable: true })
-  async smartmeters(
-    @Parent() DeviceCommands: DeviceCommands,
-  ): Promise<any | null> {
-    const result = await this.DeviceCommandsService.findSmartmeters(
-      Number(DeviceCommands.commandId),
-    );
+  async smartmeters(@Parent() DeviceCommands: DeviceCommands): Promise<any | null> {
+    const result = await this.DeviceCommandsService.findSmartmeters(Number(DeviceCommands.commandId));
     return result[0] || null;
   }
 
   @ResolveField(() => Prosumers, { nullable: true })
-  async prosumers(
-    @Parent() DeviceCommands: DeviceCommands,
-  ): Promise<any | null> {
-    const result = await this.DeviceCommandsService.findProsumers(
-      Number(DeviceCommands.commandId),
-    );
+  async prosumers(@Parent() DeviceCommands: DeviceCommands): Promise<any | null> {
+    const result = await this.DeviceCommandsService.findProsumers(Number(DeviceCommands.commandId));
     return result[0] || null;
   }
 }

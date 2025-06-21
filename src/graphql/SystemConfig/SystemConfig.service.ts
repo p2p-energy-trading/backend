@@ -15,17 +15,12 @@ export class SystemConfigService {
   async findAll(args?: SystemConfigArgs): Promise<SystemConfig[]> {
     // Simple filter: remove undefined keys
     const where = {};
-    if (args && args.configKey !== undefined)
-      where['configKey'] = args.configKey;
-    if (args && args.configValue !== undefined)
-      where['configValue'] = args.configValue;
-    if (args && args.description !== undefined)
-      where['description'] = args.description;
-    if (args && args.updatedAt !== undefined)
-      where['updatedAt'] = args.updatedAt;
-    if (args && args.updatedBy !== undefined)
-      where['updatedBy'] = args.updatedBy;
-
+    if (args && args.configKey !== undefined) where['configKey'] = args.configKey;
+    if (args && args.configValue !== undefined) where['configValue'] = args.configValue;
+    if (args && args.description !== undefined) where['description'] = args.description;
+    if (args && args.updatedAt !== undefined) where['updatedAt'] = args.updatedAt;
+    if (args && args.updatedBy !== undefined) where['updatedBy'] = args.updatedBy;
+    
     const relations = [];
     return this.repo.find({ where, relations });
   }
@@ -34,9 +29,7 @@ export class SystemConfigService {
     const relations = [];
     const entity = await this.repo.findOne({ where: { configKey }, relations });
     if (!entity) {
-      throw new Error(
-        `SystemConfig with configKey ${'$'}{configKey} not found`,
-      );
+      throw new Error(`SystemConfig with configKey ${'$'}{configKey} not found`);
     }
     return entity;
   }
@@ -44,26 +37,23 @@ export class SystemConfigService {
   async create(input: CreateSystemConfigInput): Promise<SystemConfig> {
     // Convert input types to match entity types
     const createData: Partial<SystemConfig> = { ...input } as any;
+    
+    if (input.updatedAt) (createData as any).updatedAt = new Date(input.updatedAt);
 
-    if (input.updatedAt)
-      (createData as any).updatedAt = new Date(input.updatedAt);
 
     const entity = this.repo.create(createData);
     const savedEntity = await this.repo.save(entity);
     return this.findOne(savedEntity.configKey);
   }
 
-  async update(
-    configKey: any,
-    input: CreateSystemConfigInput,
-  ): Promise<SystemConfig> {
+  async update(configKey: any, input: CreateSystemConfigInput): Promise<SystemConfig> {
     const existing = await this.findOne(configKey);
-
+    
     // Convert input types to match entity types
     const updateData: Partial<SystemConfig> = { ...input } as any;
+    
+    if (input.updatedAt) (updateData as any).updatedAt = new Date(input.updatedAt);
 
-    if (input.updatedAt)
-      (updateData as any).updatedAt = new Date(input.updatedAt);
 
     await this.repo.save({ ...existing, ...updateData });
     return this.findOne(configKey);
@@ -73,4 +63,5 @@ export class SystemConfigService {
     const result = await this.repo.delete({ configKey });
     return (result.affected ?? 0) > 0;
   }
+
 }

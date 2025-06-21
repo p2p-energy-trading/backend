@@ -17,9 +17,7 @@ import { EnergySettlements } from '../EnergySettlements/dto/EnergySettlements.ou
 
 @Resolver(() => TransactionLogs)
 export class TransactionLogsResolver {
-  constructor(
-    private readonly TransactionLogsService: TransactionLogsService,
-  ) {}
+  constructor(private readonly TransactionLogsService: TransactionLogsService) {}
 
   @Query(() => [TransactionLogs], { name: 'TransactionLogsAll' })
   findAll(@Args() args: TransactionLogsArgs) {
@@ -50,32 +48,20 @@ export class TransactionLogsResolver {
   }
 
   @ResolveField(() => TradeOrdersCache, { nullable: true })
-  async tradeorderscache(
-    @Parent() TransactionLogs: TransactionLogs,
-  ): Promise<any | null> {
-    const result = await this.TransactionLogsService.findTradeorderscache(
-      Number(TransactionLogs.logId),
-    );
+  async tradeorderscache(@Parent() TransactionLogs: TransactionLogs): Promise<any | null> {
+    const result = await this.TransactionLogsService.findTradeorderscache(Number(TransactionLogs.logId));
     return result[0] || null;
   }
 
   @ResolveField(() => Prosumers, { nullable: true })
-  async prosumers(
-    @Parent() TransactionLogs: TransactionLogs,
-  ): Promise<any | null> {
-    const result = await this.TransactionLogsService.findProsumers(
-      Number(TransactionLogs.logId),
-    );
+  async prosumers(@Parent() TransactionLogs: TransactionLogs): Promise<any | null> {
+    const result = await this.TransactionLogsService.findProsumers(Number(TransactionLogs.logId));
     return result[0] || null;
   }
 
   @ResolveField(() => EnergySettlements, { nullable: true })
-  async energysettlements(
-    @Parent() TransactionLogs: TransactionLogs,
-  ): Promise<any | null> {
-    const result = await this.TransactionLogsService.findEnergysettlements(
-      Number(TransactionLogs.logId),
-    );
+  async energysettlements(@Parent() TransactionLogs: TransactionLogs): Promise<any | null> {
+    const result = await this.TransactionLogsService.findEnergysettlements(Number(TransactionLogs.logId));
     return result[0] || null;
   }
 }

@@ -15,9 +15,7 @@ import { SmartMeters } from '../SmartMeters/dto/SmartMeters.output';
 
 @Resolver(() => DeviceStatusSnapshots)
 export class DeviceStatusSnapshotsResolver {
-  constructor(
-    private readonly DeviceStatusSnapshotsService: DeviceStatusSnapshotsService,
-  ) {}
+  constructor(private readonly DeviceStatusSnapshotsService: DeviceStatusSnapshotsService) {}
 
   @Query(() => [DeviceStatusSnapshots], { name: 'DeviceStatusSnapshotsAll' })
   findAll(@Args() args: DeviceStatusSnapshotsArgs) {
@@ -30,9 +28,7 @@ export class DeviceStatusSnapshotsResolver {
   }
 
   @Mutation(() => DeviceStatusSnapshots)
-  createDeviceStatusSnapshots(
-    @Args('input') input: CreateDeviceStatusSnapshotsInput,
-  ) {
+  createDeviceStatusSnapshots(@Args('input') input: CreateDeviceStatusSnapshotsInput) {
     return this.DeviceStatusSnapshotsService.create(input);
   }
 
@@ -45,19 +41,13 @@ export class DeviceStatusSnapshotsResolver {
   }
 
   @Mutation(() => Boolean)
-  removeDeviceStatusSnapshots(
-    @Args('snapshotId', { type: () => Int }) snapshotId: number,
-  ) {
+  removeDeviceStatusSnapshots(@Args('snapshotId', { type: () => Int }) snapshotId: number) {
     return this.DeviceStatusSnapshotsService.remove(Number(snapshotId));
   }
 
   @ResolveField(() => SmartMeters, { nullable: true })
-  async smartmeters(
-    @Parent() DeviceStatusSnapshots: DeviceStatusSnapshots,
-  ): Promise<any | null> {
-    const result = await this.DeviceStatusSnapshotsService.findSmartmeters(
-      Number(DeviceStatusSnapshots.snapshotId),
-    );
+  async smartmeters(@Parent() DeviceStatusSnapshots: DeviceStatusSnapshots): Promise<any | null> {
+    const result = await this.DeviceStatusSnapshotsService.findSmartmeters(Number(DeviceStatusSnapshots.snapshotId));
     return result[0] || null;
   }
 }

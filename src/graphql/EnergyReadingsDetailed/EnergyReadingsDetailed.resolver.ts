@@ -15,9 +15,7 @@ import { SmartMeters } from '../SmartMeters/dto/SmartMeters.output';
 
 @Resolver(() => EnergyReadingsDetailed)
 export class EnergyReadingsDetailedResolver {
-  constructor(
-    private readonly EnergyReadingsDetailedService: EnergyReadingsDetailedService,
-  ) {}
+  constructor(private readonly EnergyReadingsDetailedService: EnergyReadingsDetailedService) {}
 
   @Query(() => [EnergyReadingsDetailed], { name: 'EnergyReadingsDetailedAll' })
   findAll(@Args() args: EnergyReadingsDetailedArgs) {
@@ -30,9 +28,7 @@ export class EnergyReadingsDetailedResolver {
   }
 
   @Mutation(() => EnergyReadingsDetailed)
-  createEnergyReadingsDetailed(
-    @Args('input') input: CreateEnergyReadingsDetailedInput,
-  ) {
+  createEnergyReadingsDetailed(@Args('input') input: CreateEnergyReadingsDetailedInput) {
     return this.EnergyReadingsDetailedService.create(input);
   }
 
@@ -45,19 +41,13 @@ export class EnergyReadingsDetailedResolver {
   }
 
   @Mutation(() => Boolean)
-  removeEnergyReadingsDetailed(
-    @Args('readingId', { type: () => Int }) readingId: number,
-  ) {
+  removeEnergyReadingsDetailed(@Args('readingId', { type: () => Int }) readingId: number) {
     return this.EnergyReadingsDetailedService.remove(Number(readingId));
   }
 
   @ResolveField(() => SmartMeters, { nullable: true })
-  async smartmeters(
-    @Parent() EnergyReadingsDetailed: EnergyReadingsDetailed,
-  ): Promise<any | null> {
-    const result = await this.EnergyReadingsDetailedService.findSmartmeters(
-      Number(EnergyReadingsDetailed.readingId),
-    );
+  async smartmeters(@Parent() EnergyReadingsDetailed: EnergyReadingsDetailed): Promise<any | null> {
+    const result = await this.EnergyReadingsDetailedService.findSmartmeters(Number(EnergyReadingsDetailed.readingId));
     return result[0] || null;
   }
 }

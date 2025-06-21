@@ -16,9 +16,7 @@ import { Wallets } from '../Wallets/dto/Wallets.output';
 
 @Resolver(() => IdrsConversions)
 export class IdrsConversionsResolver {
-  constructor(
-    private readonly IdrsConversionsService: IdrsConversionsService,
-  ) {}
+  constructor(private readonly IdrsConversionsService: IdrsConversionsService) {}
 
   @Query(() => [IdrsConversions], { name: 'IdrsConversionsAll' })
   findAll(@Args() args: IdrsConversionsArgs) {
@@ -44,29 +42,19 @@ export class IdrsConversionsResolver {
   }
 
   @Mutation(() => Boolean)
-  removeIdrsConversions(
-    @Args('conversionId', { type: () => Int }) conversionId: number,
-  ) {
+  removeIdrsConversions(@Args('conversionId', { type: () => Int }) conversionId: number) {
     return this.IdrsConversionsService.remove(Number(conversionId));
   }
 
   @ResolveField(() => Prosumers, { nullable: true })
-  async prosumers(
-    @Parent() IdrsConversions: IdrsConversions,
-  ): Promise<any | null> {
-    const result = await this.IdrsConversionsService.findProsumers(
-      Number(IdrsConversions.conversionId),
-    );
+  async prosumers(@Parent() IdrsConversions: IdrsConversions): Promise<any | null> {
+    const result = await this.IdrsConversionsService.findProsumers(Number(IdrsConversions.conversionId));
     return result[0] || null;
   }
 
   @ResolveField(() => Wallets, { nullable: true })
-  async wallets(
-    @Parent() IdrsConversions: IdrsConversions,
-  ): Promise<any | null> {
-    const result = await this.IdrsConversionsService.findWallets(
-      Number(IdrsConversions.conversionId),
-    );
+  async wallets(@Parent() IdrsConversions: IdrsConversions): Promise<any | null> {
+    const result = await this.IdrsConversionsService.findWallets(Number(IdrsConversions.conversionId));
     return result[0] || null;
   }
 }

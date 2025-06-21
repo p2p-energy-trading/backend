@@ -43,8 +43,7 @@ export class DeviceCommandsService {
     if (args && args.sentByUser !== undefined)
       where['sentByUser'] = args.sentByUser;
 
-    const relations = ['smartmeters', 'prosumers'];
-    return this.repo.find({ where, relations });
+    return this.repo.find({ where });
   }
 
   async findOne(commandId: any): Promise<DeviceCommands> {
@@ -67,21 +66,6 @@ export class DeviceCommandsService {
       (createData as any).acknowledgedAt = new Date(input.acknowledgedAt);
     if (input.timeoutAt)
       (createData as any).timeoutAt = new Date(input.timeoutAt);
-
-    // Handle smartmeters relation
-    if (input.smartmetersIds && input.smartmetersIds.length > 0) {
-      const smartmetersEntities = await this.SmartMetersRepo.findBy({
-        meterId: In(input.smartmetersIds),
-      });
-      (createData as any).smartmeters = smartmetersEntities;
-    }
-    // Handle prosumers relation
-    if (input.prosumersIds && input.prosumersIds.length > 0) {
-      const prosumersEntities = await this.ProsumersRepo.findBy({
-        prosumerId: In(input.prosumersIds),
-      });
-      (createData as any).prosumers = prosumersEntities;
-    }
 
     const entity = this.repo.create(createData);
     const savedEntity = await this.repo.save(entity);

@@ -8,7 +8,10 @@ import { SmartMetersModule } from '../SmartMeters/SmartMeters.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([EnergyReadings, SmartMeters]),
+    TypeOrmModule.forFeature([
+      EnergyReadings,
+      SmartMeters,
+    ]),
     forwardRef(() => SmartMetersModule),
   ],
   providers: [EnergyReadingsResolver, EnergyReadingsService],

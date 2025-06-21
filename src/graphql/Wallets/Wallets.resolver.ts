@@ -27,9 +27,7 @@ export class WalletsResolver {
   }
 
   @Query(() => Wallets, { name: 'Wallets' })
-  findOne(
-    @Args('walletAddress', { type: () => String }) walletAddress: string,
-  ) {
+  findOne(@Args('walletAddress', { type: () => String }) walletAddress: string) {
     return this.WalletsService.findOne(walletAddress);
   }
 
@@ -47,44 +45,48 @@ export class WalletsResolver {
   }
 
   @Mutation(() => Boolean)
-  removeWallets(
-    @Args('walletAddress', { type: () => String }) walletAddress: string,
-  ) {
+  removeWallets(@Args('walletAddress', { type: () => String }) walletAddress: string) {
     return this.WalletsService.remove(walletAddress);
   }
 
   @ResolveField(() => [BlockchainApprovals])
   async blockchainapprovalsList(@Parent() Wallets: Wallets): Promise<any[]> {
     return this.WalletsService.findBlockchainapprovalsList(
-      Wallets.walletAddress,
+      Wallets.walletAddress
     );
   }
 
   @ResolveField(() => [IdrsConversions])
   async idrsconversionsList(@Parent() Wallets: Wallets): Promise<any[]> {
-    return this.WalletsService.findIdrsconversionsList(Wallets.walletAddress);
+    return this.WalletsService.findIdrsconversionsList(
+      Wallets.walletAddress
+    );
   }
 
   @ResolveField(() => [MarketTrades])
   async markettradesList(@Parent() Wallets: Wallets): Promise<any[]> {
-    return this.WalletsService.findMarkettradesList(Wallets.walletAddress);
+    return this.WalletsService.findMarkettradesList(
+      Wallets.walletAddress
+    );
   }
 
   @ResolveField(() => [MarketTrades])
   async markettradesList2(@Parent() Wallets: Wallets): Promise<any[]> {
-    return this.WalletsService.findMarkettradesList2(Wallets.walletAddress);
+    return this.WalletsService.findMarkettradesList2(
+      Wallets.walletAddress
+    );
   }
 
   @ResolveField(() => [TradeOrdersCache])
   async tradeorderscacheList(@Parent() Wallets: Wallets): Promise<any[]> {
-    return this.WalletsService.findTradeorderscacheList(Wallets.walletAddress);
+    return this.WalletsService.findTradeorderscacheList(
+      Wallets.walletAddress
+    );
   }
 
   @ResolveField(() => Prosumers, { nullable: true })
   async prosumers(@Parent() Wallets: Wallets): Promise<any | null> {
-    const result = await this.WalletsService.findProsumers(
-      Wallets.walletAddress,
-    );
+    const result = await this.WalletsService.findProsumers(Wallets.walletAddress);
     return result[0] || null;
   }
 }

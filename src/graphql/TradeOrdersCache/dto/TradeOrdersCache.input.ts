@@ -46,4 +46,5 @@ export class CreateTradeOrdersCacheInput {
 
   @Field(() => [Int], { nullable: true })
   walletsIds?: number[];
+
 }

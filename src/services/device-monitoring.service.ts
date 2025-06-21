@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { SmartMetersService } from '../graphql/SmartMeters/SmartMeters.service';
-import { DeviceHeartbeatsService } from '../graphql/DeviceHeartbeats/DeviceHeartbeats.service';
 import { TransactionLogsService } from '../graphql/TransactionLogs/TransactionLogs.service';
 import { TransactionType } from '../common/enums';
 
@@ -33,7 +32,6 @@ export class DeviceMonitoringService {
 
   constructor(
     private smartMetersService: SmartMetersService,
-    private deviceHeartbeatsService: DeviceHeartbeatsService,
     private transactionLogsService: TransactionLogsService,
   ) {}
 
@@ -59,16 +57,10 @@ export class DeviceMonitoringService {
 
   async checkDeviceHealth(meterId: string): Promise<DeviceHealthStatus> {
     try {
-      // Get latest heartbeat
-      const heartbeats =
-        await this.smartMetersService.findDeviceheartbeatsList(meterId);
-      const latestHeartbeat = (heartbeats as any[]).sort((a: any, b: any) => {
-        const timestampA = String(a?.timestamp || '');
-        const timestampB = String(b?.timestamp || '');
-        return new Date(timestampB).getTime() - new Date(timestampA).getTime();
-      })[0];
+      // Get device info from smart meters
+      const device = await this.smartMetersService.findOne(meterId);
 
-      // Get latest status snapshot
+      // Get latest status snapshot for device health info
       const statusSnapshots =
         await this.smartMetersService.findDevicestatussnapshotsList(meterId);
       const latestStatus = (statusSnapshots as any[]).sort((a: any, b: any) => {
@@ -77,19 +69,28 @@ export class DeviceMonitoringService {
         return new Date(timestampB).getTime() - new Date(timestampA).getTime();
       })[0];
 
+      // Get latest energy readings for activity monitoring
+      const energyReadings =
+        await this.smartMetersService.findEnergyreadingsdetailedList(meterId);
+      const latestReading = (energyReadings as any[]).sort((a: any, b: any) => {
+        const timestampA = String(a?.timestamp || '');
+        const timestampB = String(b?.timestamp || '');
+        return new Date(timestampB).getTime() - new Date(timestampA).getTime();
+      })[0];
+
       const status: DeviceHealthStatus = {
         meterId,
         isOnline: false,
-        lastHeartbeat: latestHeartbeat?.timestamp?.toString() || null,
-        uptimeSeconds: Number(latestHeartbeat?.uptimeSeconds) || 0,
-        signalStrength: Number(latestHeartbeat?.signalStrength) || 0,
+        lastHeartbeat: device.lastHeartbeatAt?.toString() || null,
+        uptimeSeconds: 0,
+        signalStrength: 0,
         errorCodes: [],
         alerts: [],
       };
 
-      // Check if device is online
-      if (latestHeartbeat) {
-        const heartbeatTime = new Date(latestHeartbeat.timestamp);
+      // Check if device is online based on last heartbeat timestamp
+      if (device.lastHeartbeatAt) {
+        const heartbeatTime = new Date(device.lastHeartbeatAt);
         const now = new Date();
         const timeDiff =
           (now.getTime() - heartbeatTime.getTime()) / (1000 * 60); // minutes
@@ -115,57 +116,71 @@ export class DeviceMonitoringService {
         );
       }
 
-      // Check signal strength
-      if (status.signalStrength < this.LOW_SIGNAL_THRESHOLD) {
-        status.alerts.push(`Low signal strength: ${status.signalStrength} dBm`);
-        await this.logDeviceAlert(
-          meterId,
-          'LOW_SIGNAL',
-          `Low signal strength: ${status.signalStrength} dBm`,
-        );
-      }
-
-      // Check error codes from status
-      if (latestStatus?.errorCodes) {
-        status.errorCodes = (latestStatus.errorCodes as string)
-          .split(',')
-          .filter((code: string) => code.trim());
-        if (status.errorCodes.length > 0) {
-          status.alerts.push(
-            `Error codes detected: ${status.errorCodes.join(', ')}`,
-          );
-          await this.logDeviceAlert(
-            meterId,
-            'ERROR_CODES',
-            `Error codes: ${status.errorCodes.join(', ')}`,
-          );
-        }
-      }
-
-      // Check battery level if available
-      if (latestHeartbeat?.additionalMetrics) {
+      // Extract signal strength and other metrics from status snapshots
+      if (latestStatus?.statusData) {
         try {
-          const metrics = JSON.parse(
-            latestHeartbeat.additionalMetrics as string,
-          ) as {
-            batteryLevel?: number;
-            [key: string]: any;
-          };
-          if (metrics.batteryLevel !== undefined) {
-            status.batteryLevel = Number(metrics.batteryLevel);
-            if (metrics.batteryLevel < this.LOW_BATTERY_THRESHOLD) {
-              status.alerts.push(`Low battery: ${metrics.batteryLevel}%`);
+          const statusData = JSON.parse(
+            latestStatus.statusData as string,
+          ) as any;
+
+          // Extract WiFi signal strength
+          if (statusData.wifi?.rssi) {
+            status.signalStrength = Number(statusData.wifi.rssi);
+
+            if (status.signalStrength < this.LOW_SIGNAL_THRESHOLD) {
+              status.alerts.push(
+                `Low signal strength: ${status.signalStrength} dBm`,
+              );
               await this.logDeviceAlert(
                 meterId,
-                'LOW_BATTERY',
-                `Low battery: ${metrics.batteryLevel}%`,
+                'LOW_SIGNAL',
+                `Low signal strength: ${status.signalStrength} dBm`,
               );
             }
           }
+
+          // Calculate uptime from system info if available
+          if (statusData.system?.uptime) {
+            status.uptimeSeconds = Number(statusData.system.uptime) / 1000; // Convert ms to seconds
+          }
+
+          // Check for connection issues
+          if (statusData.mqtt?.connected === false) {
+            status.alerts.push('MQTT connection lost');
+            await this.logDeviceAlert(
+              meterId,
+              'MQTT_DISCONNECTED',
+              'MQTT connection lost',
+            );
+          }
+
+          if (statusData.wifi?.connected === false) {
+            status.alerts.push('WiFi connection lost');
+            await this.logDeviceAlert(
+              meterId,
+              'WIFI_DISCONNECTED',
+              'WiFi connection lost',
+            );
+          }
         } catch (error) {
-          this.logger.warn(
-            `Error parsing additional metrics for ${meterId}:`,
-            error,
+          this.logger.warn(`Error parsing status data for ${meterId}:`, error);
+        }
+      }
+
+      // Check for recent activity based on energy readings
+      if (latestReading) {
+        const readingTime = new Date(latestReading.timestamp);
+        const now = new Date();
+        const timeDiff = (now.getTime() - readingTime.getTime()) / (1000 * 60); // minutes
+
+        if (timeDiff > this.OFFLINE_THRESHOLD_MINUTES * 2) {
+          status.alerts.push(
+            `No recent energy data for ${Math.round(timeDiff)} minutes`,
+          );
+          await this.logDeviceAlert(
+            meterId,
+            'NO_ENERGY_DATA',
+            `No recent energy data for ${Math.round(timeDiff)} minutes`,
           );
         }
       }

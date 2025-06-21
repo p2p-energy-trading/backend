@@ -143,32 +143,39 @@ export class DeviceController {
       throw new BadRequestException('Device not found or unauthorized');
     }
 
-    // Get latest status data
-    const heartbeats =
-      await this.smartMetersService.findDeviceheartbeatsList(meterId);
+    // Get device info and latest status data
+    const meter = await this.smartMetersService.findOne(meterId);
     const statusSnapshots =
       await this.smartMetersService.findDevicestatussnapshotsList(meterId);
-
-    const latestHeartbeat = heartbeats.sort(
-      (a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-    )[0];
 
     const latestStatus = statusSnapshots.sort(
       (a, b) =>
         new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
     )[0];
 
+    // Use lastHeartbeatAt from SmartMeters entity instead of separate heartbeats
+    const lastHeartbeatTime = meter.lastHeartbeatAt;
+    const isOnline =
+      lastHeartbeatTime &&
+      new Date().getTime() - new Date(lastHeartbeatTime).getTime() <
+        5 * 60 * 1000; // 5 minutes
+
     return {
       success: true,
       data: {
         meterId,
-        lastHeartbeat: latestHeartbeat,
+        lastHeartbeat:
+          lastHeartbeatTime != null
+            ? {
+                timestamp:
+                  lastHeartbeatTime instanceof Date
+                    ? lastHeartbeatTime.toISOString()
+                    : lastHeartbeatTime,
+                status: isOnline ? 'alive' : 'offline',
+              }
+            : null,
         lastStatus: latestStatus,
-        isOnline:
-          latestHeartbeat &&
-          new Date().getTime() - new Date(latestHeartbeat.timestamp).getTime() <
-            5 * 60 * 1000, // 5 minutes
+        isOnline: !!isOnline,
       },
     };
   }

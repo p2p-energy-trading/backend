@@ -19,4 +19,5 @@ export class CreateProsumersInput {
 
   @Field(() => String)
   updatedAt: string;
+
 }

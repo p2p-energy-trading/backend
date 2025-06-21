@@ -1,13 +1,14 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { Provider, Type, DynamicModule } from '@nestjs/common';
 
 export const createTestingModule = async (
-  providers: any[],
-  imports: any[] = [],
-  controllers: any[] = [],
+  providers: Provider[],
+  imports: (Type<any> | DynamicModule)[] = [],
+  controllers: Type<any>[] = [],
 ) => {
   const moduleBuilder = Test.createTestingModule({
     imports: [

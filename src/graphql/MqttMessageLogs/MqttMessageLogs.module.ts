@@ -10,7 +10,11 @@ import { SmartMetersModule } from '../SmartMeters/SmartMeters.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([MqttMessageLogs, EnergySettlements, SmartMeters]),
+    TypeOrmModule.forFeature([
+      MqttMessageLogs,
+      EnergySettlements,
+      SmartMeters,
+    ]),
     forwardRef(() => EnergySettlementsModule),
     forwardRef(() => SmartMetersModule),
   ],

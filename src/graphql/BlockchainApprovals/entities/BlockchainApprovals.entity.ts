@@ -4,7 +4,7 @@ import {
   PrimaryGeneratedColumn,
   ManyToOne,
   JoinColumn,
-} from 'typeorm';
+  } from 'typeorm';
 import { Prosumers } from '../../Prosumers/entities/Prosumers.entity';
 import { Wallets } from '../../Wallets/entities/Wallets.entity';
 

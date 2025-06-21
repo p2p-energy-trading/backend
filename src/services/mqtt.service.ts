@@ -7,8 +7,6 @@ import {
 import { ConfigService } from '@nestjs/config';
 import * as mqtt from 'mqtt';
 import { MqttMessageLogsService } from '../graphql/MqttMessageLogs/MqttMessageLogs.service';
-import { EnergyReadingsService } from '../graphql/EnergyReadings/EnergyReadings.service';
-import { DeviceHeartbeatsService } from '../graphql/DeviceHeartbeats/DeviceHeartbeats.service';
 import { DeviceStatusSnapshotsService } from '../graphql/DeviceStatusSnapshots/DeviceStatusSnapshots.service';
 import { DeviceCommandsService } from '../graphql/DeviceCommands/DeviceCommands.service';
 import { CryptoService } from '../common/crypto.service';
@@ -16,10 +14,11 @@ import {
   MqttTopicType,
   MqttDirection,
   DeviceCommandType,
+  DeviceSubsystem,
 } from '../common/enums';
+import { EnergyReadingsDetailedService } from '../graphql/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
 import {
   SensorData,
-  DeviceHeartbeat,
   DeviceStatus,
   DeviceCommandPayload,
 } from '../common/interfaces';
@@ -30,7 +29,6 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   private client: mqtt.MqttClient;
   private readonly topics = {
     sensors: 'home/energy-monitor/sensors',
-    heartbeat: 'home/energy-monitor/heartbeat',
     status: 'home/energy-monitor/status',
     command: 'home/energy-monitor/command',
   };
@@ -38,8 +36,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private configService: ConfigService,
     private mqttMessageLogsService: MqttMessageLogsService,
-    private energyReadingsService: EnergyReadingsService,
-    private deviceHeartbeatsService: DeviceHeartbeatsService,
+    private EnergyReadingsDetailedService: EnergyReadingsDetailedService,
     private deviceStatusSnapshotsService: DeviceStatusSnapshotsService,
     private deviceCommandsService: DeviceCommandsService,
     private cryptoService: CryptoService,
@@ -90,11 +87,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   }
 
   private subscribeToTopics() {
-    const topicsToSubscribe = [
-      this.topics.sensors,
-      this.topics.heartbeat,
-      this.topics.status,
-    ];
+    const topicsToSubscribe = [this.topics.sensors, this.topics.status];
 
     topicsToSubscribe.forEach((topic) => {
       this.client.subscribe(topic, (err) => {
@@ -118,20 +111,18 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       }
 
       // Extract meter ID from topic or payload
-      // const meterId = this.extractMeterId(topic, parsedPayload);
-      const meterId = 'METER001';
+      const meterId = this.extractMeterId(topic, parsedPayload);
+      // const meterId = 'METER001';
       // Log message
       await this.logMessage(topic, payload, meterId, MqttDirection.INBOUND);
 
       // Process based on topic type
       if (topic.includes('sensors')) {
+        // this.logger.log(parsedPayload);
         await this.processSensorData(meterId, parsedPayload as SensorData);
+      } else if (topic.includes('status')) {
+        await this.processStatus(meterId, parsedPayload as DeviceStatus);
       }
-      // } else if (topic.includes('heartbeat')) {
-      //   await this.processHeartbeat(meterId, parsedPayload as DeviceHeartbeat);
-      // } else if (topic.includes('status')) {
-      //   await this.processStatus(meterId, parsedPayload as DeviceStatus);
-      // }
     } catch (error) {
       this.logger.error('Error processing MQTT message:', error);
       // Log error message
@@ -173,32 +164,67 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
 
   private async processSensorData(meterId: string, data: SensorData) {
     try {
-      // Calculate net power in kW (solar - load)
-      const netPowerW = data.solar.power - data.load.power;
-      const powerKw = netPowerW / 1000; // Convert from W to kW
+      // Store detailed energy readings for all subsystems
+      const subsystemMappings = [
+        {
+          subsystem: DeviceSubsystem.SOLAR,
+          data: data.solar,
+          extraData: { generating: data.solar.generating },
+        },
+        {
+          subsystem: DeviceSubsystem.LOAD,
+          data: data.load,
+          extraData: {},
+        },
+        {
+          subsystem: DeviceSubsystem.BATTERY,
+          data: data.battery,
+          extraData: { state: data.battery.state },
+        },
+        {
+          subsystem: DeviceSubsystem.GRID_IMPORT,
+          data: data.import,
+          extraData: { active: data.import.active },
+        },
+        {
+          subsystem: DeviceSubsystem.GRID_EXPORT,
+          data: data.export,
+          extraData: { active: data.export.active },
+        },
+      ];
 
-      // Determine flow direction based on net power
-      const flowDirection = netPowerW > 0 ? 'export' : 'import';
+      // Use backend system timestamp instead of payload timestamp for consistency
+      const timestamp = new Date().toISOString();
+      // this.logger.debug(
+      //   `Processing sensor data for meter ${meterId} at ${timestamp} (backend system time)`,
+      // );
 
-      // Calculate voltage and current (assuming standard 230V for residential)
-      const voltage = 230; // Standard residential voltage
-      const currentAmp = Math.abs(netPowerW) / voltage; // Current = Power / Voltage
+      const smartmetersIds = [parseInt(meterId, 10)];
 
-      // Store energy reading with correct schema fields
-      await this.energyReadingsService.create({
-        meterId,
-        timestamp: new Date(data.timestamp).toISOString(),
-        voltage,
-        currentAmp,
-        powerKw: Math.abs(powerKw), // Store absolute value
-        flowDirection,
-        smartmetersIds: [parseInt(meterId, 10)],
-      });
-
+      await Promise.all(
+        subsystemMappings.map(({ subsystem, data: subsystemData, extraData }) =>
+          this.EnergyReadingsDetailedService.create({
+            meterId,
+            timestamp,
+            subsystem,
+            dailyEnergyWh: subsystemData.daily_energy_wh * 1000 * 10,
+            totalEnergyWh: subsystemData.total_energy_wh * 1000 * 10,
+            settlementEnergyWh: subsystemData.settlement_energy_wh * 1000 * 10,
+            currentPowerW: subsystemData.power * 10,
+            voltage: subsystemData.voltage,
+            currentAmp: subsystemData.current,
+            subsystemData: JSON.stringify({
+              ...extraData,
+              originalTimestamp: data.timestamp, // Keep original timestamp as reference
+              backendReceivedAt: timestamp,
+            }),
+            rawPayload: JSON.stringify(subsystemData),
+            smartmetersIds,
+          }),
+        ),
+      );
       this.logger.log(
-        `Processed sensor data for meter ${meterId}: ${powerKw.toFixed(
-          3,
-        )}kW ${flowDirection}`,
+        `Processed sensor data for meter ${meterId} using backend system time`,
       );
     } catch (error) {
       this.logger.error(
@@ -208,41 +234,33 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private async processHeartbeat(meterId: string, data: DeviceHeartbeat) {
-    try {
-      await this.deviceHeartbeatsService.create({
-        meterId,
-        timestamp: new Date(data.timestamp).toISOString(),
-        uptimeSeconds: data.uptime_seconds.toString(),
-        freeHeapBytes: data.free_heap_bytes.toString(),
-        signalStrength: data.signal_strength,
-        additionalMetrics: JSON.stringify(data.additional_metrics || {}),
-        smartmetersIds: [parseInt(meterId, 10)],
-      });
-
-      this.logger.log(`Processed heartbeat for meter ${meterId}`);
-    } catch (error) {
-      this.logger.error(
-        `Error processing heartbeat for meter ${meterId}:`,
-        error,
-      );
-    }
-  }
-
   private async processStatus(meterId: string, data: DeviceStatus) {
     try {
+      // Use backend system timestamp instead of payload timestamp
+      const timestamp = new Date().toISOString();
+
       await this.deviceStatusSnapshotsService.create({
         meterId,
-        timestamp: new Date(data.timestamp).toISOString(),
-        wifiStatus: data.wifi_status,
-        mqttStatus: data.mqtt_status,
-        gridMode: data.grid_mode,
-        systemStatus: data.system_status,
-        rawPayload: JSON.stringify(data),
+        timestamp,
+        wifiStatus: data.wifi,
+        mqttStatus: data.mqtt,
+        gridMode: data.grid.exporting
+          ? 'exporting'
+          : data.grid.importing
+            ? 'importing'
+            : 'idle',
+        systemStatus: data.system,
+        rawPayload: JSON.stringify({
+          ...data,
+          originalTimestamp: data.timestamp, // Keep original timestamp as reference
+          backendReceivedAt: timestamp,
+        }),
         smartmetersIds: [parseInt(meterId, 10)],
       });
 
-      this.logger.log(`Processed status for meter ${meterId}`);
+      this.logger.log(
+        `Processed status for meter ${meterId} using backend system time`,
+      );
     } catch (error) {
       this.logger.error(`Error processing status for meter ${meterId}:`, error);
     }

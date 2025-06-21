@@ -15,9 +15,7 @@ import { SmartMeters } from '../SmartMeters/dto/SmartMeters.output';
 
 @Resolver(() => DeviceHeartbeats)
 export class DeviceHeartbeatsResolver {
-  constructor(
-    private readonly DeviceHeartbeatsService: DeviceHeartbeatsService,
-  ) {}
+  constructor(private readonly DeviceHeartbeatsService: DeviceHeartbeatsService) {}
 
   @Query(() => [DeviceHeartbeats], { name: 'DeviceHeartbeatsAll' })
   findAll(@Args() args: DeviceHeartbeatsArgs) {
@@ -43,19 +41,13 @@ export class DeviceHeartbeatsResolver {
   }
 
   @Mutation(() => Boolean)
-  removeDeviceHeartbeats(
-    @Args('heartbeatId', { type: () => Int }) heartbeatId: number,
-  ) {
+  removeDeviceHeartbeats(@Args('heartbeatId', { type: () => Int }) heartbeatId: number) {
     return this.DeviceHeartbeatsService.remove(Number(heartbeatId));
   }
 
   @ResolveField(() => SmartMeters, { nullable: true })
-  async smartmeters(
-    @Parent() DeviceHeartbeats: DeviceHeartbeats,
-  ): Promise<any | null> {
-    const result = await this.DeviceHeartbeatsService.findSmartmeters(
-      Number(DeviceHeartbeats.heartbeatId),
-    );
+  async smartmeters(@Parent() DeviceHeartbeats: DeviceHeartbeats): Promise<any | null> {
+    const result = await this.DeviceHeartbeatsService.findSmartmeters(Number(DeviceHeartbeats.heartbeatId));
     return result[0] || null;
   }
 }

@@ -16,9 +16,7 @@ import { Wallets } from '../Wallets/dto/Wallets.output';
 
 @Resolver(() => BlockchainApprovals)
 export class BlockchainApprovalsResolver {
-  constructor(
-    private readonly BlockchainApprovalsService: BlockchainApprovalsService,
-  ) {}
+  constructor(private readonly BlockchainApprovalsService: BlockchainApprovalsService) {}
 
   @Query(() => [BlockchainApprovals], { name: 'BlockchainApprovalsAll' })
   findAll(@Args() args: BlockchainApprovalsArgs) {
@@ -31,9 +29,7 @@ export class BlockchainApprovalsResolver {
   }
 
   @Mutation(() => BlockchainApprovals)
-  createBlockchainApprovals(
-    @Args('input') input: CreateBlockchainApprovalsInput,
-  ) {
+  createBlockchainApprovals(@Args('input') input: CreateBlockchainApprovalsInput) {
     return this.BlockchainApprovalsService.create(input);
   }
 
@@ -46,29 +42,19 @@ export class BlockchainApprovalsResolver {
   }
 
   @Mutation(() => Boolean)
-  removeBlockchainApprovals(
-    @Args('approvalId', { type: () => Int }) approvalId: number,
-  ) {
+  removeBlockchainApprovals(@Args('approvalId', { type: () => Int }) approvalId: number) {
     return this.BlockchainApprovalsService.remove(Number(approvalId));
   }
 
   @ResolveField(() => Prosumers, { nullable: true })
-  async prosumers(
-    @Parent() BlockchainApprovals: BlockchainApprovals,
-  ): Promise<any | null> {
-    const result = await this.BlockchainApprovalsService.findProsumers(
-      Number(BlockchainApprovals.approvalId),
-    );
+  async prosumers(@Parent() BlockchainApprovals: BlockchainApprovals): Promise<any | null> {
+    const result = await this.BlockchainApprovalsService.findProsumers(Number(BlockchainApprovals.approvalId));
     return result[0] || null;
   }
 
   @ResolveField(() => Wallets, { nullable: true })
-  async wallets(
-    @Parent() BlockchainApprovals: BlockchainApprovals,
-  ): Promise<any | null> {
-    const result = await this.BlockchainApprovalsService.findWallets(
-      Number(BlockchainApprovals.approvalId),
-    );
+  async wallets(@Parent() BlockchainApprovals: BlockchainApprovals): Promise<any | null> {
+    const result = await this.BlockchainApprovalsService.findWallets(Number(BlockchainApprovals.approvalId));
     return result[0] || null;
   }
 }

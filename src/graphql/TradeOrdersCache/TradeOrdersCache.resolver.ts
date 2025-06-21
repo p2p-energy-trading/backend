@@ -17,9 +17,7 @@ import { TransactionLogs } from '../TransactionLogs/dto/TransactionLogs.output';
 
 @Resolver(() => TradeOrdersCache)
 export class TradeOrdersCacheResolver {
-  constructor(
-    private readonly TradeOrdersCacheService: TradeOrdersCacheService,
-  ) {}
+  constructor(private readonly TradeOrdersCacheService: TradeOrdersCacheService) {}
 
   @Query(() => [TradeOrdersCache], { name: 'TradeOrdersCacheAll' })
   findAll(@Args() args: TradeOrdersCacheArgs) {
@@ -45,38 +43,26 @@ export class TradeOrdersCacheResolver {
   }
 
   @Mutation(() => Boolean)
-  removeTradeOrdersCache(
-    @Args('orderId', { type: () => String }) orderId: string,
-  ) {
+  removeTradeOrdersCache(@Args('orderId', { type: () => String }) orderId: string) {
     return this.TradeOrdersCacheService.remove(orderId);
   }
 
   @ResolveField(() => Prosumers, { nullable: true })
-  async prosumers(
-    @Parent() TradeOrdersCache: TradeOrdersCache,
-  ): Promise<any | null> {
-    const result = await this.TradeOrdersCacheService.findProsumers(
-      TradeOrdersCache.orderId,
-    );
+  async prosumers(@Parent() TradeOrdersCache: TradeOrdersCache): Promise<any | null> {
+    const result = await this.TradeOrdersCacheService.findProsumers(TradeOrdersCache.orderId);
     return result[0] || null;
   }
 
   @ResolveField(() => Wallets, { nullable: true })
-  async wallets(
-    @Parent() TradeOrdersCache: TradeOrdersCache,
-  ): Promise<any | null> {
-    const result = await this.TradeOrdersCacheService.findWallets(
-      TradeOrdersCache.orderId,
-    );
+  async wallets(@Parent() TradeOrdersCache: TradeOrdersCache): Promise<any | null> {
+    const result = await this.TradeOrdersCacheService.findWallets(TradeOrdersCache.orderId);
     return result[0] || null;
   }
 
   @ResolveField(() => [TransactionLogs])
-  async transactionlogsList(
-    @Parent() TradeOrdersCache: TradeOrdersCache,
-  ): Promise<any[]> {
+  async transactionlogsList(@Parent() TradeOrdersCache: TradeOrdersCache): Promise<any[]> {
     return this.TradeOrdersCacheService.findTransactionlogsList(
-      TradeOrdersCache.orderId,
+      TradeOrdersCache.orderId
     );
   }
 }

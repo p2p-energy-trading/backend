@@ -1,4 +1,9 @@
-import { Entity, Column, PrimaryColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryColumn,
+  OneToMany,
+  } from 'typeorm';
 import { BlockchainApprovals } from '../../BlockchainApprovals/entities/BlockchainApprovals.entity';
 import { DeviceCommands } from '../../DeviceCommands/entities/DeviceCommands.entity';
 import { IdrsConversions } from '../../IdrsConversions/entities/IdrsConversions.entity';
@@ -28,19 +33,13 @@ export class Prosumers {
   @Column({ type: 'timestamp', name: 'updated_at' })
   updatedAt: Date;
 
-  @OneToMany(
-    () => BlockchainApprovals,
-    (BlockchainApprovals) => BlockchainApprovals.prosumers,
-  )
+  @OneToMany(() => BlockchainApprovals, (BlockchainApprovals) => BlockchainApprovals.prosumers)
   blockchainapprovalsList: BlockchainApprovals[];
 
   @OneToMany(() => DeviceCommands, (DeviceCommands) => DeviceCommands.prosumers)
   devicecommandsList: DeviceCommands[];
 
-  @OneToMany(
-    () => IdrsConversions,
-    (IdrsConversions) => IdrsConversions.prosumers,
-  )
+  @OneToMany(() => IdrsConversions, (IdrsConversions) => IdrsConversions.prosumers)
   idrsconversionsList: IdrsConversions[];
 
   @OneToMany(() => MarketTrades, (MarketTrades) => MarketTrades.prosumers)
@@ -52,16 +51,10 @@ export class Prosumers {
   @OneToMany(() => SmartMeters, (SmartMeters) => SmartMeters.prosumers)
   smartmetersList: SmartMeters[];
 
-  @OneToMany(
-    () => TradeOrdersCache,
-    (TradeOrdersCache) => TradeOrdersCache.prosumers,
-  )
+  @OneToMany(() => TradeOrdersCache, (TradeOrdersCache) => TradeOrdersCache.prosumers)
   tradeorderscacheList: TradeOrdersCache[];
 
-  @OneToMany(
-    () => TransactionLogs,
-    (TransactionLogs) => TransactionLogs.prosumers,
-  )
+  @OneToMany(() => TransactionLogs, (TransactionLogs) => TransactionLogs.prosumers)
   transactionlogsList: TransactionLogs[];
 
   @OneToMany(() => Wallets, (Wallets) => Wallets.prosumers)

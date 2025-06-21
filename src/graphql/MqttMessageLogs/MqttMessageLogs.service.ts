@@ -23,26 +23,17 @@ export class MqttMessageLogsService {
     const where = {};
     if (args && args.logId !== undefined) where['logId'] = args.logId;
     if (args && args.meterId !== undefined) where['meterId'] = args.meterId;
-    if (args && args.topicType !== undefined)
-      where['topicType'] = args.topicType;
-    if (args && args.direction !== undefined)
-      where['direction'] = args.direction;
-    if (args && args.mqttTopic !== undefined)
-      where['mqttTopic'] = args.mqttTopic;
+    if (args && args.topicType !== undefined) where['topicType'] = args.topicType;
+    if (args && args.direction !== undefined) where['direction'] = args.direction;
+    if (args && args.mqttTopic !== undefined) where['mqttTopic'] = args.mqttTopic;
     if (args && args.payload !== undefined) where['payload'] = args.payload;
-    if (args && args.rawMessage !== undefined)
-      where['rawMessage'] = args.rawMessage;
-    if (args && args.messageTimestamp !== undefined)
-      where['messageTimestamp'] = args.messageTimestamp;
-    if (args && args.processedAt !== undefined)
-      where['processedAt'] = args.processedAt;
-    if (args && args.processingStatus !== undefined)
-      where['processingStatus'] = args.processingStatus;
-    if (args && args.errorMessage !== undefined)
-      where['errorMessage'] = args.errorMessage;
-    if (args && args.correlationId !== undefined)
-      where['correlationId'] = args.correlationId;
-
+    if (args && args.rawMessage !== undefined) where['rawMessage'] = args.rawMessage;
+    if (args && args.messageTimestamp !== undefined) where['messageTimestamp'] = args.messageTimestamp;
+    if (args && args.processedAt !== undefined) where['processedAt'] = args.processedAt;
+    if (args && args.processingStatus !== undefined) where['processingStatus'] = args.processingStatus;
+    if (args && args.errorMessage !== undefined) where['errorMessage'] = args.errorMessage;
+    if (args && args.correlationId !== undefined) where['correlationId'] = args.correlationId;
+    
     const relations = ['energysettlementsList', 'smartmeters'];
     return this.repo.find({ where, relations });
   }
@@ -58,47 +49,35 @@ export class MqttMessageLogsService {
 
   async create(input: CreateMqttMessageLogsInput): Promise<MqttMessageLogs> {
     // Convert input types to match entity types
-    const createData: Partial<MqttMessageLogs> = {
-      ...input,
-      messageTimestamp: input.messageTimestamp
-        ? new Date(input.messageTimestamp)
-        : undefined,
-      processedAt: input.processedAt ? new Date(input.processedAt) : undefined,
-    };
+    const createData: Partial<MqttMessageLogs> = { ...input } as any;
+    
+    if (input.messageTimestamp) (createData as any).messageTimestamp = new Date(input.messageTimestamp);
+    if (input.processedAt) (createData as any).processedAt = new Date(input.processedAt);
 
-    // Handle smartmeters relation (dont delete)
-    // if (input.smartmetersIds && input.smartmetersIds.length > 0) {
-    //   const smartmetersEntities = await this.SmartMetersRepo.findBy({
-    //     meterId: In(input.smartmetersIds),
-    //   });
-    //   (createData as any).smartmeters = smartmetersEntities;
-    // }
+    // Handle smartmeters relation
+    if (input.smartmetersIds && input.smartmetersIds.length > 0) {
+      const smartmetersEntities = await this.SmartMetersRepo.findBy({ meterId: In(input.smartmetersIds) });
+      (createData as any).smartmeters = smartmetersEntities;
+    }
 
     const entity = this.repo.create(createData);
     const savedEntity = await this.repo.save(entity);
     return this.findOne(savedEntity.logId);
   }
 
-  async update(
-    logId: any,
-    input: CreateMqttMessageLogsInput,
-  ): Promise<MqttMessageLogs> {
+  async update(logId: any, input: CreateMqttMessageLogsInput): Promise<MqttMessageLogs> {
     const existing = await this.findOne(logId);
-
+    
     // Convert input types to match entity types
     const updateData: Partial<MqttMessageLogs> = { ...input } as any;
-
-    if (input.messageTimestamp)
-      (updateData as any).messageTimestamp = new Date(input.messageTimestamp);
-    if (input.processedAt)
-      (updateData as any).processedAt = new Date(input.processedAt);
+    
+    if (input.messageTimestamp) (updateData as any).messageTimestamp = new Date(input.messageTimestamp);
+    if (input.processedAt) (updateData as any).processedAt = new Date(input.processedAt);
 
     // Handle smartmeters relation update
     if (input.smartmetersIds !== undefined) {
       if (input.smartmetersIds.length > 0) {
-        const smartmetersEntities = await this.SmartMetersRepo.findBy({
-          meterId: In(input.smartmetersIds),
-        });
+        const smartmetersEntities = await this.SmartMetersRepo.findBy({ meterId: In(input.smartmetersIds) });
         (updateData as any).smartmeters = smartmetersEntities;
       } else {
         (updateData as any).smartmeters = [];
@@ -115,74 +94,30 @@ export class MqttMessageLogsService {
   }
 
   async findEnergysettlementsList(logId: any): Promise<any[]> {
-    const parent = await this.repo.findOne({
-      where: { logId },
-      relations: ['energysettlementsList'],
-    });
+    const parent = await this.repo.findOne({ where: { logId }, relations: ['energysettlementsList'] });
     const entities = parent?.energysettlementsList || [];
     // Convert entities to match GraphQL output format
-    return entities.map((entity) => ({
+    return entities.map(entity => ({
       ...entity,
-      periodStartTime: entity.periodStartTime
-        ? entity.periodStartTime instanceof Date
-          ? entity.periodStartTime.toISOString()
-          : entity.periodStartTime
-        : null,
-      periodEndTime: entity.periodEndTime
-        ? entity.periodEndTime instanceof Date
-          ? entity.periodEndTime.toISOString()
-          : entity.periodEndTime
-        : null,
-      createdAtBackend: entity.createdAtBackend
-        ? entity.createdAtBackend instanceof Date
-          ? entity.createdAtBackend.toISOString()
-          : entity.createdAtBackend
-        : null,
-      confirmedAtOnChain: entity.confirmedAtOnChain
-        ? entity.confirmedAtOnChain instanceof Date
-          ? entity.confirmedAtOnChain.toISOString()
-          : entity.confirmedAtOnChain
-        : null,
+      periodStartTime: entity.periodStartTime ? (entity.periodStartTime instanceof Date ? entity.periodStartTime.toISOString() : entity.periodStartTime) : null,
+      periodEndTime: entity.periodEndTime ? (entity.periodEndTime instanceof Date ? entity.periodEndTime.toISOString() : entity.periodEndTime) : null,
+      createdAtBackend: entity.createdAtBackend ? (entity.createdAtBackend instanceof Date ? entity.createdAtBackend.toISOString() : entity.createdAtBackend) : null,
+      confirmedAtOnChain: entity.confirmedAtOnChain ? (entity.confirmedAtOnChain instanceof Date ? entity.confirmedAtOnChain.toISOString() : entity.confirmedAtOnChain) : null,
     }));
   }
 
   async findSmartmeters(logId: any): Promise<any[]> {
-    const parent = await this.repo.findOne({
-      where: { logId },
-      relations: ['smartmeters'],
-    });
+    const parent = await this.repo.findOne({ where: { logId }, relations: ['smartmeters'] });
     const entity = parent?.smartmeters;
     if (!entity) return [];
     // Convert entity to match GraphQL output format
-    return [
-      {
-        ...entity,
-        createdAt: entity.createdAt
-          ? entity.createdAt instanceof Date
-            ? entity.createdAt.toISOString()
-            : entity.createdAt
-          : null,
-        lastSeen: entity.lastSeen
-          ? entity.lastSeen instanceof Date
-            ? entity.lastSeen.toISOString()
-            : entity.lastSeen
-          : null,
-        updatedAt: entity.updatedAt
-          ? entity.updatedAt instanceof Date
-            ? entity.updatedAt.toISOString()
-            : entity.updatedAt
-          : null,
-        lastSettlementAt: entity.lastSettlementAt
-          ? entity.lastSettlementAt instanceof Date
-            ? entity.lastSettlementAt.toISOString()
-            : entity.lastSettlementAt
-          : null,
-        lastHeartbeatAt: entity.lastHeartbeatAt
-          ? entity.lastHeartbeatAt instanceof Date
-            ? entity.lastHeartbeatAt.toISOString()
-            : entity.lastHeartbeatAt
-          : null,
-      },
-    ];
+    return [{
+      ...entity,
+      createdAt: entity.createdAt ? (entity.createdAt instanceof Date ? entity.createdAt.toISOString() : entity.createdAt) : null,
+      lastSeen: entity.lastSeen ? (entity.lastSeen instanceof Date ? entity.lastSeen.toISOString() : entity.lastSeen) : null,
+      updatedAt: entity.updatedAt ? (entity.updatedAt instanceof Date ? entity.updatedAt.toISOString() : entity.updatedAt) : null,
+      lastSettlementAt: entity.lastSettlementAt ? (entity.lastSettlementAt instanceof Date ? entity.lastSettlementAt.toISOString() : entity.lastSettlementAt) : null,
+      lastHeartbeatAt: entity.lastHeartbeatAt ? (entity.lastHeartbeatAt instanceof Date ? entity.lastHeartbeatAt.toISOString() : entity.lastHeartbeatAt) : null,
+    }];
   }
 }
