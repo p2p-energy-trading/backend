@@ -3,7 +3,7 @@ import { MqttService } from './mqtt.service';
 import { BlockchainService } from './blockchain.service';
 import { EnergySettlementService } from './energy-settlement.service';
 import { DashboardService } from './dashboard.service';
-import { DeviceMonitoringService } from './device-monitoring.service';
+// import { DeviceMonitoringService } from './device-monitoring.service';
 import { HealthCheckService } from './health-check.service';
 import { MqttMessageLogsModule } from '../graphql/MqttMessageLogs/MqttMessageLogs.module';
 import { EnergyReadingsModule } from '../graphql/EnergyReadings/EnergyReadings.module';
@@ -44,7 +44,7 @@ import { EnergyReadingsDetailedModule } from 'src/graphql/EnergyReadingsDetailed
     BlockchainService,
     EnergySettlementService,
     DashboardService,
-    DeviceMonitoringService,
+    // DeviceMonitoringService,
     HealthCheckService,
   ],
   exports: [
@@ -52,7 +52,7 @@ import { EnergyReadingsDetailedModule } from 'src/graphql/EnergyReadingsDetailed
     BlockchainService,
     EnergySettlementService,
     DashboardService,
-    DeviceMonitoringService,
+    // DeviceMonitoringService,
     HealthCheckService,
   ],
 })

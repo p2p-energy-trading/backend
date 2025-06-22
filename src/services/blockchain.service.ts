@@ -1272,14 +1272,35 @@ export class BlockchainService {
     }
 
     // Method 2: Nested log structure (your case)
-    const eventWithLog = event as any;
-    if (eventWithLog.log && eventWithLog.log.transactionHash) {
-      return eventWithLog.log.transactionHash;
+    const eventWithLog = event as unknown;
+    if (
+      typeof eventWithLog === 'object' &&
+      eventWithLog !== null &&
+      'log' in eventWithLog &&
+      typeof (eventWithLog as { log: unknown }).log === 'object' &&
+      (eventWithLog as { log: unknown }).log !== null
+    ) {
+      const logObject = (eventWithLog as { log: unknown }).log;
+      if (
+        typeof logObject === 'object' &&
+        logObject !== null &&
+        'transactionHash' in logObject &&
+        typeof (logObject as { transactionHash: unknown }).transactionHash ===
+          'string'
+      ) {
+        return (logObject as { transactionHash: string }).transactionHash;
+      }
     }
 
     // Method 3: Args structure (sometimes transaction hash is in args)
-    if (eventWithLog.args && Array.isArray(eventWithLog.args)) {
-      for (const arg of eventWithLog.args) {
+    if (
+      typeof eventWithLog === 'object' &&
+      eventWithLog !== null &&
+      'args' in eventWithLog &&
+      Array.isArray((eventWithLog as { args: unknown }).args)
+    ) {
+      const args = (eventWithLog as { args: unknown[] }).args;
+      for (const arg of args) {
         if (
           typeof arg === 'string' &&
           arg.startsWith('0x') &&

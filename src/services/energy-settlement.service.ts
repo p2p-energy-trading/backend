@@ -7,12 +7,8 @@ import { EnergyReadingsDetailedService } from '../graphql/EnergyReadingsDetailed
 import { BlockchainService } from './blockchain.service';
 import { MqttService } from './mqtt.service';
 import { TransactionLogsService } from '../graphql/TransactionLogs/TransactionLogs.service';
-import {
-  SettlementTrigger,
-  TransactionType,
-  TransactionStatus,
-} from '../common/enums';
-import { DeviceCommandPayload, GridSettlementData } from '../common/interfaces';
+import { SettlementTrigger, TransactionStatus } from '../common/enums';
+import { DeviceCommandPayload } from '../common/interfaces';
 import { WalletsService } from 'src/graphql/Wallets/Wallets.service';
 
 interface SettlementReadingsData {
@@ -41,7 +37,8 @@ export class EnergySettlementService {
   ) {}
 
   // Run every 5 minutes by default
-  @Cron('*/5 * * * * *')
+  // @Cron('*/5 * * * * *')
+  @Cron(CronExpression.EVERY_5_MINUTES)
   async periodicSettlement() {
     const isAutoSettlementEnabled =
       this.configService.get('AUTO_SETTLEMENT_ENABLED') === 'true';
