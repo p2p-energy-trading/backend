@@ -1,15 +1,16 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ethers } from 'ethers';
-import { WalletsService } from '../graphql/Wallets/Wallets.service';
-import { TransactionLogsService } from '../graphql/TransactionLogs/TransactionLogs.service';
-import { TradeOrdersCacheService } from '../graphql/TradeOrdersCache/TradeOrdersCache.service';
-import { MarketTradesService } from '../graphql/MarketTrades/MarketTrades.service';
-import { BlockchainApprovalsService } from '../graphql/BlockchainApprovals/BlockchainApprovals.service';
+import { Contract, ethers } from 'ethers';
+import { WalletsService } from '../modules/Wallets/Wallets.service';
+import { TransactionLogsService } from '../modules/TransactionLogs/TransactionLogs.service';
+import { TradeOrdersCacheService } from '../modules/TradeOrdersCache/TradeOrdersCache.service';
+import { MarketTradesService } from '../modules/MarketTrades/MarketTrades.service';
+import { BlockchainApprovalsService } from '../modules/BlockchainApprovals/BlockchainApprovals.service';
 import { CryptoService } from '../common/crypto.service';
 import { TransactionType, OrderType } from '../common/enums';
 import { BlockchainConfig } from '../common/interfaces';
 import { EnergySettlementService } from './energy-settlement.service';
+import { ProsumersService } from 'src/modules/Prosumers/Prosumers.service';
 
 @Injectable()
 export class BlockchainService {
@@ -82,6 +83,7 @@ export class BlockchainService {
     private cryptoService: CryptoService,
     @Inject(forwardRef(() => EnergySettlementService))
     private energySettlementService: EnergySettlementService,
+    private prosumerService: ProsumersService,
   ) {
     this.initializeProvider();
   }
@@ -90,9 +92,7 @@ export class BlockchainService {
     this.config = {
       rpcUrl:
         this.configService.get('BLOCKCHAIN_RPC_URL') || 'http://localhost:8545',
-      chainId: parseInt(
-        this.configService.get('BLOCKCHAIN_CHAIN_ID') || '1337',
-      ),
+      chainId: parseInt(this.configService.get('BLOCKCHAIN_CHAIN_ID') || '10'),
       networkName: this.configService.get('BLOCKCHAIN_NETWORK_NAME') || 'Local',
       contracts: {
         energyConverter:
@@ -109,6 +109,8 @@ export class BlockchainService {
           '0x0000000000000000000000000000000000000000',
       },
     };
+
+    this.logger.debug(this.config);
 
     this.provider = new ethers.JsonRpcProvider(this.config.rpcUrl);
     this.setupEventListeners();
@@ -139,7 +141,7 @@ export class BlockchainService {
   }
 
   private getSettlementIdDbByTxHash() {
-    return async (txHash: string): Promise<string | null> => {
+    return async (txHash: string): Promise<number | null> => {
       try {
         const settlementId =
           await this.energySettlementService.getSettlementIdDbByTxHash(txHash);
@@ -350,7 +352,7 @@ export class BlockchainService {
     prosumerAddress: string,
     netEnergyWh: number,
     settlementId: string,
-    originalSettlementId?: string,
+    originalSettlementId?: number,
   ): Promise<string> {
     try {
       const wallet = await this.getWalletSigner(walletAddress);
@@ -1159,7 +1161,8 @@ export class BlockchainService {
     walletAddress: string,
   ): Promise<string | null> {
     try {
-      const prosumers = await this.walletsService.findProsumers(walletAddress);
+      const prosumers =
+        await this.prosumerService.findByWalletAddress(walletAddress);
       const firstProsumer: unknown =
         Array.isArray(prosumers) && prosumers.length > 0 ? prosumers[0] : null;
       return firstProsumer &&

@@ -1,11 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { EnergyReadingsDetailedService } from '../graphql/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
-import { EnergySettlementsService } from '../graphql/EnergySettlements/EnergySettlements.service';
-import { MarketTradesService } from '../graphql/MarketTrades/MarketTrades.service';
-import { SmartMetersService } from '../graphql/SmartMeters/SmartMeters.service';
-import { WalletsService } from '../graphql/Wallets/Wallets.service';
-import { DeviceHeartbeatsService } from '../graphql/DeviceHeartbeats/DeviceHeartbeats.service';
-import { DeviceStatusSnapshotsService } from '../graphql/DeviceStatusSnapshots/DeviceStatusSnapshots.service';
+import { EnergyReadingsDetailedService } from '../modules/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
+import { EnergySettlementsService } from '../modules/EnergySettlements/EnergySettlements.service';
+import { MarketTradesService } from '../modules/MarketTrades/MarketTrades.service';
+import { SmartMetersService } from '../modules/SmartMeters/SmartMeters.service';
+import { WalletsService } from '../modules/Wallets/Wallets.service';
+import { DeviceStatusSnapshotsService } from '../modules/DeviceStatusSnapshots/DeviceStatusSnapshots.service';
 import { BlockchainService } from './blockchain.service';
 import { EnergySettlementService } from './energy-settlement.service';
 
@@ -68,7 +67,6 @@ export class DashboardService {
     private marketTradesService: MarketTradesService,
     private smartMetersService: SmartMetersService,
     private walletsService: WalletsService,
-    private deviceHeartbeatsService: DeviceHeartbeatsService,
     private deviceStatusSnapshotsService: DeviceStatusSnapshotsService,
     private blockchainService: BlockchainService,
     private energySettlementService: EnergySettlementService,
@@ -544,25 +542,24 @@ export class DashboardService {
 
           // Calculate average uptime from recent heartbeats
           try {
-            const recentHeartbeats = await this.deviceHeartbeatsService.findAll(
-              {
-                meterId,
-              },
-            );
-
-            if (recentHeartbeats.length > 0) {
-              // Calculate uptime based on latest heartbeat
-              const latestHeartbeat = recentHeartbeats[0];
-              if (
-                latestHeartbeat &&
-                typeof latestHeartbeat === 'object' &&
-                'uptime' in latestHeartbeat &&
-                latestHeartbeat.uptime
-              ) {
-                totalUptime += Number(latestHeartbeat.uptime) / 1000; // Convert ms to seconds
-                deviceCount++;
-              }
-            }
+            // const recentHeartbeats = await this.deviceHeartbeatsService.findAll(
+            //   {
+            //     meterId,
+            //   },
+            // );
+            // if (recentHeartbeats.length > 0) {
+            //   // Calculate uptime based on latest heartbeat
+            //   const latestHeartbeat = recentHeartbeats[0];
+            //   if (
+            //     latestHeartbeat &&
+            //     typeof latestHeartbeat === 'object' &&
+            //     'uptime' in latestHeartbeat &&
+            //     latestHeartbeat.uptime
+            //   ) {
+            //     totalUptime += Number(latestHeartbeat.uptime) / 1000; // Convert ms to seconds
+            //     deviceCount++;
+            //   }
+            // }
           } catch (heartbeatError) {
             this.logger.warn(
               `Error getting heartbeats for meter ${meterId}:`,

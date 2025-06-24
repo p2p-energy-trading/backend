@@ -6,9 +6,9 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as mqtt from 'mqtt';
-import { MqttMessageLogsService } from '../graphql/MqttMessageLogs/MqttMessageLogs.service';
-import { DeviceStatusSnapshotsService } from '../graphql/DeviceStatusSnapshots/DeviceStatusSnapshots.service';
-import { DeviceCommandsService } from '../graphql/DeviceCommands/DeviceCommands.service';
+import { MqttMessageLogsService } from '../modules/MqttMessageLogs/MqttMessageLogs.service';
+import { DeviceStatusSnapshotsService } from '../modules/DeviceStatusSnapshots/DeviceStatusSnapshots.service';
+import { DeviceCommandsService } from '../modules/DeviceCommands/DeviceCommands.service';
 import { CryptoService } from '../common/crypto.service';
 import {
   MqttTopicType,
@@ -16,7 +16,7 @@ import {
   DeviceCommandType,
   DeviceSubsystem,
 } from '../common/enums';
-import { EnergyReadingsDetailedService } from '../graphql/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
+import { EnergyReadingsDetailedService } from '../modules/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
 import {
   SensorData,
   DeviceStatus,
@@ -199,8 +199,6 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       //   `Processing sensor data for meter ${meterId} at ${timestamp} (backend system time)`,
       // );
 
-      const smartmetersIds = [parseInt(meterId, 10)];
-
       await Promise.all(
         subsystemMappings.map(({ subsystem, data: subsystemData, extraData }) =>
           this.EnergyReadingsDetailedService.create({
@@ -219,7 +217,6 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
               backendReceivedAt: timestamp,
             }),
             rawPayload: JSON.stringify(subsystemData),
-            smartmetersIds,
           }),
         ),
       );
@@ -242,14 +239,14 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       await this.deviceStatusSnapshotsService.create({
         meterId,
         timestamp,
-        wifiStatus: data.wifi,
-        mqttStatus: data.mqtt,
+        wifiStatus: JSON.stringify(data.wifi),
+        mqttStatus: JSON.stringify(data.mqtt),
         gridMode: data.grid.exporting
           ? 'exporting'
           : data.grid.importing
             ? 'importing'
             : 'idle',
-        systemStatus: data.system,
+        systemStatus: JSON.stringify(data.system),
         rawPayload: JSON.stringify({
           ...data,
           originalTimestamp: data.timestamp, // Keep original timestamp as reference
@@ -290,8 +287,6 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
         correlationId,
         status: 'SENT',
         sentAt: new Date().toISOString(),
-        smartmetersIds: [parseInt(meterId, 10)],
-        prosumersIds: prosumerId ? [parseInt(prosumerId, 10)] : [],
       });
 
       // Log MQTT message

@@ -8,11 +8,12 @@ import {
   Request,
   BadRequestException,
 } from '@nestjs/common';
-import { WalletsService } from '../graphql/Wallets/Wallets.service';
-import { IdrsConversionsService } from '../graphql/IdrsConversions/IdrsConversions.service';
+import { WalletsService } from '../modules/Wallets/Wallets.service';
+import { IdrsConversionsService } from '../modules/IdrsConversions/IdrsConversions.service';
 import { CryptoService } from '../common/crypto.service';
 import { JwtAuthGuard } from '../auth/guards/auth.guards';
 import { ConversionType, WalletImportMethod } from '../common/enums';
+import { ProsumersService } from 'src/modules/Prosumers/Prosumers.service';
 
 interface CreateWalletRequest {
   walletName: string;
@@ -34,6 +35,7 @@ export class WalletController {
     private walletsService: WalletsService,
     private idrsConversionsService: IdrsConversionsService,
     private cryptoService: CryptoService,
+    private prosumersService: ProsumersService, // Assuming this is the correct service for prosumer validation
   ) {}
 
   @Post('create')
@@ -127,7 +129,8 @@ export class WalletController {
 
     // Verify ownership
     const wallet = await this.walletsService.findOne(walletAddress);
-    const prosumers = await this.walletsService.findProsumers(walletAddress);
+    const prosumers =
+      await this.prosumersService.findByWalletAddress(walletAddress);
 
     if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
       throw new BadRequestException('Unauthorized: You do not own this wallet');
@@ -152,7 +155,7 @@ export class WalletController {
 
     // Verify wallet ownership
     const wallet = await this.walletsService.findOne(body.walletAddress);
-    const prosumers = await this.walletsService.findProsumers(
+    const prosumers = await this.prosumersService.findByWalletAddress(
       body.walletAddress,
     );
 
@@ -195,14 +198,15 @@ export class WalletController {
 
     // Verify ownership
     const wallet = await this.walletsService.findOne(walletAddress);
-    const prosumers = await this.walletsService.findProsumers(walletAddress);
+    const prosumers =
+      await this.prosumersService.findByWalletAddress(walletAddress);
 
     if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
       throw new BadRequestException('Unauthorized');
     }
 
     const conversions =
-      await this.walletsService.findIdrsconversionsList(walletAddress);
+      await this.idrsConversionsService.findByWalletAddress(walletAddress);
 
     return {
       success: true,
@@ -222,7 +226,8 @@ export class WalletController {
 
     // Verify ownership
     const wallet = await this.walletsService.findOne(walletAddress);
-    const prosumers = await this.walletsService.findProsumers(walletAddress);
+    const prosumers =
+      await this.prosumersService.findByWalletAddress(walletAddress);
 
     if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
       throw new BadRequestException('Unauthorized');
@@ -256,7 +261,8 @@ export class WalletController {
 
     // Verify ownership
     const currentWallet = await this.walletsService.findOne(walletAddress);
-    const prosumers = await this.walletsService.findProsumers(walletAddress);
+    const prosumers =
+      await this.prosumersService.findByWalletAddress(walletAddress);
 
     if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
       throw new BadRequestException('Unauthorized');

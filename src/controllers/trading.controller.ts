@@ -11,11 +11,12 @@ import {
 } from '@nestjs/common';
 import { BlockchainService } from '../services/blockchain.service';
 import { EnergySettlementService } from '../services/energy-settlement.service';
-import { WalletsService } from '../graphql/Wallets/Wallets.service';
-import { TradeOrdersCacheService } from '../graphql/TradeOrdersCache/TradeOrdersCache.service';
-import { MarketTradesService } from '../graphql/MarketTrades/MarketTrades.service';
+import { WalletsService } from '../modules/Wallets/Wallets.service';
+import { TradeOrdersCacheService } from '../modules/TradeOrdersCache/TradeOrdersCache.service';
+import { MarketTradesService } from '../modules/MarketTrades/MarketTrades.service';
 import { JwtAuthGuard } from '../auth/guards/auth.guards';
 import { OrderType } from '../common/enums';
+import { ProsumersService } from 'src/modules/Prosumers/Prosumers.service';
 
 interface PlaceOrderRequest {
   walletAddress: string;
@@ -69,6 +70,7 @@ export class TradingController {
     private walletsService: WalletsService,
     private tradeOrdersCacheService: TradeOrdersCacheService,
     private marketTradesService: MarketTradesService,
+    private prosumersService: ProsumersService,
   ) {}
 
   @Post('approve')
@@ -557,7 +559,9 @@ export class TradingController {
   ) {
     try {
       const wallet = await this.walletsService.findOne(walletAddress);
-      const prosumers = await this.walletsService.findProsumers(walletAddress);
+      // const prosumers = await this.walletsService.findProsumers(walletAddress);
+      const prosumers =
+        await this.prosumersService.findByWalletAddress(walletAddress);
 
       if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
         throw new BadRequestException(

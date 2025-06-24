@@ -5,30 +5,27 @@ import { EnergySettlementService } from './energy-settlement.service';
 import { DashboardService } from './dashboard.service';
 // import { DeviceMonitoringService } from './device-monitoring.service';
 import { HealthCheckService } from './health-check.service';
-import { MqttMessageLogsModule } from '../graphql/MqttMessageLogs/MqttMessageLogs.module';
-import { EnergyReadingsModule } from '../graphql/EnergyReadings/EnergyReadings.module';
-import { DeviceHeartbeatsModule } from '../graphql/DeviceHeartbeats/DeviceHeartbeats.module';
-import { DeviceStatusSnapshotsModule } from '../graphql/DeviceStatusSnapshots/DeviceStatusSnapshots.module';
-import { DeviceCommandsModule } from '../graphql/DeviceCommands/DeviceCommands.module';
-import { WalletsModule } from '../graphql/Wallets/Wallets.module';
-import { TransactionLogsModule } from '../graphql/TransactionLogs/TransactionLogs.module';
-import { TradeOrdersCacheModule } from '../graphql/TradeOrdersCache/TradeOrdersCache.module';
-import { MarketTradesModule } from '../graphql/MarketTrades/MarketTrades.module';
-import { BlockchainApprovalsModule } from '../graphql/BlockchainApprovals/BlockchainApprovals.module';
-import { EnergySettlementsModule } from '../graphql/EnergySettlements/EnergySettlements.module';
-import { SmartMetersModule } from '../graphql/SmartMeters/SmartMeters.module';
+import { MqttMessageLogsModule } from '../modules/MqttMessageLogs/MqttMessageLogs.module';
+import { DeviceStatusSnapshotsModule } from '../modules/DeviceStatusSnapshots/DeviceStatusSnapshots.module';
+import { DeviceCommandsModule } from '../modules/DeviceCommands/DeviceCommands.module';
+import { WalletsModule } from '../modules/Wallets/Wallets.module';
+import { TransactionLogsModule } from '../modules/TransactionLogs/TransactionLogs.module';
+import { TradeOrdersCacheModule } from '../modules/TradeOrdersCache/TradeOrdersCache.module';
+import { MarketTradesModule } from '../modules/MarketTrades/MarketTrades.module';
+import { BlockchainApprovalsModule } from '../modules/BlockchainApprovals/BlockchainApprovals.module';
+import { EnergySettlementsModule } from '../modules/EnergySettlements/EnergySettlements.module';
+import { SmartMetersModule } from '../modules/SmartMeters/SmartMeters.module';
 import { CommonModule } from '../common/common.module';
 import { WebSocketModule } from '../websocket/websocket.module';
-import { EnergyReadingsDetailedModule } from 'src/graphql/EnergyReadingsDetailed/EnergyReadingsDetailed.module';
+import { EnergyReadingsDetailedModule } from 'src/modules/EnergyReadingsDetailed/EnergyReadingsDetailed.module';
+import { ProsumersModule } from 'src/modules/Prosumers/Prosumers.module';
 
 @Module({
   imports: [
     CommonModule,
     WebSocketModule,
     MqttMessageLogsModule,
-    EnergyReadingsModule,
     EnergyReadingsDetailedModule,
-    DeviceHeartbeatsModule,
     DeviceStatusSnapshotsModule,
     DeviceCommandsModule,
     WalletsModule,
@@ -38,6 +35,7 @@ import { EnergyReadingsDetailedModule } from 'src/graphql/EnergyReadingsDetailed
     BlockchainApprovalsModule,
     EnergySettlementsModule,
     SmartMetersModule,
+    ProsumersModule,
   ],
   providers: [
     MqttService,

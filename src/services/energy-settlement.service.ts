@@ -1,15 +1,17 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+// import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
-import { EnergySettlementsService } from '../graphql/EnergySettlements/EnergySettlements.service';
-import { SmartMetersService } from '../graphql/SmartMeters/SmartMeters.service';
-import { EnergyReadingsDetailedService } from '../graphql/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
+import { EnergySettlementsService } from '../modules/EnergySettlements/EnergySettlements.service';
+import { SmartMetersService } from '../modules/SmartMeters/SmartMeters.service';
+import { EnergyReadingsDetailedService } from '../modules/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
 import { BlockchainService } from './blockchain.service';
 import { MqttService } from './mqtt.service';
-import { TransactionLogsService } from '../graphql/TransactionLogs/TransactionLogs.service';
+import { TransactionLogsService } from '../modules/TransactionLogs/TransactionLogs.service';
 import { SettlementTrigger, TransactionStatus } from '../common/enums';
 import { DeviceCommandPayload } from '../common/interfaces';
-import { WalletsService } from 'src/graphql/Wallets/Wallets.service';
+import { WalletsService } from 'src/modules/Wallets/Wallets.service';
+import { ProsumersService } from 'src/modules/Prosumers/Prosumers.service';
 
 interface SettlementReadingsData {
   exportEnergyWh: number;
@@ -33,12 +35,13 @@ export class EnergySettlementService {
     private blockchainService: BlockchainService,
     private mqttService: MqttService,
     private transactionLogsService: TransactionLogsService,
+    private prosumersService: ProsumersService,
     private readonly WalletsService: WalletsService, // Assuming this is imported correctly
   ) {}
 
   // Run every 5 minutes by default
-  // @Cron('*/5 * * * * *')
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  @Cron('*/5 * * * * *')
+  // @Cron(CronExpression.EVERY_5_MINUTES)
   async periodicSettlement() {
     const isAutoSettlementEnabled =
       this.configService.get('AUTO_SETTLEMENT_ENABLED') === 'true';
@@ -51,9 +54,9 @@ export class EnergySettlementService {
     await this.processAllMetersSettlement(SettlementTrigger.PERIODIC);
   }
 
-  async getSettlementIdDbByTxHash(txHash: string): Promise<string | null> {
+  async getSettlementIdDbByTxHash(txHash: string): Promise<number | null> {
     const entity = await this.energySettlementsService.findByTxHash(txHash);
-    return entity?.settlementId?.toString() || null;
+    return entity?.settlementId || null;
   }
 
   async getMeterIdByTxHash(txHash: string): Promise<string | null> {
@@ -114,7 +117,8 @@ export class EnergySettlementService {
       // );
 
       // Get meter owner's wallet
-      const prosumers = await this.smartMetersService.findProsumers(meterId);
+      // const prosumers = await this.smartMetersService.findProsumers(meterId);
+      const prosumers = await this.prosumersService.findByMeterId(meterId);
       if (!prosumers || prosumers.length === 0) {
         this.logger.warn(`No prosumer found for meter ${meterId}`);
         return null;
@@ -183,6 +187,11 @@ export class EnergySettlementService {
         etkAmountCredited: etkAmount,
         status: 'PENDING',
         createdAtBackend: new Date().toISOString(),
+        detailedEnergyBreakdown: {
+          exportEnergyWh: latestReadings.exportEnergyWh,
+          importEnergyWh: latestReadings.importEnergyWh,
+          netEnergyWh,
+        },
       });
 
       // Generate unique settlement ID for blockchain
@@ -205,7 +214,7 @@ export class EnergySettlementService {
           prosumerAddress,
           netEnergyWhInt, // Use Wh directly as the contract expects
           settlementId,
-          settlement.settlementId.toString(),
+          settlement.settlementId,
         );
 
         this.logger.log(
@@ -358,8 +367,7 @@ export class EnergySettlementService {
   ): Promise<string | null> {
     try {
       // Verify that the prosumer owns this meter
-      const meterProsumers =
-        await this.smartMetersService.findProsumers(meterId);
+      const meterProsumers = await this.prosumersService.findByMeterId(meterId);
 
       if (
         !meterProsumers.find(
@@ -383,7 +391,7 @@ export class EnergySettlementService {
   }
 
   async confirmSettlement(
-    settlementId: string,
+    settlementId: number,
     txHash: string,
     success: boolean,
     etkAmount?: number,

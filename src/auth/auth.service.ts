@@ -5,16 +5,12 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { ProsumersService } from '../graphql/Prosumers/Prosumers.service';
-import { WalletsService } from '../graphql/Wallets/Wallets.service';
+import { ProsumersService } from '../modules/Prosumers/Prosumers.service';
+import { WalletsService } from '../modules/Wallets/Wallets.service';
 import { CryptoService } from '../common/crypto.service';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
-import { TransactionLogsService } from '../graphql/TransactionLogs/TransactionLogs.service';
-import {
-  TransactionType,
-  TransactionStatus,
-  WalletImportMethod,
-} from '../common/enums';
+import { TransactionLogsService } from '../modules/TransactionLogs/TransactionLogs.service';
+import { TransactionType, WalletImportMethod } from '../common/enums';
 
 @Injectable()
 export class AuthService {
@@ -199,7 +195,7 @@ export class AuthService {
       const { passwordHash, ...profile } = prosumer;
 
       // Get associated wallets
-      const wallets = await this.prosumersService.findWalletsList(prosumerId);
+      const wallets = await this.walletsService.findByProsumerId(prosumerId);
 
       return {
         ...profile,

@@ -9,10 +9,12 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { MqttService } from '../services/mqtt.service';
-import { DeviceCommandsService } from '../graphql/DeviceCommands/DeviceCommands.service';
-import { SmartMetersService } from '../graphql/SmartMeters/SmartMeters.service';
+import { DeviceCommandsService } from '../modules/DeviceCommands/DeviceCommands.service';
+import { SmartMetersService } from '../modules/SmartMeters/SmartMeters.service';
 import { JwtAuthGuard } from '../auth/guards/auth.guards';
 import { DeviceCommandPayload } from '../common/interfaces';
+import { ProsumersService } from 'src/modules/Prosumers/Prosumers.service';
+import { DeviceStatusSnapshotsService } from 'src/modules/DeviceStatusSnapshots/DeviceStatusSnapshots.service';
 
 interface DeviceControlRequest {
   meterId: string;
@@ -26,6 +28,8 @@ export class DeviceController {
     private mqttService: MqttService,
     private deviceCommandsService: DeviceCommandsService,
     private smartMetersService: SmartMetersService,
+    private prosumersService: ProsumersService, // Assuming this is the correct service for prosumer validation
+    private deviceStatusSnapshotsService: DeviceStatusSnapshotsService,
   ) {}
 
   @Post('control')
@@ -36,7 +40,7 @@ export class DeviceController {
     // Verify that the prosumer owns this device
     try {
       const meter = await this.smartMetersService.findOne(meterId);
-      const prosumers = await this.smartMetersService.findProsumers(meterId);
+      const prosumers = await this.prosumersService.findByMeterId(meterId);
 
       if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
         throw new BadRequestException(
@@ -108,7 +112,7 @@ export class DeviceController {
     // Verify ownership
     try {
       const meter = await this.smartMetersService.findOne(meterId);
-      const prosumers = await this.smartMetersService.findProsumers(meterId);
+      const prosumers = await this.prosumersService.findByMeterId(meterId);
 
       if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
         throw new BadRequestException('Unauthorized');
@@ -134,7 +138,7 @@ export class DeviceController {
     // Verify ownership
     try {
       const meter = await this.smartMetersService.findOne(meterId);
-      const prosumers = await this.smartMetersService.findProsumers(meterId);
+      const prosumers = await this.prosumersService.findByMeterId(meterId);
 
       if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
         throw new BadRequestException('Unauthorized');
@@ -145,8 +149,9 @@ export class DeviceController {
 
     // Get device info and latest status data
     const meter = await this.smartMetersService.findOne(meterId);
-    const statusSnapshots =
-      await this.smartMetersService.findDevicestatussnapshotsList(meterId);
+    const statusSnapshots = await this.deviceStatusSnapshotsService.findAll({
+      meterId,
+    });
 
     const latestStatus = statusSnapshots.sort(
       (a, b) =>

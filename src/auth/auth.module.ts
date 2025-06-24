@@ -6,9 +6,9 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
-import { ProsumersModule } from '../graphql/Prosumers/Prosumers.module';
-import { WalletsModule } from '../graphql/Wallets/Wallets.module';
-import { TransactionLogsModule } from '../graphql/TransactionLogs/TransactionLogs.module';
+import { ProsumersModule } from '../modules/Prosumers/Prosumers.module';
+import { WalletsModule } from '../modules/Wallets/Wallets.module';
+import { TransactionLogsModule } from '../modules/TransactionLogs/TransactionLogs.module';
 import { CommonModule } from '../common/common.module';
 
 @Module({

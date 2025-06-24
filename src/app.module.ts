@@ -8,38 +8,34 @@ import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 
-import { BlockchainApprovalsModule } from './graphql/BlockchainApprovals/BlockchainApprovals.module';
-import { BlockchainApprovals } from './graphql/BlockchainApprovals/entities/BlockchainApprovals.entity';
-import { DeviceCommandsModule } from './graphql/DeviceCommands/DeviceCommands.module';
-import { DeviceCommands } from './graphql/DeviceCommands/entities/DeviceCommands.entity';
-import { DeviceHeartbeatsModule } from './graphql/DeviceHeartbeats/DeviceHeartbeats.module';
-import { DeviceHeartbeats } from './graphql/DeviceHeartbeats/entities/DeviceHeartbeats.entity';
-import { DeviceStatusSnapshotsModule } from './graphql/DeviceStatusSnapshots/DeviceStatusSnapshots.module';
-import { DeviceStatusSnapshots } from './graphql/DeviceStatusSnapshots/entities/DeviceStatusSnapshots.entity';
-import { EnergyReadingsModule } from './graphql/EnergyReadings/EnergyReadings.module';
-import { EnergyReadings } from './graphql/EnergyReadings/entities/EnergyReadings.entity';
-import { EnergyReadingsDetailedModule } from './graphql/EnergyReadingsDetailed/EnergyReadingsDetailed.module';
-import { EnergyReadingsDetailed } from './graphql/EnergyReadingsDetailed/entities/EnergyReadingsDetailed.entity';
-import { EnergySettlementsModule } from './graphql/EnergySettlements/EnergySettlements.module';
-import { EnergySettlements } from './graphql/EnergySettlements/entities/EnergySettlements.entity';
-import { IdrsConversionsModule } from './graphql/IdrsConversions/IdrsConversions.module';
-import { IdrsConversions } from './graphql/IdrsConversions/entities/IdrsConversions.entity';
-import { MarketTradesModule } from './graphql/MarketTrades/MarketTrades.module';
-import { MarketTrades } from './graphql/MarketTrades/entities/MarketTrades.entity';
-import { MqttMessageLogsModule } from './graphql/MqttMessageLogs/MqttMessageLogs.module';
-import { MqttMessageLogs } from './graphql/MqttMessageLogs/entities/MqttMessageLogs.entity';
-import { ProsumersModule } from './graphql/Prosumers/Prosumers.module';
-import { Prosumers } from './graphql/Prosumers/entities/Prosumers.entity';
-import { SmartMetersModule } from './graphql/SmartMeters/SmartMeters.module';
-import { SmartMeters } from './graphql/SmartMeters/entities/SmartMeters.entity';
-import { SystemConfigModule } from './graphql/SystemConfig/SystemConfig.module';
-import { SystemConfig } from './graphql/SystemConfig/entities/SystemConfig.entity';
-import { TradeOrdersCacheModule } from './graphql/TradeOrdersCache/TradeOrdersCache.module';
-import { TradeOrdersCache } from './graphql/TradeOrdersCache/entities/TradeOrdersCache.entity';
-import { TransactionLogsModule } from './graphql/TransactionLogs/TransactionLogs.module';
-import { TransactionLogs } from './graphql/TransactionLogs/entities/TransactionLogs.entity';
-import { WalletsModule } from './graphql/Wallets/Wallets.module';
-import { Wallets } from './graphql/Wallets/entities/Wallets.entity';
+import { BlockchainApprovalsModule } from './modules/BlockchainApprovals/BlockchainApprovals.module';
+import { BlockchainApprovals } from './modules/BlockchainApprovals/entities/BlockchainApprovals.entity';
+import { DeviceCommandsModule } from './modules/DeviceCommands/DeviceCommands.module';
+import { DeviceCommands } from './modules/DeviceCommands/entities/DeviceCommands.entity';
+import { DeviceStatusSnapshotsModule } from './modules/DeviceStatusSnapshots/DeviceStatusSnapshots.module';
+import { DeviceStatusSnapshots } from './modules/DeviceStatusSnapshots/entities/DeviceStatusSnapshots.entity';
+import { EnergyReadingsDetailedModule } from './modules/EnergyReadingsDetailed/EnergyReadingsDetailed.module';
+import { EnergyReadingsDetailed } from './modules/EnergyReadingsDetailed/entities/EnergyReadingsDetailed.entity';
+import { EnergySettlementsModule } from './modules/EnergySettlements/EnergySettlements.module';
+import { EnergySettlements } from './modules/EnergySettlements/entities/EnergySettlements.entity';
+import { IdrsConversionsModule } from './modules/IdrsConversions/IdrsConversions.module';
+import { IdrsConversions } from './modules/IdrsConversions/entities/IdrsConversions.entity';
+import { MarketTradesModule } from './modules/MarketTrades/MarketTrades.module';
+import { MarketTrades } from './modules/MarketTrades/entities/MarketTrades.entity';
+import { MqttMessageLogsModule } from './modules/MqttMessageLogs/MqttMessageLogs.module';
+import { MqttMessageLogs } from './modules/MqttMessageLogs/entities/MqttMessageLogs.entity';
+import { ProsumersModule } from './modules/Prosumers/Prosumers.module';
+import { Prosumers } from './modules/Prosumers/entities/Prosumers.entity';
+import { SmartMetersModule } from './modules/SmartMeters/SmartMeters.module';
+import { SmartMeters } from './modules/SmartMeters/entities/SmartMeters.entity';
+import { SystemConfigModule } from './modules/SystemConfig/SystemConfig.module';
+import { SystemConfig } from './modules/SystemConfig/entities/SystemConfig.entity';
+import { TradeOrdersCacheModule } from './modules/TradeOrdersCache/TradeOrdersCache.module';
+import { TradeOrdersCache } from './modules/TradeOrdersCache/entities/TradeOrdersCache.entity';
+import { TransactionLogsModule } from './modules/TransactionLogs/TransactionLogs.module';
+import { TransactionLogs } from './modules/TransactionLogs/entities/TransactionLogs.entity';
+import { WalletsModule } from './modules/Wallets/Wallets.module';
+import { Wallets } from './modules/Wallets/entities/Wallets.entity';
 
 // Import new modules
 import { AuthModule } from './auth/auth.module';
@@ -75,9 +71,7 @@ import { WebSocketModule } from './websocket/websocket.module';
       entities: [
         BlockchainApprovals,
         DeviceCommands,
-        DeviceHeartbeats,
         DeviceStatusSnapshots,
-        EnergyReadings,
         EnergyReadingsDetailed,
         EnergySettlements,
         IdrsConversions,
@@ -94,9 +88,7 @@ import { WebSocketModule } from './websocket/websocket.module';
     }),
     BlockchainApprovalsModule,
     DeviceCommandsModule,
-    DeviceHeartbeatsModule,
     DeviceStatusSnapshotsModule,
-    EnergyReadingsModule,
     EnergyReadingsDetailedModule,
     EnergySettlementsModule,
     IdrsConversionsModule,
