@@ -2,9 +2,11 @@ import {
   Injectable,
   BadRequestException,
   UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { ethers } from 'ethers';
 import { ProsumersService } from '../modules/Prosumers/Prosumers.service';
 import { WalletsService } from '../modules/Wallets/Wallets.service';
 import { CryptoService } from '../common/crypto.service';
@@ -12,8 +14,24 @@ import { LoginDto, RegisterDto } from './dto/auth.dto';
 import { TransactionLogsService } from '../modules/TransactionLogs/TransactionLogs.service';
 import { TransactionType, WalletImportMethod } from '../common/enums';
 
+interface ValidatedProsumer {
+  prosumerId: string;
+  email: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface RefreshObject {
+  access_token: string;
+  prosumerId: string;
+  email: string;
+}
+
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private prosumersService: ProsumersService,
     private walletsService: WalletsService,
@@ -23,7 +41,10 @@ export class AuthService {
     private transactionLogsService: TransactionLogsService,
   ) {}
 
-  async validateProsumer(email: string, password: string): Promise<any> {
+  async validateProsumer(
+    email: string,
+    password: string,
+  ): Promise<ValidatedProsumer | null> {
     try {
       // Find prosumer by email
       const prosumers = await this.prosumersService.findAll({ email });
@@ -43,9 +64,19 @@ export class AuthService {
       }
 
       // Return prosumer without password hash
-      const { passwordHash, ...result } = prosumer;
+      const result = {
+        prosumerId: prosumer.prosumerId,
+        email: prosumer.email,
+        name: prosumer.name,
+        createdAt: prosumer.createdAt.toISOString(),
+        updatedAt: prosumer.updatedAt.toISOString(),
+      };
+
       return result;
     } catch (error) {
+      this.logger.error(
+        `Error validating prosumer with email ${email}: ${error instanceof Error ? error.message : String(error)}`,
+      );
       return null;
     }
   }
@@ -143,7 +174,7 @@ export class AuthService {
 
   async refreshToken(refreshToken: string) {
     try {
-      const payload = this.jwtService.verify(refreshToken);
+      const payload: RefreshObject = this.jwtService.verify(refreshToken);
       const prosumer = await this.prosumersService.findOne(payload.prosumerId);
 
       const newPayload = {
@@ -157,17 +188,15 @@ export class AuthService {
       return {
         access_token: accessToken,
       };
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
-
   private async generateWalletForProsumer(
     prosumerId: string,
     walletName: string,
   ) {
     // Generate Ethereum wallet
-    const ethers = require('ethers');
     const wallet = ethers.Wallet.createRandom();
 
     // Encrypt private key
@@ -192,13 +221,20 @@ export class AuthService {
   async getProfile(prosumerId: string) {
     try {
       const prosumer = await this.prosumersService.findOne(prosumerId);
-      const { passwordHash, ...profile } = prosumer;
+      // const { passwordHash, ...profile } = prosumer;
+      const prosumerWithoutPassword = {
+        prosumerId: prosumer.prosumerId,
+        email: prosumer.email,
+        name: prosumer.name,
+        createdAt: prosumer.createdAt.toISOString(),
+        updatedAt: prosumer.updatedAt.toISOString(),
+      };
 
       // Get associated wallets
       const wallets = await this.walletsService.findByProsumerId(prosumerId);
 
       return {
-        ...profile,
+        prosumerWithoutPassword,
         wallets: wallets.map((wallet) => ({
           walletAddress: wallet.walletAddress,
           walletName: wallet.walletName,
@@ -207,6 +243,11 @@ export class AuthService {
         })),
       };
     } catch (error) {
+      this.logger.error(
+        `Error fetching profile for prosumerId ${prosumerId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
       throw new UnauthorizedException('Profile not found');
     }
   }
