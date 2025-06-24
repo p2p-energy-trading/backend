@@ -8,6 +8,7 @@ import {
   Request,
   BadRequestException,
 } from '@nestjs/common';
+import { ethers } from 'ethers';
 import { WalletsService } from '../modules/Wallets/Wallets.service';
 import { IdrsConversionsService } from '../modules/IdrsConversions/IdrsConversions.service';
 import { CryptoService } from '../common/crypto.service';
@@ -28,6 +29,12 @@ interface IdrsConversionRequest {
   amount: number;
 }
 
+interface User extends Request {
+  user: {
+    prosumerId: string;
+  };
+}
+
 @Controller('wallet')
 @UseGuards(JwtAuthGuard)
 export class WalletController {
@@ -39,15 +46,13 @@ export class WalletController {
   ) {}
 
   @Post('create')
-  async createWallet(@Body() body: CreateWalletRequest, @Request() req) {
+  async createWallet(@Body() body: CreateWalletRequest, @Request() req: User) {
     const prosumerId = req.user.prosumerId;
 
     let walletAddress: string;
     let privateKey: string;
-
     if (body.importMethod === 'GENERATED') {
       // Generate new wallet
-      const ethers = require('ethers');
       const wallet = ethers.Wallet.createRandom();
       walletAddress = wallet.address;
       privateKey = wallet.privateKey;
@@ -55,7 +60,6 @@ export class WalletController {
       if (!body.privateKey) {
         throw new BadRequestException('Private key is required for import');
       }
-      const ethers = require('ethers');
       const wallet = new ethers.Wallet(body.privateKey);
       walletAddress = wallet.address;
       privateKey = body.privateKey;
@@ -63,7 +67,6 @@ export class WalletController {
       if (!body.mnemonic) {
         throw new BadRequestException('Mnemonic is required for import');
       }
-      const ethers = require('ethers');
       const wallet = ethers.Wallet.fromPhrase(body.mnemonic);
       walletAddress = wallet.address;
       privateKey = wallet.privateKey;
@@ -102,7 +105,7 @@ export class WalletController {
   }
 
   @Get('list')
-  async getWallets(@Request() req) {
+  async getWallets(@Request() req: User) {
     const prosumerId = req.user.prosumerId;
 
     const wallets = await this.walletsService.findAll({ prosumerId });
@@ -123,18 +126,19 @@ export class WalletController {
   @Get(':walletAddress')
   async getWallet(
     @Param('walletAddress') walletAddress: string,
-    @Request() req,
+    @Request() req: User,
   ) {
     const prosumerId = req.user.prosumerId;
 
     // Verify ownership
-    const wallet = await this.walletsService.findOne(walletAddress);
     const prosumers =
       await this.prosumersService.findByWalletAddress(walletAddress);
 
     if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
       throw new BadRequestException('Unauthorized: You do not own this wallet');
     }
+
+    const wallet = await this.walletsService.findOne(walletAddress);
 
     return {
       success: true,
@@ -150,11 +154,10 @@ export class WalletController {
   }
 
   @Post('idrs-conversion')
-  async convertIdrs(@Body() body: IdrsConversionRequest, @Request() req) {
+  async convertIdrs(@Body() body: IdrsConversionRequest, @Request() req: User) {
     const prosumerId = req.user.prosumerId;
 
     // Verify wallet ownership
-    const wallet = await this.walletsService.findOne(body.walletAddress);
     const prosumers = await this.prosumersService.findByWalletAddress(
       body.walletAddress,
     );
@@ -192,12 +195,11 @@ export class WalletController {
   @Get(':walletAddress/conversions')
   async getConversions(
     @Param('walletAddress') walletAddress: string,
-    @Request() req,
+    @Request() req: User,
   ) {
     const prosumerId = req.user.prosumerId;
 
     // Verify ownership
-    const wallet = await this.walletsService.findOne(walletAddress);
     const prosumers =
       await this.prosumersService.findByWalletAddress(walletAddress);
 
@@ -220,12 +222,11 @@ export class WalletController {
   @Post(':walletAddress/activate')
   async activateWallet(
     @Param('walletAddress') walletAddress: string,
-    @Request() req,
+    @Request() req: User,
   ) {
     const prosumerId = req.user.prosumerId;
 
     // Verify ownership
-    const wallet = await this.walletsService.findOne(walletAddress);
     const prosumers =
       await this.prosumersService.findByWalletAddress(walletAddress);
 
@@ -255,7 +256,7 @@ export class WalletController {
   @Post(':walletAddress/deactivate')
   async deactivateWallet(
     @Param('walletAddress') walletAddress: string,
-    @Request() req,
+    @Request() req: User,
   ) {
     const prosumerId = req.user.prosumerId;
 

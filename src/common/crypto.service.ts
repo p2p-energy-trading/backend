@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as crypto from 'crypto';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class CryptoService {
@@ -50,21 +51,18 @@ export class CryptoService {
   generateCorrelationId(): string {
     return crypto.randomUUID();
   }
-
   /**
    * Hash a password using bcrypt-like algorithm
    */
   async hashPassword(password: string): Promise<string> {
-    const bcrypt = require('bcryptjs');
     const saltRounds = 12;
-    return bcrypt.hash(password, saltRounds);
+    return await bcrypt.hash(password, saltRounds);
   }
 
   /**
    * Verify a password against its hash
    */
   async verifyPassword(password: string, hash: string): Promise<boolean> {
-    const bcrypt = require('bcryptjs');
-    return bcrypt.compare(password, hash);
+    return await bcrypt.compare(password, hash);
   }
 }
