@@ -9,6 +9,7 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { ProsumersModule } from '../modules/Prosumers/Prosumers.module';
 import { WalletsModule } from '../modules/Wallets/Wallets.module';
 import { TransactionLogsModule } from '../modules/TransactionLogs/TransactionLogs.module';
+import { TokenBlacklistModule } from '../modules/TokenBlacklist/TokenBlacklist.module';
 import { CommonModule } from '../common/common.module';
 
 @Module({
@@ -27,6 +28,7 @@ import { CommonModule } from '../common/common.module';
     ProsumersModule,
     WalletsModule,
     TransactionLogsModule,
+    TokenBlacklistModule,
     CommonModule,
   ],
   providers: [AuthService, JwtStrategy, LocalStrategy],

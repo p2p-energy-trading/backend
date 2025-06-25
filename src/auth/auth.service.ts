@@ -13,6 +13,9 @@ import { CryptoService } from '../common/crypto.service';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
 import { TransactionLogsService } from '../modules/TransactionLogs/TransactionLogs.service';
 import { TransactionType, WalletImportMethod } from '../common/enums';
+import { BlacklistService } from 'src/modules/TokenBlacklist/TokenBlacklist.service';
+import { BlacklistReason } from 'src/modules/TokenBlacklist/entities/TokenBlacklist.entity';
+import { Request } from 'express';
 
 interface ValidatedProsumer {
   prosumerId: string;
@@ -39,6 +42,7 @@ export class AuthService {
     private configService: ConfigService,
     private cryptoService: CryptoService,
     private transactionLogsService: TransactionLogsService,
+    private blacklistService: BlacklistService,
   ) {}
 
   async validateProsumer(
@@ -49,6 +53,16 @@ export class AuthService {
       // Find prosumer by email
       const prosumers = await this.prosumersService.findAll({ email });
       const prosumer = prosumers[0];
+
+      this.logger.debug(
+        `Validating prosumer with email ${email}, found: ${prosumer ? 'yes' : 'no'}`,
+      );
+
+      // generate hash
+      const hashedPassword = await this.cryptoService.hashPassword('password');
+      this.logger.debug(
+        `Hashed password for prosumer with email ${email}: ${hashedPassword}`,
+      );
 
       if (!prosumer) {
         return null;
@@ -174,7 +188,18 @@ export class AuthService {
 
   async refreshToken(refreshToken: string) {
     try {
+      // Check if token is blacklisted
+      if (await this.blacklistService.isTokenBlacklisted(refreshToken)) {
+        throw new UnauthorizedException('Token has been revoked');
+      }
+
       const payload: RefreshObject = this.jwtService.verify(refreshToken);
+
+      // Check if user is blacklisted (logged out from all devices)
+      if (await this.blacklistService.isUserBlacklisted(payload.prosumerId)) {
+        throw new UnauthorizedException('User session has been terminated');
+      }
+
       const prosumer = await this.prosumersService.findOne(payload.prosumerId);
 
       const newPayload = {
@@ -188,7 +213,10 @@ export class AuthService {
       return {
         access_token: accessToken,
       };
-    } catch {
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
@@ -249,6 +277,104 @@ export class AuthService {
         }`,
       );
       throw new UnauthorizedException('Profile not found');
+    }
+  }
+
+  async logout(prosumerId: string, refreshToken?: string, request?: Request) {
+    try {
+      // Extract request metadata
+      const ipAddress: string =
+        request?.ip || request?.connection?.remoteAddress || 'unknown';
+      const userAgent: string = request?.get?.('User-Agent') || 'unknown';
+
+      // Blacklist refresh token if provided
+      if (refreshToken) {
+        await this.blacklistService.blacklistToken(
+          refreshToken,
+          prosumerId,
+          BlacklistReason.LOGOUT,
+          ipAddress,
+          userAgent,
+          'User initiated logout',
+        );
+      }
+
+      // Log logout activity
+      await this.transactionLogsService.create({
+        prosumerId: prosumerId,
+        transactionType: TransactionType.DEVICE_COMMAND,
+        description: JSON.stringify({
+          message: 'User logged out',
+          timestamp: new Date().toISOString(),
+          ipAddress: ipAddress,
+          userAgent: userAgent,
+        }),
+        amountPrimary: 0,
+        currencyPrimary: 'ETK',
+        transactionTimestamp: new Date().toISOString(),
+      });
+
+      this.logger.log(`Prosumer ${prosumerId} logged out successfully`);
+
+      return {
+        message: 'Logged out successfully',
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error during logout for prosumerId ${prosumerId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      throw new BadRequestException('Logout failed');
+    }
+  }
+
+  async logoutAll(prosumerId: string, request?: Request) {
+    try {
+      // Extract request metadata
+      const ipAddress: string =
+        request?.ip || request?.connection?.remoteAddress || 'unknown';
+      const userAgent: string = request?.get?.('User-Agent') || 'unknown';
+
+      // Blacklist all tokens for this user
+      await this.blacklistService.blacklistUser(
+        prosumerId,
+        BlacklistReason.LOGOUT_ALL_DEVICES,
+        ipAddress,
+        userAgent,
+        'SYSTEM',
+        'User initiated logout from all devices',
+      );
+
+      // Log logout from all devices
+      await this.transactionLogsService.create({
+        prosumerId: prosumerId,
+        transactionType: TransactionType.DEVICE_COMMAND,
+        description: JSON.stringify({
+          message: 'User logged out from all devices',
+          timestamp: new Date().toISOString(),
+          ipAddress: ipAddress,
+          userAgent: userAgent,
+        }),
+        amountPrimary: 0,
+        currencyPrimary: 'ETK',
+        transactionTimestamp: new Date().toISOString(),
+      });
+
+      this.logger.log(`Prosumer ${prosumerId} logged out from all devices`);
+
+      return {
+        message: 'Logged out from all devices successfully',
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error during logout all for prosumerId ${prosumerId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      throw new BadRequestException('Logout from all devices failed');
     }
   }
 }
