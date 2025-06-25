@@ -23,7 +23,7 @@ export enum BlacklistReason {
   EXPIRED = 'EXPIRED',
 }
 
-@Entity('TOKEN_BLACKLIST')
+@Entity()
 @Index(['prosumerId'])
 @Index(['blacklistType'])
 @Index(['tokenHash'])

@@ -20,8 +20,3 @@ export class RegisterDto {
   @IsNotEmpty()
   name: string;
 }
-
-export class RefreshTokenDto {
-  @IsNotEmpty()
-  refreshToken: string;
-}

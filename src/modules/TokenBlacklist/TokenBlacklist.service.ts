@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
@@ -20,6 +20,8 @@ export enum BlacklistReason {
 
 @Injectable()
 export class BlacklistService {
+  private readonly logger = new Logger(BlacklistService.name);
+
   constructor(
     @InjectRepository(TokenBlacklist)
     private blacklistRepository: Repository<TokenBlacklist>,
@@ -37,6 +39,14 @@ export class BlacklistService {
   ): Promise<void> {
     const tokenHash = this.hashToken(token);
     const expiresAt = new Date(Date.now() + this.getJwtExpirationMs());
+
+    this.logger.debug(
+      `Original token: ${token}, Prosumer ID: ${prosumerId}, Reason: ${reason}`,
+    );
+
+    this.logger.debug(
+      `Blacklisting token for prosumer ${prosumerId}: ${tokenHash}`,
+    );
 
     // Check if token is already blacklisted
     const existing = await this.blacklistRepository.findOne({
@@ -112,18 +122,36 @@ export class BlacklistService {
 
   // Check if token is blacklisted
   async isTokenBlacklisted(token: string): Promise<boolean> {
-    const tokenHash = this.hashToken(token);
+    try {
+      this.logger.debug(`Checking if token is blacklisted: ${token}`);
+      if (!token) {
+        this.logger.warn('Token is empty or undefined');
+        return false;
+      }
+      const tokenHash = this.hashToken(token);
+      this.logger.debug(`Hashed token: ${tokenHash}`);
 
-    const blacklisted = await this.blacklistRepository.findOne({
-      where: {
-        tokenHash,
-        blacklistType: BlacklistType.TOKEN,
-        isActive: true,
-        expiresAt: MoreThan(new Date()),
-      },
-    });
+      const blacklisted = await this.blacklistRepository.findOne({
+        where: {
+          tokenHash,
+          blacklistType: BlacklistType.TOKEN,
+          isActive: true,
+          expiresAt: MoreThan(new Date()),
+        },
+      });
 
-    return !!blacklisted;
+      this.logger.debug(
+        `Token ${tokenHash} is ${blacklisted ? 'blacklisted' : 'not blacklisted'}`,
+      );
+
+      return !!blacklisted;
+    } catch (error) {
+      this.logger.error(
+        `Error checking token blacklist status: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      return false;
+    }
   }
 
   // Check if user is blacklisted (all tokens invalid)

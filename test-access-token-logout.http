@@ -1,0 +1,38 @@
+### Test Logout dengan Access Token
+### Pastikan untuk menggunakan access token yang valid dari login
+
+### 1. Login terlebih dahulu
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "email": "lineoz@example.com",
+  "password": "password"
+}
+
+### 2. Logout dengan access token di body (opsional)
+POST http://localhost:3000/auth/logout
+Authorization: Bearer YOUR_ACCESS_TOKEN_HERE
+Content-Type: application/json
+
+{
+  "accessToken": "YOUR_ACCESS_TOKEN_HERE"
+}
+
+### 3. Logout hanya dengan token di Authorization header
+POST http://localhost:3000/auth/logout
+Authorization: Bearer YOUR_ACCESS_TOKEN_HERE
+Content-Type: application/json
+
+{}
+
+### 4. Test endpoint yang memerlukan autentikasi setelah logout (harus gagal)
+GET http://localhost:3000/auth/profile
+Authorization: Bearer YOUR_ACCESS_TOKEN_HERE
+
+### 5. Logout dari semua perangkat
+POST http://localhost:3000/auth/logout-all
+Authorization: Bearer YOUR_ACCESS_TOKEN_HERE
+Content-Type: application/json
+
+{}

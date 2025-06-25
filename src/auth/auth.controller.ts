@@ -7,9 +7,17 @@ import {
   Request,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginDto, RegisterDto, RefreshTokenDto } from './dto/auth.dto';
+import { RegisterDto } from './dto/auth.dto';
 import { JwtAuthGuard, LocalAuthGuard } from './guards/auth.guards';
 import { Request as ExpressRequest } from 'express';
+
+interface ValidatedProsumer {
+  prosumerId: string;
+  email: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 @Controller('auth')
 export class AuthController {
@@ -17,18 +25,14 @@ export class AuthController {
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
-  async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  login(@Request() req: { user: ValidatedProsumer }) {
+    // User sudah divalidasi oleh LocalAuthGuard, tersedia di req.user
+    return this.authService.generateTokens(req.user);
   }
 
   @Post('register')
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
-  }
-
-  @Post('refresh')
-  async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
-    return this.authService.refreshToken(refreshTokenDto.refreshToken);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -41,11 +45,11 @@ export class AuthController {
   @Post('logout')
   async logout(
     @Request() req: ExpressRequest & { user: { prosumerId: string } },
-    @Body() body: { refreshToken?: string },
+    @Body() body: { accessToken?: string },
   ) {
     return await this.authService.logout(
       req.user.prosumerId,
-      body.refreshToken,
+      body.accessToken,
       req,
     );
   }

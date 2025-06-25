@@ -36,6 +36,8 @@ import { TransactionLogsModule } from './modules/TransactionLogs/TransactionLogs
 import { TransactionLogs } from './modules/TransactionLogs/entities/TransactionLogs.entity';
 import { WalletsModule } from './modules/Wallets/Wallets.module';
 import { Wallets } from './modules/Wallets/entities/Wallets.entity';
+import { TokenBlacklistModule } from './modules/TokenBlacklist/TokenBlacklist.module';
+import { TokenBlacklist } from './modules/TokenBlacklist/entities/TokenBlacklist.entity';
 
 // Import new modules
 import { AuthModule } from './auth/auth.module';
@@ -83,6 +85,7 @@ import { WebSocketModule } from './websocket/websocket.module';
         TradeOrdersCache,
         TransactionLogs,
         Wallets,
+        TokenBlacklist,
       ],
       // synchronize: true,
     }),
@@ -105,6 +108,7 @@ import { WebSocketModule } from './websocket/websocket.module';
     ServicesModule,
     ControllersModule,
     WebSocketModule,
+    TokenBlacklistModule,
   ],
 })
 export class AppModule {}

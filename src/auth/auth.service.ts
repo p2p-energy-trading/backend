@@ -25,12 +25,6 @@ interface ValidatedProsumer {
   updatedAt: string;
 }
 
-interface RefreshObject {
-  access_token: string;
-  prosumerId: string;
-  email: string;
-}
-
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -59,10 +53,18 @@ export class AuthService {
       );
 
       // generate hash
-      const hashedPassword = await this.cryptoService.hashPassword('password');
-      this.logger.debug(
-        `Hashed password for prosumer with email ${email}: ${hashedPassword}`,
-      );
+      // const hashedPassword = await this.cryptoService.hashPassword('password');
+      // this.logger.debug(
+      //   `Hashed password for prosumer with email ${email}: ${hashedPassword}`,
+      // );
+
+      // const encryptedWalletPrivateKey = this.cryptoService.encrypt(
+      //   '3a4e16c3706eec96f018394580ee4b5f267c3a55717dc5c6e45c821d899a3407',
+      //   this.configService.get('WALLET_ENCRYPTION_KEY') || 'default-wallet-key',
+      // );
+      // this.logger.debug(
+      //   `Encrypted wallet private key for prosumer with email ${email}: ${encryptedWalletPrivateKey}`,
+      // );
 
       if (!prosumer) {
         return null;
@@ -95,6 +97,27 @@ export class AuthService {
     }
   }
 
+  // Generate hanya access token saja
+  generateTokens(prosumer: ValidatedProsumer) {
+    const payload = {
+      prosumerId: prosumer.prosumerId,
+      email: prosumer.email,
+      sub: prosumer.prosumerId,
+    };
+
+    const accessToken = this.jwtService.sign(payload);
+
+    return {
+      access_token: accessToken,
+      prosumer: {
+        prosumerId: prosumer.prosumerId,
+        email: prosumer.email,
+        name: prosumer.name,
+      },
+    };
+  }
+
+  // Remove refresh token functionality
   async login(loginDto: LoginDto) {
     const prosumer = await this.validateProsumer(
       loginDto.email,
@@ -104,26 +127,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = {
-      prosumerId: prosumer.prosumerId,
-      email: prosumer.email,
-      sub: prosumer.prosumerId,
-    };
-
-    const accessToken = this.jwtService.sign(payload);
-    const refreshToken = this.jwtService.sign(payload, {
-      expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN') || '7d',
-    });
-
-    return {
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      prosumer: {
-        prosumerId: prosumer.prosumerId,
-        email: prosumer.email,
-        name: prosumer.name,
-      },
-    };
+    return this.generateTokens(prosumer);
   }
 
   async register(registerDto: RegisterDto) {
@@ -186,40 +190,6 @@ export class AuthService {
     }
   }
 
-  async refreshToken(refreshToken: string) {
-    try {
-      // Check if token is blacklisted
-      if (await this.blacklistService.isTokenBlacklisted(refreshToken)) {
-        throw new UnauthorizedException('Token has been revoked');
-      }
-
-      const payload: RefreshObject = this.jwtService.verify(refreshToken);
-
-      // Check if user is blacklisted (logged out from all devices)
-      if (await this.blacklistService.isUserBlacklisted(payload.prosumerId)) {
-        throw new UnauthorizedException('User session has been terminated');
-      }
-
-      const prosumer = await this.prosumersService.findOne(payload.prosumerId);
-
-      const newPayload = {
-        prosumerId: prosumer.prosumerId,
-        email: prosumer.email,
-        sub: prosumer.prosumerId,
-      };
-
-      const accessToken = this.jwtService.sign(newPayload);
-
-      return {
-        access_token: accessToken,
-      };
-    } catch (error) {
-      if (error instanceof UnauthorizedException) {
-        throw error;
-      }
-      throw new UnauthorizedException('Invalid refresh token');
-    }
-  }
   private async generateWalletForProsumer(
     prosumerId: string,
     walletName: string,
@@ -280,17 +250,25 @@ export class AuthService {
     }
   }
 
-  async logout(prosumerId: string, refreshToken?: string, request?: Request) {
+  async logout(prosumerId: string, accessToken?: string, request?: Request) {
     try {
       // Extract request metadata
       const ipAddress: string =
         request?.ip || request?.connection?.remoteAddress || 'unknown';
       const userAgent: string = request?.get?.('User-Agent') || 'unknown';
 
-      // Blacklist refresh token if provided
-      if (refreshToken) {
+      // Extract access token dari header jika tidak diberikan
+      if (!accessToken && request?.headers?.authorization) {
+        const [type, token] = request.headers.authorization.split(' ');
+        if (type === 'Bearer') {
+          accessToken = token;
+        }
+      }
+
+      // Blacklist access token if available
+      if (accessToken) {
         await this.blacklistService.blacklistToken(
-          refreshToken,
+          accessToken,
           prosumerId,
           BlacklistReason.LOGOUT,
           ipAddress,

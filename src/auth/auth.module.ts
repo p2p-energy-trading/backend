@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
+import { JwtAuthGuard } from './guards/auth.guards';
 import { ProsumersModule } from '../modules/Prosumers/Prosumers.module';
 import { WalletsModule } from '../modules/Wallets/Wallets.module';
 import { TransactionLogsModule } from '../modules/TransactionLogs/TransactionLogs.module';
@@ -31,8 +32,8 @@ import { CommonModule } from '../common/common.module';
     TokenBlacklistModule,
     CommonModule,
   ],
-  providers: [AuthService, JwtStrategy, LocalStrategy],
+  providers: [AuthService, JwtStrategy, LocalStrategy, JwtAuthGuard],
   controllers: [AuthController],
-  exports: [AuthService],
+  exports: [AuthService, JwtAuthGuard],
 })
 export class AuthModule {}

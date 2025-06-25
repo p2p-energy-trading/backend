@@ -1128,6 +1128,16 @@ export class BlockchainService {
       );
       throw new Error('Invalid owner wallet address');
     }
+
+    const decryptedPrivateKey: string =
+      this.configService.get<string>(
+        'ENCRYPTED_BLOCKCHAIN_OWNER_PRIVATE_KEY',
+      ) || '';
+    if (!decryptedPrivateKey) {
+      this.logger.error('Owner private key is not configured');
+      throw new Error('Owner private key is not configured');
+    }
+
     return new ethers.Wallet(
       this.configService.get<string>('BLOCKCHAIN_OWNER_PRIVATE_KEY') || '',
       this.provider,
@@ -1137,14 +1147,14 @@ export class BlockchainService {
   private async getWalletSigner(walletAddress: string): Promise<ethers.Wallet> {
     try {
       const walletRecord = await this.walletsService.findOne(walletAddress);
-      // const encryptionKey: string =
-      //   this.configService.get<string>('WALLET_ENCRYPTION_KEY') ||
-      //   'default-wallet-key';
-      // const privateKey = this.cryptoService.decrypt(
-      //   walletRecord.encryptedPrivateKey,
-      //   encryptionKey,
-      // );
-      const privateKey = walletRecord.encryptedPrivateKey;
+      const encryptionKey: string =
+        this.configService.get<string>('WALLET_ENCRYPTION_KEY') ||
+        'default-wallet-key';
+      const privateKey = this.cryptoService.decrypt(
+        walletRecord.encryptedPrivateKey,
+        encryptionKey,
+      );
+      // const privateKey = walletRecord.encryptedPrivateKey;
 
       // const privateKey =
       //   this.configService.get<string>('WALLET_ENCRYPTION_KEY') ||
