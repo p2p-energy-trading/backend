@@ -45,13 +45,9 @@ export class AuthController {
   @Post('logout')
   async logout(
     @Request() req: ExpressRequest & { user: { prosumerId: string } },
-    @Body() body: { accessToken?: string },
   ) {
-    return await this.authService.logout(
-      req.user.prosumerId,
-      body.accessToken,
-      req,
-    );
+    // Token akan diambil otomatis dari Authorization header
+    return await this.authService.logout(req.user.prosumerId, undefined, req);
   }
 
   @UseGuards(JwtAuthGuard)

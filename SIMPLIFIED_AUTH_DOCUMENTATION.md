@@ -64,14 +64,10 @@ POST /auth/logout
 Authorization: Bearer YOUR_ACCESS_TOKEN
 Content-Type: application/json
 
-{
-  "accessToken": "optional_token_in_body"
-}
+{}
 ```
 
-**Note:** Token dapat diberikan via:
-1. Authorization header (recommended)
-2. Body parameter `accessToken` (optional)
+**Note:** Token diambil otomatis dari Authorization header. Tidak perlu parameter tambahan di body.
 
 ### Logout All Devices
 ```http

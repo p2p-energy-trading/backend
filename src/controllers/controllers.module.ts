@@ -15,6 +15,8 @@ import { MarketTradesModule } from '../modules/MarketTrades/MarketTrades.module'
 import { CommonModule } from '../common/common.module';
 import { ProsumersModule } from 'src/modules/Prosumers/Prosumers.module';
 import { DeviceStatusSnapshotsModule } from 'src/modules/DeviceStatusSnapshots/DeviceStatusSnapshots.module';
+import { TokenBlacklistModule } from 'src/modules/TokenBlacklist/TokenBlacklist.module';
+import { TransactionLogsModule } from 'src/modules/TransactionLogs/TransactionLogs.module';
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { DeviceStatusSnapshotsModule } from 'src/modules/DeviceStatusSnapshots/D
     CommonModule,
     ProsumersModule,
     DeviceStatusSnapshotsModule,
+    TokenBlacklistModule,
+    TransactionLogsModule,
   ],
   controllers: [
     EnergyController,

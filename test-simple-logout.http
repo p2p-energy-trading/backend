@@ -1,0 +1,42 @@
+### Simple Logout Test - Authorization Header Only
+### Untuk EnerLink P2P Energy Trading Authentication
+
+### Step 1: Register new prosumer
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "email": "prosumer-test@enerlink.com",
+  "password": "secure123",
+  "name": "Test Prosumer"
+}
+
+### Step 2: Login prosumer
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "email": "prosumer-test@enerlink.com",
+  "password": "secure123"
+}
+
+# Copy access_token dari response login ke variable berikut
+# @access_token = YOUR_TOKEN_HERE
+
+### Step 3: Get profile (should work)
+GET http://localhost:3000/auth/profile
+Authorization: Bearer {{access_token}}
+
+### Step 4: Logout (token dari Authorization header saja)
+POST http://localhost:3000/auth/logout
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{}
+
+### Step 5: Try get profile again (should fail - token blacklisted)
+GET http://localhost:3000/auth/profile
+Authorization: Bearer {{access_token}}
+
+### Expected Response: 401 Unauthorized
+### Message: "Token has been revoked or user session terminated"

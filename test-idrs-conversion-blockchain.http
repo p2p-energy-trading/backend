@@ -1,0 +1,69 @@
+### Test IDRS Conversion with Blockchain Integration
+### EnerLink P2P Energy Trading - Wallet Operations
+
+### Variables (replace with actual values from your tests)
+@walletAddress = 0x742d35Cc6482C42532f77Ef9cbBE5A130ACF3aaa
+@accessToken = YOUR_ACCESS_TOKEN_HERE
+
+### 1. Get wallet list first
+GET http://localhost:3000/api/v1/wallet/list
+Authorization: Bearer {{accessToken}}
+
+### 2. Get wallet balances before conversion
+GET http://localhost:3000/api/v1/wallet/{{walletAddress}}
+Authorization: Bearer {{accessToken}}
+
+### 3. ON_RAMP: Convert IDR to IDRS (Mint IDRS tokens)
+POST http://localhost:3000/api/v1/wallet/idrs-conversion
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "walletAddress": "{{walletAddress}}",
+  "conversionType": "ON_RAMP",
+  "amount": 100000
+}
+
+### 4. Check conversion history
+GET http://localhost:3000/api/v1/wallet/{{walletAddress}}/conversions
+Authorization: Bearer {{accessToken}}
+
+### 5. Check wallet balances after ON_RAMP
+GET http://localhost:3000/api/v1/wallet/{{walletAddress}}
+Authorization: Bearer {{accessToken}}
+
+### 6. OFF_RAMP: Convert IDRS to IDR (Burn IDRS tokens)
+POST http://localhost:3000/api/v1/wallet/idrs-conversion
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "walletAddress": "{{walletAddress}}",
+  "conversionType": "OFF_RAMP",
+  "amount": 50000
+}
+
+### 7. Check final conversion history
+GET http://localhost:3000/api/v1/wallet/{{walletAddress}}/conversions
+Authorization: Bearer {{accessToken}}
+
+### 8. Check final wallet balances
+GET http://localhost:3000/api/v1/wallet/{{walletAddress}}
+Authorization: Bearer {{accessToken}}
+
+### 9. Test insufficient balance (should fail)
+POST http://localhost:3000/api/v1/wallet/idrs-conversion
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "walletAddress": "{{walletAddress}}",
+  "conversionType": "OFF_RAMP",
+  "amount": 999999999
+}
+
+### Expected Flow:
+# 1. ON_RAMP: 100,000 IDR → 100,000 IDRS (minted to blockchain)
+# 2. OFF_RAMP: 50,000 IDRS → 50,000 IDR (burned from blockchain)
+# 3. Final balance: 50,000 IDRS remaining
+# 4. Last test should fail with "Insufficient IDRS balance" error

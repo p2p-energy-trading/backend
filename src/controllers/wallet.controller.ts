@@ -7,14 +7,22 @@ import {
   UseGuards,
   Request,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { ethers } from 'ethers';
 import { WalletsService } from '../modules/Wallets/Wallets.service';
 import { IdrsConversionsService } from '../modules/IdrsConversions/IdrsConversions.service';
 import { CryptoService } from '../common/crypto.service';
 import { JwtAuthGuard } from '../auth/guards/auth.guards';
-import { ConversionType, WalletImportMethod } from '../common/enums';
+import {
+  ConversionType,
+  WalletImportMethod,
+  TransactionType,
+} from '../common/enums';
 import { ProsumersService } from 'src/modules/Prosumers/Prosumers.service';
+import { BlockchainService } from '../services/blockchain.service';
+import { TransactionLogsService } from '../modules/TransactionLogs/TransactionLogs.service';
+// import { create } from 'domain';
 
 interface CreateWalletRequest {
   walletName: string;
@@ -38,11 +46,15 @@ interface User extends Request {
 @Controller('wallet')
 @UseGuards(JwtAuthGuard)
 export class WalletController {
+  private readonly logger = new Logger(WalletController.name);
+
   constructor(
     private walletsService: WalletsService,
     private idrsConversionsService: IdrsConversionsService,
     private cryptoService: CryptoService,
-    private prosumersService: ProsumersService, // Assuming this is the correct service for prosumer validation
+    private prosumersService: ProsumersService,
+    private blockchainService: BlockchainService,
+    private transactionLogsService: TransactionLogsService,
   ) {}
 
   @Post('create')
@@ -157,39 +169,188 @@ export class WalletController {
   async convertIdrs(@Body() body: IdrsConversionRequest, @Request() req: User) {
     const prosumerId = req.user.prosumerId;
 
-    // Verify wallet ownership
-    const prosumers = await this.prosumersService.findByWalletAddress(
-      body.walletAddress,
-    );
+    try {
+      // Verify wallet ownership
+      const prosumers = await this.prosumersService.findByWalletAddress(
+        body.walletAddress,
+      );
 
-    if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
-      throw new BadRequestException('Unauthorized: You do not own this wallet');
+      if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
+        throw new BadRequestException(
+          'Unauthorized: You do not own this wallet',
+        );
+      }
+
+      // Exchange rate: 1 IDR = 1 IDRS (stablecoin)
+      const exchangeRate = 1.0;
+      const conversionAmount = body.amount * exchangeRate;
+
+      let blockchainTxHash: string | undefined;
+      let status = 'PENDING';
+
+      // Perform blockchain transaction based on conversion type
+      if (body.conversionType === 'ON_RAMP') {
+        // ON_RAMP: IDR → IDRS (Mint IDRS tokens)
+        this.logger.log(
+          `ON_RAMP: Minting ${conversionAmount} IDRS tokens for wallet ${body.walletAddress}`,
+        );
+
+        blockchainTxHash = await this.blockchainService.mintIDRSTokens(
+          body.walletAddress,
+          conversionAmount,
+        );
+
+        // Log transaction
+        await this.transactionLogsService.create({
+          prosumerId,
+          transactionType: TransactionType.TOKEN_MINT,
+          description: JSON.stringify({
+            message: 'IDRS tokens minted for ON_RAMP conversion',
+            walletAddress: body.walletAddress,
+            idrAmount: body.amount,
+            idrsAmount: conversionAmount,
+            exchangeRate,
+            txHash: blockchainTxHash,
+          }),
+          amountPrimary: conversionAmount,
+          currencyPrimary: 'IDRS',
+          transactionTimestamp: new Date().toISOString(),
+        });
+
+        status = 'SUCCESS';
+      } else if (body.conversionType === 'OFF_RAMP') {
+        // OFF_RAMP: IDRS → IDR (Burn IDRS tokens)
+        this.logger.log(
+          `OFF_RAMP: Burning ${body.amount} IDRS tokens from wallet ${body.walletAddress}`,
+        );
+
+        // Check if user has sufficient IDRS balance
+        const idrsBalance = await this.blockchainService.getTokenBalance(
+          body.walletAddress,
+          process.env.CONTRACT_IDRS_TOKEN!,
+        );
+
+        if (idrsBalance < body.amount) {
+          throw new BadRequestException(
+            `Insufficient IDRS balance. Available: ${idrsBalance}, Required: ${body.amount}`,
+          );
+        }
+
+        blockchainTxHash = await this.blockchainService.burnIDRSTokens(
+          body.walletAddress,
+          body.amount,
+        );
+
+        // Log transaction
+        await this.transactionLogsService.create({
+          prosumerId,
+          transactionType: TransactionType.TOKEN_BURN,
+          description: JSON.stringify({
+            message: 'IDRS tokens burned for OFF_RAMP conversion',
+            walletAddress: body.walletAddress,
+            idrsAmount: body.amount,
+            idrAmount: conversionAmount,
+            exchangeRate,
+            txHash: blockchainTxHash,
+          }),
+          amountPrimary: body.amount,
+          currencyPrimary: 'IDRS',
+          transactionTimestamp: new Date().toISOString(),
+        });
+
+        status = 'SUCCESS';
+      }
+
+      // Create conversion record in database
+      const conversion = await this.idrsConversionsService.create({
+        prosumerId,
+        walletAddress: body.walletAddress,
+        conversionType: body.conversionType as ConversionType,
+        idrAmount:
+          body.conversionType === 'ON_RAMP' ? body.amount : conversionAmount,
+        idrsAmount:
+          body.conversionType === 'ON_RAMP' ? conversionAmount : body.amount,
+        exchangeRate,
+        blockchainTxHash: blockchainTxHash || '',
+        status,
+        simulationNote: blockchainTxHash
+          ? `Blockchain transaction: ${blockchainTxHash}`
+          : 'No blockchain transaction',
+        createdAt: new Date().toISOString(),
+        confirmedAt: new Date().toISOString(),
+      });
+
+      this.logger.log(
+        `${body.conversionType} conversion completed for prosumer ${prosumerId}, txHash: ${blockchainTxHash}`,
+      );
+
+      // Get wallet balances after conversion
+      // const balanceAfter = await this.getWalletBalances(body.walletAddress);
+
+      const res = {
+        walletAddress: conversion.walletAddress,
+        conversionType: conversion.conversionType,
+        idrAmount: conversion.idrAmount,
+        idrsAmount: conversion.idrsAmount,
+        exchangeRate: conversion.exchangeRate,
+        blockchainTxHash: conversion.blockchainTxHash,
+        status: conversion.status,
+        createdAt: conversion.createdAt,
+        confirmedAt: conversion.confirmedAt,
+      };
+
+      return {
+        success: true,
+        data: {
+          ...res,
+          // blockchainTxHash,
+          // balanceAfter,
+        },
+        message: `${body.conversionType} conversion completed successfully`,
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
+      this.logger.error(
+        `IDRS conversion failed for prosumer ${prosumerId}: ${errorMessage}`,
+        errorStack,
+      );
+
+      // Log failed transaction
+      await this.transactionLogsService.create({
+        prosumerId,
+        transactionType:
+          body.conversionType === 'ON_RAMP'
+            ? TransactionType.TOKEN_MINT
+            : TransactionType.TOKEN_BURN,
+        description: JSON.stringify({
+          message: `${body.conversionType} conversion failed`,
+          walletAddress: body.walletAddress,
+          amount: body.amount,
+          error: errorMessage,
+        }),
+        amountPrimary: body.amount,
+        currencyPrimary: body.conversionType === 'ON_RAMP' ? 'IDR' : 'IDRS',
+        transactionTimestamp: new Date().toISOString(),
+      });
+
+      // Create failed conversion record
+      await this.idrsConversionsService.create({
+        prosumerId,
+        walletAddress: body.walletAddress,
+        conversionType: body.conversionType as ConversionType,
+        idrAmount: body.conversionType === 'ON_RAMP' ? body.amount : 0,
+        idrsAmount: body.conversionType === 'ON_RAMP' ? 0 : body.amount,
+        exchangeRate: 1.0,
+        status: 'FAILED',
+        simulationNote: `Conversion failed: ${errorMessage}`,
+        createdAt: new Date().toISOString(),
+      });
+
+      throw new BadRequestException(`IDRS conversion failed: ${errorMessage}`);
     }
-
-    // For simulation purposes, we'll create a conversion record
-    // In real implementation, this would interact with a payment gateway
-    const exchangeRate = 1.0; // 1 IDR = 1 IDRS for simulation
-    const conversionAmount = body.amount * exchangeRate;
-
-    const conversion = await this.idrsConversionsService.create({
-      prosumerId,
-      walletAddress: body.walletAddress,
-      conversionType: body.conversionType as ConversionType,
-      idrAmount:
-        body.conversionType === 'ON_RAMP' ? body.amount : conversionAmount,
-      idrsAmount:
-        body.conversionType === 'ON_RAMP' ? conversionAmount : body.amount,
-      exchangeRate,
-      status: 'COMPLETED', // Simulated completion
-      createdAt: new Date().toISOString(),
-      confirmedAt: new Date().toISOString(),
-    });
-
-    return {
-      success: true,
-      data: conversion,
-      message: `${body.conversionType} conversion completed (simulated)`,
-    };
   }
 
   @Get(':walletAddress/conversions')
@@ -285,5 +446,38 @@ export class WalletController {
       success: true,
       message: 'Wallet deactivated successfully',
     };
+  }
+
+  private async getWalletBalances(walletAddress: string) {
+    try {
+      const [ethBalance, etkBalance, idrsBalance] = await Promise.all([
+        this.blockchainService.getEthBalance(walletAddress),
+        this.blockchainService.getTokenBalance(
+          walletAddress,
+          process.env.CONTRACT_ETK_TOKEN!,
+        ),
+        this.blockchainService.getTokenBalance(
+          walletAddress,
+          process.env.CONTRACT_IDRS_TOKEN!,
+        ),
+      ]);
+
+      return {
+        ETH: ethBalance,
+        ETK: etkBalance,
+        IDRS: idrsBalance,
+      };
+    } catch (error) {
+      this.logger.warn(
+        `Failed to fetch balances for wallet ${walletAddress}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      return {
+        ETH: 0,
+        ETK: 0,
+        IDRS: 0,
+      };
+    }
   }
 }
