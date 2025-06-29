@@ -1,10 +1,4 @@
-import {
-  Resolver,
-  Query,
-  Mutation,
-  Args,
-  Int,
-} from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
 import { SystemConfigService } from './SystemConfig.service';
 import { SystemConfig } from './dto/SystemConfig.output';
 import { CreateSystemConfigInput } from './dto/SystemConfig.input';
@@ -38,8 +32,9 @@ export class SystemConfigResolver {
   }
 
   @Mutation(() => Boolean)
-  removeSystemConfig(@Args('configKey', { type: () => String }) configKey: string) {
+  removeSystemConfig(
+    @Args('configKey', { type: () => String }) configKey: string,
+  ) {
     return this.SystemConfigService.remove(configKey);
   }
-
 }

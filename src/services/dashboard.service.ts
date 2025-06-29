@@ -138,120 +138,23 @@ export class DashboardService {
         };
       }
 
-      // Get today's date range
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      let todayGeneration = 0;
-      let todayConsumption = 0;
-      let totalGeneration = 0;
-      let totalConsumption = 0;
-      let todayGridExport = 0;
-      let todayGridImport = 0;
-      let totalGridExport = 0;
-      let totalGridImport = 0;
-
-      // Aggregate stats from all meters using detailed readings
-      for (const meterId of meterIds) {
-        const readings = await this.energyReadingsDetailedService.findAll({
-          meterId,
-        });
-
-        // Group readings by timestamp to get complete meter snapshots
-        const readingsByTimestamp = new Map<string, any[]>();
-
-        for (const reading of readings) {
-          const timestampKey = new Date(reading.timestamp).toISOString();
-          if (!readingsByTimestamp.has(timestampKey)) {
-            readingsByTimestamp.set(timestampKey, []);
-          }
-          readingsByTimestamp.get(timestampKey)!.push(reading);
-        }
-
-        // Process each timestamp group
-        for (const [timestampStr, timestampReadings] of readingsByTimestamp) {
-          const readingDate = new Date(timestampStr);
-          let solarEnergyWh = 0;
-          let loadEnergyWh = 0;
-          let gridExportWh = 0;
-          let gridImportWh = 0;
-
-          // Extract generation and consumption from subsystem readings
-          // NOTE: For dashboard stats, we use SOLAR for generation and LOAD for consumption
-          // Grid export/import are tracked separately for settlement analysis
-          for (const reading of timestampReadings) {
-            const dailyEnergy =
-              Number(
-                reading &&
-                  typeof reading === 'object' &&
-                  'dailyEnergyWh' in reading
-                  ? (reading as { dailyEnergyWh: unknown }).dailyEnergyWh
-                  : 0,
-              ) || 0;
-
-            const subsystem =
-              reading &&
-              typeof reading === 'object' &&
-              'subsystem' in reading &&
-              typeof (reading as { subsystem: unknown }).subsystem === 'string'
-                ? (reading as { subsystem: string }).subsystem
-                : null;
-
-            switch (subsystem) {
-              case 'SOLAR':
-                // Solar panels generate energy
-                solarEnergyWh += dailyEnergy;
-                break;
-              case 'LOAD':
-                // Electrical loads consume energy
-                loadEnergyWh += dailyEnergy;
-                break;
-              case 'GRID_EXPORT':
-                // Energy exported to grid
-                gridExportWh += dailyEnergy;
-                break;
-              case 'GRID_IMPORT':
-                // Energy imported from grid
-                gridImportWh += dailyEnergy;
-                break;
-              // BATTERY subsystem not included in generation/consumption stats
-              // as it represents energy storage, not production/consumption
-            }
-          }
-
-          // Convert Wh to kWh
-          const solarEnergyKwh = solarEnergyWh / 1000;
-          const loadEnergyKwh = loadEnergyWh / 1000;
-          const gridExportKwh = gridExportWh / 1000;
-          const gridImportKwh = gridImportWh / 1000;
-
-          totalGeneration += solarEnergyKwh;
-          totalConsumption += loadEnergyKwh;
-          totalGridExport += gridExportKwh;
-          totalGridImport += gridImportKwh;
-
-          if (readingDate >= today && readingDate < tomorrow) {
-            todayGeneration += solarEnergyKwh;
-            todayConsumption += loadEnergyKwh;
-            todayGridExport += gridExportKwh;
-            todayGridImport += gridImportKwh;
-          }
-        }
-      }
+      // Use the new optimized method that leverages cumulative data
+      const { todayStats, totalStats } =
+        await this.energyReadingsDetailedService.findLatestEnergyStatsForDashboard(
+          meterIds,
+        );
 
       return {
-        todayGeneration,
-        todayConsumption,
-        totalGeneration,
-        totalConsumption,
-        netEnergy: totalGeneration - totalConsumption,
-        todayGridExport,
-        todayGridImport,
-        totalGridExport,
-        totalGridImport,
-        netGridEnergy: totalGridExport - totalGridImport,
+        todayGeneration: todayStats.generation,
+        todayConsumption: todayStats.consumption,
+        totalGeneration: totalStats.generation,
+        totalConsumption: totalStats.consumption,
+        netEnergy: totalStats.generation - totalStats.consumption,
+        todayGridExport: todayStats.gridExport,
+        todayGridImport: todayStats.gridImport,
+        totalGridExport: totalStats.gridExport,
+        totalGridImport: totalStats.gridImport,
+        netGridEnergy: totalStats.gridExport - totalStats.gridImport,
       };
     } catch (error) {
       this.logger.error('Error getting energy stats:', error);
@@ -438,156 +341,52 @@ export class DashboardService {
 
   private async getDeviceStatus(meterIds: string[]) {
     try {
-      const totalDevices = meterIds.length;
-      let onlineDevices = 0;
-      let lastHeartbeat: string | null = null;
-      let authorizedDevices = 0;
-      let settlementsToday = 0;
-      let totalUptime = 0;
-      let deviceCount = 0;
-
-      // Get today's date range for settlements count
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      for (const meterId of meterIds) {
-        try {
-          // Get device info directly from SmartMeters
-          const device = await this.smartMetersService.findOne(meterId);
-
-          if (device.lastHeartbeatAt) {
-            const heartbeatTime = new Date(device.lastHeartbeatAt);
-            const now = new Date();
-            const timeDiff = now.getTime() - heartbeatTime.getTime();
-
-            // Consider device online if heartbeat is within 5 minutes
-            if (timeDiff < 5 * 60 * 1000) {
-              onlineDevices++;
-            }
-
-            if (!lastHeartbeat || heartbeatTime > new Date(lastHeartbeat)) {
-              lastHeartbeat =
-                device.lastHeartbeatAt instanceof Date
-                  ? device.lastHeartbeatAt.toISOString()
-                  : device.lastHeartbeatAt;
-            }
-          }
-
-          // Check if meter is authorized on blockchain
-          try {
-            const isAuthorized =
-              await this.blockchainService.isMeterIdAuthorized(meterId);
-            if (isAuthorized) {
-              authorizedDevices++;
-            }
-          } catch (authError) {
-            this.logger.warn(
-              `Error checking authorization for meter ${meterId}:`,
-              authError,
-            );
-          }
-
-          // Count today's settlements for this meter
-          try {
-            const settlements = await this.energySettlementsService.findAll({
-              meterId,
-            });
-            const todaySettlements = settlements.filter((settlement: any) => {
-              if (
-                !settlement ||
-                typeof settlement !== 'object' ||
-                !('createdAtBackend' in settlement)
-              ) {
-                return false;
-              }
-              const createdAtBackend = (() => {
-                if (
-                  settlement &&
-                  typeof settlement === 'object' &&
-                  'createdAtBackend' in settlement
-                ) {
-                  const typedSettlement = settlement as {
-                    createdAtBackend: unknown;
-                  };
-                  const value = typedSettlement.createdAtBackend;
-                  if (value !== null && value !== undefined) {
-                    return value;
-                  }
-                }
-                return null;
-              })();
-              if (!createdAtBackend) {
-                return false;
-              }
-              const settlementDate = new Date(
-                createdAtBackend instanceof Date
-                  ? createdAtBackend.getTime()
-                  : typeof createdAtBackend === 'string'
-                    ? createdAtBackend
-                    : typeof createdAtBackend === 'number'
-                      ? createdAtBackend
-                      : new Date().getTime(),
-              );
-              return settlementDate >= today && settlementDate < tomorrow;
-            });
-            settlementsToday += todaySettlements.length;
-          } catch (settlementError) {
-            this.logger.warn(
-              `Error getting settlements for meter ${meterId}:`,
-              settlementError,
-            );
-          }
-
-          // Calculate average uptime from recent heartbeats
-          try {
-            // const recentHeartbeats = await this.deviceHeartbeatsService.findAll(
-            //   {
-            //     meterId,
-            //   },
-            // );
-            // if (recentHeartbeats.length > 0) {
-            //   // Calculate uptime based on latest heartbeat
-            //   const latestHeartbeat = recentHeartbeats[0];
-            //   if (
-            //     latestHeartbeat &&
-            //     typeof latestHeartbeat === 'object' &&
-            //     'uptime' in latestHeartbeat &&
-            //     latestHeartbeat.uptime
-            //   ) {
-            //     totalUptime += Number(latestHeartbeat.uptime) / 1000; // Convert ms to seconds
-            //     deviceCount++;
-            //   }
-            // }
-          } catch (heartbeatError) {
-            this.logger.warn(
-              `Error getting heartbeats for meter ${meterId}:`,
-              heartbeatError,
-            );
-          }
-        } catch (error) {
-          this.logger.warn(
-            `Error checking device status for ${meterId}:`,
-            error,
-          );
-        }
+      if (meterIds.length === 0) {
+        return {
+          totalDevices: 0,
+          onlineDevices: 0,
+          lastHeartbeat: null,
+          authorizedDevices: 0,
+          settlementsToday: 0,
+          averageUptime: 0,
+        };
       }
 
-      const averageUptime = deviceCount > 0 ? totalUptime / deviceCount : 0;
+      // Use the new optimized method for device status
+      const deviceStats =
+        await this.energyReadingsDetailedService.findDeviceStatusStatsForDashboard(
+          meterIds,
+        );
+
+      // For authorized devices, we still need to check blockchain individually (this is expensive but necessary)
+      // TODO: This could be optimized with a batch blockchain call if the service supports it
+      let authorizedDevices = 0;
+      try {
+        const authorizationPromises = meterIds.map(async (meterId) => {
+          try {
+            return await this.blockchainService.isMeterIdAuthorized(meterId);
+          } catch {
+            return false;
+          }
+        });
+        const authResults = await Promise.all(authorizationPromises);
+        authorizedDevices = authResults.filter(Boolean).length;
+      } catch (error) {
+        this.logger.warn('Error checking meter authorizations:', error);
+      }
 
       return {
-        totalDevices,
-        onlineDevices,
-        lastHeartbeat,
+        totalDevices: deviceStats.totalDevices,
+        onlineDevices: deviceStats.onlineDevices,
+        lastHeartbeat: deviceStats.lastHeartbeat,
         authorizedDevices,
-        settlementsToday,
-        averageUptime, // in seconds
+        settlementsToday: deviceStats.settlementsToday,
+        averageUptime: 0, // TODO: Implement if needed
       };
     } catch (error) {
       this.logger.error('Error getting device status:', error);
       return {
-        totalDevices: meterIds.length,
+        totalDevices: 0,
         onlineDevices: 0,
         lastHeartbeat: null,
         authorizedDevices: 0,
@@ -611,117 +410,13 @@ export class DashboardService {
         };
       }
 
-      // Get today's date range
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      // Use the new optimized method for settlement stats
+      const settlementStats =
+        await this.energyReadingsDetailedService.findSettlementStatsForDashboard(
+          meterIds,
+        );
 
-      let totalSettlements = 0;
-      let successfulSettlements = 0;
-      let pendingSettlements = 0;
-      let todaySettlements = 0;
-      let lastSettlementTime: string | null = null;
-      let totalEtkMinted = 0;
-      let totalEtkBurned = 0;
-
-      for (const meterId of meterIds) {
-        try {
-          const settlements = await this.energySettlementsService.findAll({
-            meterId,
-          });
-
-          totalSettlements += settlements.length;
-
-          for (const settlement of settlements) {
-            // Type safety check for settlement object
-            if (!settlement || typeof settlement !== 'object') continue;
-
-            const createdAtBackend = (() => {
-              if (
-                settlement &&
-                typeof settlement === 'object' &&
-                'createdAtBackend' in settlement
-              ) {
-                const typedSettlement = settlement as {
-                  createdAtBackend: unknown;
-                };
-                const value = typedSettlement.createdAtBackend;
-                if (value !== null && value !== undefined) {
-                  return value;
-                }
-              }
-              return null;
-            })();
-            if (!createdAtBackend) continue;
-
-            const settlementDate = new Date(
-              createdAtBackend instanceof Date
-                ? createdAtBackend.getTime()
-                : typeof createdAtBackend === 'string'
-                  ? createdAtBackend
-                  : typeof createdAtBackend === 'number'
-                    ? createdAtBackend
-                    : new Date().getTime(),
-            );
-            const status = 'status' in settlement ? settlement.status : null;
-
-            // Count settlements by status
-            if (status === 'SUCCESS') {
-              successfulSettlements++;
-            } else if (status === 'PENDING') {
-              pendingSettlements++;
-            }
-
-            // Count today's settlements
-            if (settlementDate >= today && settlementDate < tomorrow) {
-              todaySettlements++;
-            }
-
-            // Calculate ETK minted/burned based on net energy
-            const netKwhFromGrid =
-              'netKwhFromGrid' in settlement ? settlement.netKwhFromGrid : 0;
-            const netKwh = Number(netKwhFromGrid) || 0;
-            if (netKwh > 0) {
-              // Positive = export to grid = ETK minted
-              totalEtkMinted += Math.abs(netKwh);
-            } else if (netKwh < 0) {
-              // Negative = import from grid = ETK burned
-              totalEtkBurned += Math.abs(netKwh);
-            }
-
-            // Track latest settlement time
-            if (
-              !lastSettlementTime ||
-              settlementDate > new Date(lastSettlementTime)
-            ) {
-              lastSettlementTime =
-                createdAtBackend instanceof Date
-                  ? createdAtBackend.toISOString()
-                  : typeof createdAtBackend === 'string'
-                    ? createdAtBackend
-                    : typeof createdAtBackend === 'number'
-                      ? new Date(createdAtBackend).toISOString()
-                      : new Date().toISOString();
-            }
-          }
-        } catch (error) {
-          this.logger.warn(
-            `Error getting settlement stats for meter ${meterId}:`,
-            error,
-          );
-        }
-      }
-
-      return {
-        totalSettlements,
-        successfulSettlements,
-        pendingSettlements,
-        todaySettlements,
-        lastSettlementTime,
-        totalEtkMinted,
-        totalEtkBurned,
-      };
+      return settlementStats;
     } catch (error) {
       this.logger.error('Error getting settlement stats:', error);
       return {
@@ -749,109 +444,15 @@ export class DashboardService {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
 
-      const chartData: Array<{
-        date: string;
-        generation: number;
-        consumption: number;
-        net: number;
-        gridExport?: number;
-        gridImport?: number;
-      }> = [];
+      // Use the ultra-fast optimized method that returns chart-ready data
+      const chartData =
+        await this.energyReadingsDetailedService.findDailyEnergyTotalsForChart(
+          meterIds,
+          startDate,
+          endDate,
+        );
 
-      for (
-        let d = new Date(startDate);
-        d <= endDate;
-        d.setDate(d.getDate() + 1)
-      ) {
-        const dayStart = new Date(d);
-        dayStart.setHours(0, 0, 0, 0);
-        const dayEnd = new Date(d);
-        dayEnd.setHours(23, 59, 59, 999);
-
-        let dayGeneration = 0;
-        let dayConsumption = 0;
-        let dayGridExport = 0;
-        let dayGridImport = 0;
-
-        for (const meterId of meterIds) {
-          const readings = await this.energyReadingsDetailedService.findAll({
-            meterId,
-          });
-
-          const dayReadings = readings.filter((reading) => {
-            const readingDate = new Date(reading.timestamp);
-            return readingDate >= dayStart && readingDate <= dayEnd;
-          });
-
-          // Group by timestamp and aggregate daily energy
-          const readingsByTimestamp = new Map<string, any[]>();
-
-          for (const reading of dayReadings) {
-            const timestampKey = new Date(reading.timestamp).toISOString();
-            if (!readingsByTimestamp.has(timestampKey)) {
-              readingsByTimestamp.set(timestampKey, []);
-            }
-            readingsByTimestamp.get(timestampKey)!.push(reading);
-          }
-
-          let meterSolarEnergyWh = 0;
-          let meterLoadEnergyWh = 0;
-          let meterGridExportWh = 0;
-          let meterGridImportWh = 0;
-
-          // Process each timestamp group for this day
-          for (const [, timestampReadings] of readingsByTimestamp) {
-            for (const reading of timestampReadings) {
-              const dailyEnergy =
-                Number(
-                  reading &&
-                    typeof reading === 'object' &&
-                    'dailyEnergyWh' in reading
-                    ? (reading as { dailyEnergyWh: unknown }).dailyEnergyWh
-                    : 0,
-                ) || 0;
-              const subsystem =
-                reading &&
-                typeof reading === 'object' &&
-                'subsystem' in reading &&
-                typeof (reading as { subsystem: unknown }).subsystem ===
-                  'string'
-                  ? (reading as { subsystem: string }).subsystem
-                  : null;
-
-              switch (subsystem) {
-                case 'SOLAR':
-                  meterSolarEnergyWh += dailyEnergy;
-                  break;
-                case 'LOAD':
-                  meterLoadEnergyWh += dailyEnergy;
-                  break;
-                case 'GRID_EXPORT':
-                  meterGridExportWh += dailyEnergy;
-                  break;
-                case 'GRID_IMPORT':
-                  meterGridImportWh += dailyEnergy;
-                  break;
-              }
-            }
-          }
-
-          dayGeneration += meterSolarEnergyWh / 1000; // Convert to kWh
-          dayConsumption += meterLoadEnergyWh / 1000; // Convert to kWh
-          dayGridExport += meterGridExportWh / 1000; // Convert to kWh
-          dayGridImport += meterGridImportWh / 1000; // Convert to kWh
-        }
-
-        chartData.push({
-          date: dayStart.toISOString().split('T')[0],
-          generation: dayGeneration,
-          consumption: dayConsumption,
-          net: dayGeneration - dayConsumption,
-          gridExport: dayGridExport,
-          gridImport: dayGridImport,
-        });
-      }
-
+      // Data is already in the correct format and sorted by date
       return chartData;
     } catch (error) {
       this.logger.error('Error getting energy chart data:', error);
@@ -865,6 +466,10 @@ export class DashboardService {
       const devices = await this.getProsumeDevices(prosumerId);
       const meterIds = devices.map((d) => d.meterId);
 
+      this.logger.debug(
+        `Fetching real-time energy data for prosumer ${prosumerId} with meters: ${meterIds.join(', ')}`,
+      );
+
       if (meterIds.length === 0) {
         return {
           currentGeneration: 0,
@@ -872,128 +477,176 @@ export class DashboardService {
           currentGridExport: 0,
           currentGridImport: 0,
           netFlow: 0,
-          batteryLevel: 0,
+          batteryPower: 0,
           lastUpdate: null,
+          timeSeries: [],
         };
       }
 
-      // Get the most recent readings for real-time data
-      let currentGeneration = 0;
-      let currentConsumption = 0;
-      let currentGridExport = 0;
-      let currentGridImport = 0;
-      let batteryLevel = 0;
+      // Use optimized bulk queries to eliminate N+1 query problem
+      const [latestReadingsMap, timeSeriesMap] = await Promise.all([
+        // Get latest complete sets for all meters in one query
+        this.energyReadingsDetailedService.findLatestCompleteSetsForMeters(
+          meterIds,
+        ),
+        // Get time series data for all meters efficiently
+        meterIds.length === 1
+          ? Promise.resolve(new Map()) // Will use single-meter optimization below
+          : this.energyReadingsDetailedService.findTimeSeriesForMultipleMeters(
+              meterIds,
+              8,
+            ), // Reduced per-meter limit
+      ]);
+
+      // Aggregate current power from all meters
+      let currentGeneration = 0; // SOLAR power
+      let currentConsumption = 0; // LOAD power
+      let currentGridExport = 0; // GRID_EXPORT power
+      let currentGridImport = 0; // GRID_IMPORT power
+      let batteryPower = 0; // BATTERY power (positive = discharging, negative = charging)
       let lastUpdate: string | null = null;
 
+      // Process latest readings from all meters
       for (const meterId of meterIds) {
-        // Get latest readings from the last hour
-        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-        const recentReadings = await this.energyReadingsDetailedService.findAll(
-          {
-            meterId,
-            timestamp: oneHourAgo.toISOString(), // This might need to be adjusted based on your service implementation
-          },
+        const latestReadings = latestReadingsMap.get(meterId) || [];
+
+        this.logger.debug(
+          `Found ${latestReadings.length} readings in latest complete set for meter ${meterId}`,
         );
 
-        // Get the most recent complete set of readings
-        if (recentReadings.length > 0) {
-          const latestTimestamp = Math.max(
-            ...recentReadings.map((r: any) => {
-              // Safely extract timestamp with type validation
-              const timestamp =
-                r && typeof r === 'object' && 'timestamp' in r
-                  ? (r as { timestamp: unknown }).timestamp
-                  : null;
-              if (!timestamp) return 0;
-
-              // Handle different timestamp formats
-              if (timestamp instanceof Date) {
-                return timestamp.getTime();
-              } else if (typeof timestamp === 'string') {
-                return new Date(timestamp).getTime();
-              } else if (typeof timestamp === 'number') {
-                return timestamp;
-              } else {
-                return 0;
-              }
-            }),
-          );
-          const latestReadings = recentReadings.filter((r: any) => {
-            const timestamp =
-              r && typeof r === 'object' && 'timestamp' in r
-                ? (r as { timestamp: unknown }).timestamp
-                : null;
-            if (!timestamp) return false;
-
-            let timestampValue: number;
-            if (timestamp instanceof Date) {
-              timestampValue = timestamp.getTime();
-            } else if (typeof timestamp === 'string') {
-              timestampValue = new Date(timestamp).getTime();
-            } else if (typeof timestamp === 'number') {
-              timestampValue = timestamp;
-            } else {
-              return false;
-            }
-
-            return timestampValue === latestTimestamp;
-          });
-
+        if (latestReadings.length > 0) {
+          // Process each subsystem from the latest complete set
           for (const reading of latestReadings) {
-            const power =
-              Number(
-                reading && typeof reading === 'object' && 'power' in reading
-                  ? reading.power
-                  : 0,
-              ) || 0; // Current power in watts
-            const subsystem =
-              reading && typeof reading === 'object' && 'subsystem' in reading
-                ? reading.subsystem
-                : null;
+            const powerW = reading.currentPowerW || 0;
 
-            switch (subsystem) {
+            this.logger.debug(
+              `Processing ${reading.subsystem} with power ${powerW}W at ${reading.timestamp.toISOString()}`,
+            );
+
+            switch (reading.subsystem) {
               case 'SOLAR':
-                currentGeneration += power;
+                currentGeneration += powerW;
                 break;
               case 'LOAD':
-                currentConsumption += power;
+                currentConsumption += powerW;
                 break;
               case 'GRID_EXPORT':
-                currentGridExport += power;
+                currentGridExport += powerW;
                 break;
               case 'GRID_IMPORT':
-                currentGridImport += power;
+                currentGridImport += powerW;
                 break;
               case 'BATTERY':
-                // For battery, we might want to show state of charge if available
-                if (
-                  reading &&
-                  typeof reading === 'object' &&
-                  'extraData' in reading &&
-                  reading.extraData &&
-                  typeof reading.extraData === 'object' &&
-                  'soc' in reading.extraData
-                ) {
-                  batteryLevel = Number(reading.extraData.soc) || 0;
-                }
+                batteryPower += powerW;
                 break;
             }
           }
 
-          if (!lastUpdate || latestTimestamp > new Date(lastUpdate).getTime()) {
-            lastUpdate = new Date(latestTimestamp).toISOString();
+          // Update lastUpdate from the latest timestamp
+          const latestTimestamp = latestReadings[0].timestamp.toISOString();
+          if (!lastUpdate || latestTimestamp > lastUpdate) {
+            lastUpdate = latestTimestamp;
           }
         }
       }
 
+      // Get time series data efficiently
+      let timeSeries: any[] = [];
+      if (meterIds.length > 0) {
+        if (meterIds.length === 1) {
+          // Single meter: use existing optimized query
+          const meterTimeSeries =
+            await this.energyReadingsDetailedService.findTimeSeriesPowerDataOptimized(
+              meterIds[0],
+              20, // Full 20 data points for single meter
+            );
+
+          timeSeries = meterTimeSeries.map((point) => ({
+            timestamp: point.timestamp,
+            solar: point.solar / 1000, // Convert W to kW
+            load: point.load / 1000, // Convert W to kW
+            battery: point.battery / 1000, // Convert W to kW
+            gridExport: point.gridExport / 1000, // Convert W to kW
+            gridImport: point.gridImport / 1000, // Convert W to kW
+            meterId: meterIds[0],
+          }));
+        } else {
+          // Multiple meters: merge the pre-fetched time series data
+          interface TimeSeriesPoint {
+            timestamp: string;
+            solar: number;
+            load: number;
+            battery: number;
+            gridExport: number;
+            gridImport: number;
+            meterId: string;
+          }
+
+          interface RawTimeSeriesPoint {
+            timestamp: unknown;
+            solar: unknown;
+            load: unknown;
+            battery: unknown;
+            gridExport: unknown;
+            gridImport: unknown;
+          }
+
+          const allTimeSeries: TimeSeriesPoint[] = [];
+
+          for (const [meterId, meterTimeSeries] of timeSeriesMap) {
+            const convertedTimeSeries: TimeSeriesPoint[] = (
+              meterTimeSeries as RawTimeSeriesPoint[]
+            ).map((point: RawTimeSeriesPoint) => {
+              let timestampStr = '';
+              try {
+                if (point?.timestamp instanceof Date) {
+                  timestampStr = point.timestamp.toISOString();
+                } else if (typeof point?.timestamp === 'string') {
+                  timestampStr = point.timestamp;
+                } else if (point?.timestamp != null) {
+                  // Try to parse as Date
+                  const date = new Date(point.timestamp as string | number);
+                  timestampStr = isNaN(date.getTime())
+                    ? ''
+                    : date.toISOString();
+                }
+              } catch {
+                timestampStr = '';
+              }
+
+              return {
+                timestamp: timestampStr,
+                solar: Number(point?.solar ?? 0) / 1000,
+                load: Number(point?.load ?? 0) / 1000,
+                battery: Number(point?.battery ?? 0) / 1000,
+                gridExport: Number(point?.gridExport ?? 0) / 1000,
+                gridImport: Number(point?.gridImport ?? 0) / 1000,
+                meterId: String(meterId),
+              };
+            });
+            allTimeSeries.push(...convertedTimeSeries);
+          }
+
+          // Sort by timestamp and take only the 20 most recent points
+          timeSeries = allTimeSeries
+            .sort(
+              (a, b) =>
+                new Date(b.timestamp).getTime() -
+                new Date(a.timestamp).getTime(),
+            )
+            .slice(0, 20);
+        }
+      }
+
       return {
-        currentGeneration: currentGeneration / 1000, // Convert to kW
-        currentConsumption: currentConsumption / 1000, // Convert to kW
-        currentGridExport: currentGridExport / 1000, // Convert to kW
-        currentGridImport: currentGridImport / 1000, // Convert to kW
-        netFlow: (currentGeneration - currentConsumption) / 1000, // Convert to kW
-        batteryLevel,
+        currentGeneration: currentGeneration / 1000, // Convert W to kW
+        currentConsumption: currentConsumption / 1000, // Convert W to kW
+        currentGridExport: currentGridExport / 1000, // Convert W to kW
+        currentGridImport: currentGridImport / 1000, // Convert W to kW
+        batteryPower: batteryPower / 1000, // Convert W to kW (positive = discharging, negative = charging)
+        netFlow: (currentGeneration - currentConsumption) / 1000, // Convert W to kW
         lastUpdate,
+        timeSeries,
       };
     } catch (error) {
       this.logger.error('Error getting real-time energy data:', error);
@@ -1002,9 +655,10 @@ export class DashboardService {
         currentConsumption: 0,
         currentGridExport: 0,
         currentGridImport: 0,
+        batteryPower: 0,
         netFlow: 0,
-        batteryLevel: 0,
         lastUpdate: null,
+        timeSeries: [],
       };
     }
   }

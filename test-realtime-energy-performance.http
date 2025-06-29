@@ -1,0 +1,47 @@
+### Real-Time Energy Dashboard Performance Test
+
+GET http://localhost:3000/dashboard/real-time-energy
+Authorization: Bearer {{access_token}}
+
+### Test Multiple Requests to Measure Average Response Time
+# Run this multiple times to get average response time
+
+GET http://localhost:3000/dashboard/real-time-energy
+Authorization: Bearer {{access_token}}
+
+###
+
+GET http://localhost:3000/dashboard/real-time-energy
+Authorization: Bearer {{access_token}}
+
+###
+
+GET http://localhost:3000/dashboard/real-time-energy
+Authorization: Bearer {{access_token}}
+
+###
+
+GET http://localhost:3000/dashboard/real-time-energy
+Authorization: Bearer {{access_token}}
+
+###
+
+GET http://localhost:3000/dashboard/real-time-energy
+Authorization: Bearer {{access_token}}
+
+### Performance Comparison Notes:
+# Before optimization: ~2.4 seconds
+# After bulk query optimization: Target <500ms
+# 
+# Optimizations implemented:
+# 1. Eliminated N+1 query pattern with findLatestCompleteSetsForMeters()
+# 2. Used raw SQL with window functions for maximum efficiency
+# 3. Bulk time series queries with findTimeSeriesForMultipleMeters()
+# 4. Reduced per-meter data points and database calls
+# 5. Parallel Promise.all() for independent operations
+#
+# Expected improvements:
+# - Single meter: 1-2 queries instead of N queries
+# - Multiple meters: 2 queries instead of N*2 queries
+# - Raw SQL with proper indexes should be 5-10x faster
+# - Database-level LIMIT reduces data transfer overhead

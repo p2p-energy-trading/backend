@@ -49,8 +49,7 @@ export class TradeOrdersCacheService {
     if (args && args.blockchainTxHashFilled !== undefined)
       where['blockchainTxHashFilled'] = args.blockchainTxHashFilled;
 
-    const relations = ['prosumers', 'wallets', 'transactionlogsList'];
-    return this.repo.find({ where, relations });
+    return this.repo.find({ where });
   }
 
   async findOne(orderId: string): Promise<TradeOrdersCache> {

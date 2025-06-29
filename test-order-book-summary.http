@@ -1,0 +1,132 @@
+### Test Order Book Summary Endpoint
+
+### 1. Get Order Book Summary (Aggregated by Price)
+GET http://localhost:3000/trading/orderbook
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### Expected Response Format:
+# {
+#   "success": true,
+#   "data": {
+#     "summary": {
+#       "totalBuyOrders": 5,
+#       "totalSellOrders": 3,
+#       "bestBidPrice": 55,
+#       "bestAskPrice": 60,
+#       "spread": 5,
+#       "spreadPercentage": 9.09,
+#       "totalBuyVolume": 500,
+#       "totalSellVolume": 300
+#     },
+#     "buyOrders": [
+#       {
+#         "priceIdrsPerEtk": 55,
+#         "totalAmountEtk": 200,
+#         "totalValueIdrs": 11000
+#       },
+#       {
+#         "priceIdrsPerEtk": 54,
+#         "totalAmountEtk": 150,
+#         "totalValueIdrs": 8100
+#       }
+#       // ... up to 20 price levels
+#     ],
+#     "sellOrders": [
+#       {
+#         "priceIdrsPerEtk": 60,
+#         "totalAmountEtk": 100,
+#         "totalValueIdrs": 6000
+#       },
+#       {
+#         "priceIdrsPerEtk": 61,
+#         "totalAmountEtk": 200,
+#         "totalValueIdrs": 12200
+#       }
+#       // ... up to 20 price levels
+#     ]
+#   }
+# }
+
+### 2. Place Test Orders to See Aggregation
+POST http://localhost:3000/trading/place-order
+Content-Type: application/json
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+{
+  "amount": 100,
+  "price": 50,
+  "orderType": "buy"
+}
+
+### 3. Place Another Buy Order at Same Price (Should Aggregate)
+POST http://localhost:3000/trading/place-order
+Content-Type: application/json
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+{
+  "amount": 200,
+  "price": 50,
+  "orderType": "buy"
+}
+
+### 4. Place Buy Order at Different Price
+POST http://localhost:3000/trading/place-order
+Content-Type: application/json
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+{
+  "amount": 150,
+  "price": 48,
+  "orderType": "buy"
+}
+
+### 5. Place Sell Orders
+POST http://localhost:3000/trading/place-order
+Content-Type: application/json
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+{
+  "amount": 100,
+  "price": 55,
+  "orderType": "sell"
+}
+
+### 6. Place Another Sell Order at Same Price (Should Aggregate)
+POST http://localhost:3000/trading/place-order
+Content-Type: application/json
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+{
+  "amount": 200,
+  "price": 55,
+  "orderType": "sell"
+}
+
+### 7. Place Sell Order at Different Price
+POST http://localhost:3000/trading/place-order
+Content-Type: application/json
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+{
+  "amount": 120,
+  "price": 57,
+  "orderType": "sell"
+}
+
+### 8. Get Updated Order Book Summary (Should Show Aggregated Amounts)
+GET http://localhost:3000/trading/orderbook
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### Expected Aggregation:
+# - Buy orders at price 50: 300 ETK total (100 + 200)
+# - Buy orders at price 48: 150 ETK total
+# - Sell orders at price 55: 300 ETK total (100 + 200)
+# - Sell orders at price 57: 120 ETK total
+
+### Notes:
+# - The endpoint aggregates all orders at the same price level
+# - Buy orders are sorted by price descending (highest first)
+# - Sell orders are sorted by price ascending (lowest first)
+# - Only shows top 20 price levels for each side
+# - Includes market summary with spread calculations
+# - Only includes orders with statusOnChain: 'OPEN'

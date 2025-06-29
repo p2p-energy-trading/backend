@@ -296,6 +296,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
         meterId,
         MqttDirection.OUTBOUND,
         'SENT',
+        correlationId,
       );
 
       // Send via MQTT
@@ -331,6 +332,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     meterId: string | null,
     direction: MqttDirection,
     status: string = 'SUCCESS',
+    correlationId?: string,
     errorMessage?: string,
   ) {
     try {
@@ -344,6 +346,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
         messageTimestamp: new Date().toISOString(),
         processingStatus: status,
         errorMessage,
+        correlationId: correlationId || undefined,
       });
     } catch (error) {
       this.logger.error('Error logging MQTT message:', error);

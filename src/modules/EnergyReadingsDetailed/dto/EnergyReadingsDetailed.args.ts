@@ -12,6 +12,17 @@ export class EnergyReadingsDetailedArgs {
   @Field(() => String, { nullable: true })
   timestamp?: string;
 
+  // Time range filtering for dashboard real-time data
+  @Field(() => String, { nullable: true })
+  timestampFrom?: string;
+
+  @Field(() => String, { nullable: true })
+  timestampTo?: string;
+
+  // Hours-based filtering (e.g., last 1 hour, last 24 hours)
+  @Field(() => Float, { nullable: true })
+  lastHours?: number;
+
   @Field(() => String, { nullable: true })
   subsystem?: string;
 

@@ -1,0 +1,209 @@
+### Test Dashboard Endpoints
+
+### 1. Get Dashboard Stats (Main Overview)
+GET http://localhost:3000/dashboard/stats
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### 2. Get Energy Chart Data (Default 7 days)
+GET http://localhost:3000/dashboard/energy-chart
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### 3. Get Energy Chart Data (Custom days)
+GET http://localhost:3000/dashboard/energy-chart?days=30
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### 4. Get Real-time Energy Data
+GET http://localhost:3000/dashboard/real-time-energy
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### 5. Get Settlement Recommendations
+GET http://localhost:3000/dashboard/settlement-recommendations
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### 6. Get Blockchain Sync Status
+GET http://localhost:3000/dashboard/blockchain-sync-status
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### 7. Get Device Health Status
+GET http://localhost:3000/dashboard/device-health
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### 8. Get Energy Summary (Daily)
+GET http://localhost:3000/dashboard/energy-summary?period=daily
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### 9. Get Energy Summary (Weekly)
+GET http://localhost:3000/dashboard/energy-summary?period=weekly
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### 10. Get Energy Summary (Monthly)
+GET http://localhost:3000/dashboard/energy-summary?period=monthly
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### 11. Get Trading Performance (Default 30 days)
+GET http://localhost:3000/dashboard/trading-performance
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### 12. Get Trading Performance (Custom period)
+GET http://localhost:3000/dashboard/trading-performance?days=7
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### 13. Get System Overview
+GET http://localhost:3000/dashboard/system-overview
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### Expected Response Formats:
+
+### Dashboard Stats Response:
+# {
+#   "success": true,
+#   "data": {
+#     "energyStats": {
+#       "todayGeneration": 25.5,
+#       "todayConsumption": 18.2,
+#       "totalGeneration": 1250.8,
+#       "totalConsumption": 980.3,
+#       "netEnergy": 270.5,
+#       "todayGridExport": 7.3,
+#       "todayGridImport": 0,
+#       "totalGridExport": 450.2,
+#       "totalGridImport": 120.1,
+#       "netGridEnergy": 330.1
+#     },
+#     "tradingStats": {
+#       "totalTrades": 45,
+#       "totalVolume": 125.8,
+#       "averagePrice": 1150,
+#       "last24hVolume": 8.5,
+#       "totalEarnings": 144625,
+#       "totalSpending": 98750,
+#       "netProfit": 45875
+#     },
+#     "balances": {
+#       "ETH": 2.5,
+#       "ETK": 45.7,
+#       "IDRS": 125000
+#     },
+#     "deviceStatus": {
+#       "totalDevices": 3,
+#       "onlineDevices": 3,
+#       "lastHeartbeat": "2025-06-27T10:30:00Z",
+#       "authorizedDevices": 3,
+#       "settlementsToday": 12,
+#       "averageUptime": 98.5
+#     },
+#     "settlementStats": {
+#       "totalSettlements": 156,
+#       "successfulSettlements": 154,
+#       "pendingSettlements": 2,
+#       "todaySettlements": 12,
+#       "lastSettlementTime": "2025-06-27T10:25:00Z",
+#       "totalEtkMinted": 450.2,
+#       "totalEtkBurned": 120.1
+#     }
+#   }
+# }
+
+### Device Health Response:
+# {
+#   "success": true,
+#   "data": {
+#     "totalDevices": 3,
+#     "onlineDevices": 3,
+#     "offlineDevices": 0,
+#     "healthPercentage": 100,
+#     "lastHeartbeat": "2025-06-27T10:30:00Z",
+#     "averageUptime": 98.5,
+#     "authorizedDevices": 3,
+#     "settlementsToday": 12
+#   }
+# }
+
+### Energy Summary Response:
+# {
+#   "success": true,
+#   "data": {
+#     "period": "daily",
+#     "generation": {
+#       "today": 25.5,
+#       "total": 1250.8,
+#       "gridExport": 7.3
+#     },
+#     "consumption": {
+#       "today": 18.2,
+#       "total": 980.3,
+#       "gridImport": 0
+#     },
+#     "net": {
+#       "energy": 270.5,
+#       "gridEnergy": 330.1
+#     },
+#     "chartData": [ /* chart data array */ ],
+#     "settlements": {
+#       "total": 156,
+#       "today": 12,
+#       "etkMinted": 450.2,
+#       "etkBurned": 120.1
+#     }
+#   }
+# }
+
+### Trading Performance Response:
+# {
+#   "success": true,
+#   "data": {
+#     "period": "30 days",
+#     "summary": {
+#       "totalTrades": 45,
+#       "totalVolume": 125.8,
+#       "averagePrice": 1150,
+#       "last24hVolume": 8.5
+#     },
+#     "financial": {
+#       "totalEarnings": 144625,
+#       "totalSpending": 98750,
+#       "netProfit": 45875,
+#       "profitMargin": 32
+#     },
+#     "balances": {
+#       "ETH": 2.5,
+#       "ETK": 45.7,
+#       "IDRS": 125000
+#     }
+#   }
+# }
+
+### System Overview Response:
+# {
+#   "success": true,
+#   "data": {
+#     "energy": {
+#       "status": "surplus",
+#       "efficiency": 22,
+#       "todayNet": 7.3
+#     },
+#     "devices": {
+#       "status": "all_online",
+#       "healthScore": 100
+#     },
+#     "trading": {
+#       "status": "active",
+#       "profitability": "profitable"
+#     },
+#     "blockchain": {
+#       "settlements": 156,
+#       "pendingSettlements": 2,
+#       "syncStatus": "pending"
+#     }
+#   }
+# }
+
+### Notes:
+# - All endpoints require JWT authentication
+# - Dashboard provides comprehensive overview of prosumer's energy system
+# - Real-time data includes current energy flows and device status
+# - Settlement recommendations help optimize energy trading
+# - Blockchain sync status shows settlement processing status
+# - Energy summaries can be filtered by period (daily/weekly/monthly)
+# - Trading performance includes profit/loss analysis
+# - System overview provides quick health check of entire system

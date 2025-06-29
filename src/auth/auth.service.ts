@@ -48,9 +48,9 @@ export class AuthService {
       const prosumers = await this.prosumersService.findAll({ email });
       const prosumer = prosumers[0];
 
-      this.logger.debug(
-        `Validating prosumer with email ${email}, found: ${prosumer ? 'yes' : 'no'}`,
-      );
+      // this.logger.debug(
+      //   `Validating prosumer with email ${email}, found: ${prosumer ? 'yes' : 'no'}`,
+      // );
 
       // generate hash
       // const hashedPassword = await this.cryptoService.hashPassword('password');

@@ -50,9 +50,12 @@ export class BlockchainService {
     'function getBuyOrders() external view returns (address[] memory, uint256[] memory, uint256[] memory)',
     'function getSellOrders() external view returns (address[] memory, uint256[] memory, uint256[] memory)',
     'function getMarketPrice() external view returns (uint256)',
+    // New methods for getting individual order details
+    'function buyOrders(uint256 id) external view returns (uint256, address, uint256, uint256, uint256)',
+    'function sellOrders(uint256 id) external view returns (uint256, address, uint256, uint256, uint256)',
     'event OrderPlaced(uint256 indexed id, address indexed user, uint256 amount, uint256 price, bool isBuy, uint256 timestamp)',
-    'event TransactionCompleted(address indexed buyer, address indexed seller, uint256 amount, uint256 price, uint256 timestamp)',
-    'event OrderCancelled(address indexed user, uint256 amount, uint256 price, bool isBuy, uint256 timestamp)',
+    'event TransactionCompleted(address indexed buyer, address indexed seller, uint256 amount, uint256 price, uint256 timestamp, uint256 buyOrderId, uint256 sellOrderId)',
+    'event OrderCancelled(address indexed user, uint256 amount, uint256 price, bool isBuy, uint256 timestamp, uint256 orderId)',
   ];
 
   private readonly tokenABI = [
@@ -217,6 +220,8 @@ export class BlockchainService {
             amount: bigint,
             price: bigint,
             timestamp: bigint,
+            buyOrderId: bigint,
+            sellOrderId: bigint,
             event: ethers.Log,
           ) => {
             void this.handleTransactionCompleted(
@@ -225,6 +230,8 @@ export class BlockchainService {
               amount,
               price,
               timestamp,
+              buyOrderId,
+              sellOrderId,
               event,
             );
           },
@@ -245,6 +252,7 @@ export class BlockchainService {
             price: bigint,
             isBuy: boolean,
             timestamp: bigint,
+            orderId: bigint,
             event: ethers.Log,
           ) => {
             void this.handleOrderCancelled(
@@ -253,6 +261,7 @@ export class BlockchainService {
               price,
               isBuy,
               timestamp,
+              orderId,
               event,
             );
           },
@@ -1205,6 +1214,14 @@ export class BlockchainService {
         return;
       }
 
+      const extractedTxHash = this.extractTransactionHash(event);
+      if (!extractedTxHash) {
+        this.logger.warn(
+          `No transaction hash found in OrderPlaced event for order ${id}`,
+        );
+        return;
+      }
+
       // Both tokens use 2 decimals now
       const amountEtk = Number(amount) / 100; // ETK uses 2 decimals
       const priceIdrs = Number(price) / 100; // IDRS uses 2 decimals
@@ -1221,7 +1238,7 @@ export class BlockchainService {
         statusOnChain: 'OPEN',
         createdAtOnChain: new Date(Number(timestamp) * 1000).toISOString(),
         updatedAtCache: new Date().toISOString(),
-        blockchainTxHashPlaced: event.transactionHash ?? null,
+        blockchainTxHashPlaced: extractedTxHash,
       });
 
       this.logger.log(
@@ -1238,6 +1255,8 @@ export class BlockchainService {
     amount: bigint,
     price: bigint,
     timestamp: bigint,
+    buyOrderId: bigint,
+    sellOrderId: bigint,
     event: ethers.Log,
   ) {
     try {
@@ -1251,13 +1270,21 @@ export class BlockchainService {
         return;
       }
 
+      const extractedTxHash = this.extractTransactionHash(event);
+      if (!extractedTxHash) {
+        this.logger.warn(
+          `No transaction hash found in TransactionCompleted event for trade between ${buyer} and ${seller}`,
+        );
+        return;
+      }
+
       // Both tokens use 2 decimals now
       const amountEtk = Number(amount) / 100; // ETK uses 2 decimals
       const priceIdrs = Number(price) / 100; // IDRS uses 2 decimals
 
       await this.marketTradesService.create({
-        buyerOrderId: 'unknown', // We don't have order IDs in TransactionCompleted event
-        sellerOrderId: 'unknown',
+        buyerOrderId: buyOrderId.toString(),
+        sellerOrderId: sellOrderId.toString(),
         buyerProsumerId,
         sellerProsumerId,
         buyerWalletAddress: buyer,
@@ -1265,13 +1292,32 @@ export class BlockchainService {
         tradedEtkAmount: amountEtk,
         priceIdrsPerEtk: priceIdrs,
         totalIdrsValue: amountEtk * priceIdrs,
-        blockchainTxHash: event.transactionHash ?? null,
+        blockchainTxHash: extractedTxHash,
         tradeTimestamp: new Date(Number(timestamp) * 1000).toISOString(),
         createdAt: new Date().toISOString(),
       });
 
+      // Update order status in cache for both buy and sell orders
+      const txHash = extractedTxHash;
+
+      // Update buy order status
+      await this.updateOrderStatusInCache(
+        buyOrderId.toString(),
+        true, // isBuyOrder
+        amountEtk,
+        txHash,
+      );
+
+      // Update sell order status
+      await this.updateOrderStatusInCache(
+        sellOrderId.toString(),
+        false, // isBuyOrder
+        amountEtk,
+        txHash,
+      );
+
       this.logger.log(
-        `Trade completed: ${buyer} x ${seller} - ${amountEtk} ETK @ ${priceIdrs} IDRS`,
+        `Trade completed: ${buyer} x ${seller} - ${amountEtk} ETK @ ${priceIdrs} IDRS (Buy Order: ${buyOrderId}, Sell Order: ${sellOrderId})`,
       );
     } catch (error) {
       this.logger.error('Error handling TransactionCompleted event:', error);
@@ -1321,7 +1367,7 @@ export class BlockchainService {
         ) {
           // Verify it looks like a transaction hash pattern
           if (/^0x[a-fA-F0-9]{64}$/.test(arg)) {
-            this.logger.debug(`Found potential txHash in args: ${arg}`);
+            // this.logger.debug(`Found potential txHash in args: ${arg}`);
             return arg;
           }
         }
@@ -1377,9 +1423,9 @@ export class BlockchainService {
             return;
           }
 
-          this.logger.debug(
-            `txHash: ${txHash}, settlementId: ${settlementId}, meterId: ${meterIdDb}, prosumerAddress: ${prosumerAddress}, netEnergyWh: ${energyWhValue}, etkAmount: ${etkAmountValue}, timestamp: ${timestampDate.toISOString()}`,
-          );
+          // this.logger.debug(
+          //   `txHash: ${txHash}, settlementId: ${settlementId}, meterId: ${meterIdDb}, prosumerAddress: ${prosumerAddress}, netEnergyWh: ${energyWhValue}, etkAmount: ${etkAmountValue}, timestamp: ${timestampDate.toISOString()}`,
+          // );
 
           // Determine operation type
           const operationType =
@@ -1399,9 +1445,9 @@ export class BlockchainService {
 
           // const settlementIdParts = settlementId.split('_');
           if (settlementIdDb !== null) {
-            this.logger.debug(
-              `Confirming settlement ${settlementIdDb} with txHash ${txHash}`,
-            );
+            // this.logger.debug(
+            //   `Confirming settlement ${settlementIdDb} with txHash ${txHash}`,
+            // );
 
             // Call confirmSettlement to update the database status
             await this.energySettlementService.confirmSettlement(
@@ -1460,6 +1506,7 @@ export class BlockchainService {
     price: bigint,
     isBuy: boolean,
     timestamp: bigint,
+    orderId: bigint,
     event: ethers.Log,
   ) {
     try {
@@ -1468,13 +1515,17 @@ export class BlockchainService {
       const priceIdrs = Number(price) / 100; // IDRS uses 2 decimals
 
       const cancellationTime = new Date(Number(timestamp) * 1000).toISOString();
-      const txHash = event.transactionHash ?? null;
+
+      const extractedTxHash = this.extractTransactionHash(event);
+
+      const txHash = extractedTxHash ?? undefined;
 
       // Log transaction for order cancellation
       await this.transactionLogsService.create({
         prosumerId: (await this.getProsumerIdByWallet(user)) || 'UNKNOWN',
         transactionType: TransactionType.ORDER_CANCELLED,
         description: JSON.stringify({
+          orderId: orderId.toString(),
           walletAddress: user,
           amountEtk,
           priceIdrs,
@@ -1489,13 +1540,44 @@ export class BlockchainService {
         transactionTimestamp: cancellationTime,
       });
 
-      this.logger.log(
-        `Order cancelled by ${user}: ${amountEtk} ETK @ ${priceIdrs} IDRS (${isBuy ? 'BUY' : 'SELL'}) at ${cancellationTime}`,
-      );
+      // Update order status in cache to CANCELLED
+      try {
+        const cachedOrder = await this.tradeOrdersCacheService.findOne(
+          orderId.toString(),
+        );
 
-      // Note: We don't have the order ID in the cancelled event,
-      // so we can't update the specific order in cache
-      // This could be improved by maintaining a mapping or updating the contract
+        await this.tradeOrdersCacheService.update(orderId.toString(), {
+          orderId: cachedOrder.orderId,
+          prosumerId: cachedOrder.prosumerId,
+          walletAddress: cachedOrder.walletAddress,
+          orderType: cachedOrder.orderType,
+          pair: cachedOrder.pair,
+          amountEtk: cachedOrder.amountEtk,
+          priceIdrsPerEtk: cachedOrder.priceIdrsPerEtk,
+          totalIdrsValue: cachedOrder.totalIdrsValue,
+          statusOnChain: 'CANCELLED',
+          createdAtOnChain:
+            cachedOrder.createdAtOnChain instanceof Date
+              ? cachedOrder.createdAtOnChain.toISOString()
+              : cachedOrder.createdAtOnChain,
+          updatedAtCache: new Date().toISOString(),
+          blockchainTxHashPlaced: cachedOrder.blockchainTxHashPlaced,
+          blockchainTxHashFilled: cachedOrder.blockchainTxHashFilled,
+          blockchainTxHashCancelled: txHash,
+        });
+
+        this.logger.log(
+          `Order ${orderId} status updated to CANCELLED in cache`,
+        );
+      } catch {
+        this.logger.warn(
+          `Order ${orderId} not found in cache for cancellation update`,
+        );
+      }
+
+      this.logger.log(
+        `Order cancelled by ${user}: Order ID ${orderId} - ${amountEtk} ETK @ ${priceIdrs} IDRS (${isBuy ? 'BUY' : 'SELL'}) at ${cancellationTime}`,
+      );
     } catch (error) {
       this.logger.error('Error handling OrderCancelled event:', error);
     }
@@ -1672,12 +1754,161 @@ export class BlockchainService {
         this.marketABI,
         this.provider,
       );
-      const price = (await contract.getMarketPrice()) as bigint;
-      // Convert from contract units (2 decimals) to IDRS
-      return Number(price) / 100;
+
+      const marketPrice = (await contract.getMarketPrice()) as bigint;
+      return Number(marketPrice) / 100; // Convert from wei (2 decimals)
     } catch (error) {
       this.logger.error('Error getting market price:', error);
-      return 0;
+      throw error;
+    }
+  }
+
+  async cancelOrder(
+    walletAddress: string,
+    orderId: string,
+    isBuyOrder: boolean,
+  ): Promise<string> {
+    try {
+      const wallet = await this.getWalletSigner(walletAddress);
+      const contract = new ethers.Contract(
+        this.config.contracts.market,
+        this.marketABI,
+        wallet,
+      );
+
+      const tx = (await contract.cancelOrder(
+        orderId,
+        isBuyOrder,
+      )) as ethers.ContractTransactionResponse;
+
+      return tx.hash;
+    } catch (error) {
+      this.logger.error('Error cancelling order:', error);
+      throw error;
+    }
+  }
+
+  // New methods for order synchronization
+  async getOrderDetails(
+    orderId: string,
+    isBuyOrder: boolean,
+  ): Promise<{
+    id: string;
+    user: string;
+    amount: number;
+    price: number;
+    timestamp: number;
+    exists: boolean;
+  } | null> {
+    try {
+      const contract = new ethers.Contract(
+        this.config.contracts.market,
+        this.marketABI,
+        this.provider,
+      );
+
+      const orderData = (
+        isBuyOrder
+          ? await contract.buyOrders(orderId)
+          : await contract.sellOrders(orderId)
+      ) as [bigint, string, bigint, bigint, bigint];
+
+      // Order structure: (id, user, amount, price, timestamp)
+      const [id, user, amount, price, timestamp] = orderData;
+
+      // If id is 0, the order doesn't exist (was filled or cancelled)
+      if (Number(id) === 0) {
+        return {
+          id: orderId,
+          user: '',
+          amount: 0,
+          price: 0,
+          timestamp: 0,
+          exists: false,
+        };
+      }
+
+      return {
+        id: id.toString(),
+        user: user,
+        amount: Number(amount) / 100, // Convert from wei (2 decimals)
+        price: Number(price) / 100, // Convert from wei (2 decimals)
+        timestamp: Number(timestamp),
+        exists: true,
+      };
+    } catch (error) {
+      this.logger.error('Error getting order details:', error);
+      return null;
+    }
+  }
+
+  private async updateOrderStatusInCache(
+    orderId: string,
+    isBuyOrder: boolean,
+    matchedAmount: number,
+    txHash: string | null,
+  ): Promise<void> {
+    try {
+      // Get current order details from blockchain
+      const orderDetails = await this.getOrderDetails(orderId, isBuyOrder);
+
+      if (!orderDetails) {
+        this.logger.error(`Failed to get order details for order ${orderId}`);
+        return;
+      }
+
+      // Get current order from cache
+      const cachedOrder = await this.tradeOrdersCacheService.findOne(orderId);
+
+      if (!cachedOrder) {
+        this.logger.warn(`Order ${orderId} not found in cache`);
+        return;
+      }
+
+      let newStatus: string;
+      let newAmount = cachedOrder.amountEtk;
+
+      if (!orderDetails.exists) {
+        // Order was fully filled (deleted from blockchain)
+        newStatus = 'FILLED';
+        newAmount = 0;
+      } else if (orderDetails.amount < cachedOrder.amountEtk) {
+        // Order was partially filled
+        newStatus = 'PARTIALLY_FILLED';
+        newAmount = orderDetails.amount;
+      } else {
+        // Order still open (shouldn't happen in transaction completed event)
+        newStatus = 'OPEN';
+      }
+
+      // Update order in cache
+      await this.tradeOrdersCacheService.update(orderId, {
+        orderId: cachedOrder.orderId,
+        prosumerId: cachedOrder.prosumerId,
+        walletAddress: cachedOrder.walletAddress,
+        orderType: cachedOrder.orderType,
+        pair: cachedOrder.pair,
+        amountEtk: newAmount,
+        priceIdrsPerEtk: cachedOrder.priceIdrsPerEtk,
+        totalIdrsValue: newAmount * cachedOrder.priceIdrsPerEtk,
+        statusOnChain: newStatus,
+        createdAtOnChain:
+          cachedOrder.createdAtOnChain instanceof Date
+            ? cachedOrder.createdAtOnChain.toISOString()
+            : cachedOrder.createdAtOnChain,
+        updatedAtCache: new Date().toISOString(),
+        blockchainTxHashPlaced: cachedOrder.blockchainTxHashPlaced,
+        blockchainTxHashFilled: txHash || cachedOrder.blockchainTxHashFilled,
+      });
+
+      this.logger.log(
+        `Updated order ${orderId} status to ${newStatus}, remaining amount: ${newAmount} ETK`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error updating order status in cache for ${orderId}:`,
+        error,
+      );
     }
   }
 }

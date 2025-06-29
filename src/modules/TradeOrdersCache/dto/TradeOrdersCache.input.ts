@@ -40,4 +40,7 @@ export class CreateTradeOrdersCacheInput {
 
   @Field(() => String, { nullable: true })
   blockchainTxHashFilled?: string | undefined;
+
+  @Field(() => String, { nullable: true })
+  blockchainTxHashCancelled?: string | undefined;
 }

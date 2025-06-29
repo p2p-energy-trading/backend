@@ -17,6 +17,7 @@ import { ProsumersModule } from 'src/modules/Prosumers/Prosumers.module';
 import { DeviceStatusSnapshotsModule } from 'src/modules/DeviceStatusSnapshots/DeviceStatusSnapshots.module';
 import { TokenBlacklistModule } from 'src/modules/TokenBlacklist/TokenBlacklist.module';
 import { TransactionLogsModule } from 'src/modules/TransactionLogs/TransactionLogs.module';
+import { EnergySettlementsModule } from 'src/modules/EnergySettlements/EnergySettlements.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { TransactionLogsModule } from 'src/modules/TransactionLogs/TransactionLo
     DeviceStatusSnapshotsModule,
     TokenBlacklistModule,
     TransactionLogsModule,
+    EnergySettlementsModule,
   ],
   controllers: [
     EnergyController,

@@ -1,0 +1,68 @@
+### Test Energy Settlement Endpoints
+
+### 1. Get Settlement History
+GET http://localhost:3000/energy/settlement/history
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### 2. Get Settlement History with Meter ID Filter
+GET http://localhost:3000/energy/settlement/history?meterId=METER_001&limit=10
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### 3. Get Specific Settlement by ID
+GET http://localhost:3000/energy/settlement/123
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### 4. Get Settlement by ID (Invalid ID format)
+GET http://localhost:3000/energy/settlement/invalid_id
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### 5. Get Settlement by ID (Non-existent ID)
+GET http://localhost:3000/energy/settlement/99999
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### Expected Response Format for Settlement Details:
+# {
+#   "success": true,
+#   "data": {
+#     "settlementId": 123,
+#     "meterId": "METER_001",
+#     "periodStartTime": "2025-06-27T00:00:00.000Z",
+#     "periodEndTime": "2025-06-27T00:05:00.000Z",
+#     "netKwhFromGrid": 2.5,
+#     "etkAmountCredited": 2.5,
+#     "blockchainTxHash": "0x1234567890abcdef...",
+#     "status": "SUCCESS",
+#     "createdAtBackend": "2025-06-27T00:05:30.000Z",
+#     "confirmedAtOnChain": "2025-06-27T00:06:00.000Z",
+#     "settlementTrigger": "AUTOMATIC",
+#     "rawExportKwh": 10.2,
+#     "rawImportKwh": 7.7,
+#     "validationStatus": "VALIDATED",
+#     "settlementDataSource": "MQTT_SENSOR_DATA",
+#     "detailedEnergyBreakdown": {
+#       "solar": {
+#         "generated": 12.5,
+#         "exported": 10.2
+#       },
+#       "battery": {
+#         "charged": 2.3,
+#         "discharged": 1.5
+#       },
+#       "load": {
+#         "consumed": 5.0
+#       },
+#       "grid": {
+#         "imported": 7.7,
+#         "exported": 10.2
+#       }
+#     },
+#     "mqttMessageId": 456
+#   }
+# }
+
+### Notes:
+# - The endpoint verifies that the settlement belongs to the authenticated user
+# - Returns 404 if settlement doesn't exist or doesn't belong to the user
+# - Returns 400 for invalid settlement ID format
+# - Includes all settlement details with energy breakdown
+# - Shows blockchain transaction hash and confirmation status

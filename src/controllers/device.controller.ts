@@ -7,6 +7,7 @@ import {
   UseGuards,
   Request,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { MqttService } from '../services/mqtt.service';
 import { DeviceCommandsService } from '../modules/DeviceCommands/DeviceCommands.service';
@@ -21,25 +22,36 @@ interface DeviceControlRequest {
   command: DeviceCommandPayload;
 }
 
+interface AuthenticatedUser {
+  user: {
+    prosumerId: string;
+  };
+}
+
 @Controller('device')
 @UseGuards(JwtAuthGuard)
 export class DeviceController {
+  private readonly logger = new Logger(DeviceController.name);
+
   constructor(
     private mqttService: MqttService,
     private deviceCommandsService: DeviceCommandsService,
     private smartMetersService: SmartMetersService,
-    private prosumersService: ProsumersService, // Assuming this is the correct service for prosumer validation
+    private prosumersService: ProsumersService,
     private deviceStatusSnapshotsService: DeviceStatusSnapshotsService,
   ) {}
 
   @Post('control')
-  async sendDeviceCommand(@Body() body: DeviceControlRequest, @Request() req) {
+  async sendDeviceCommand(
+    @Body() body: DeviceControlRequest,
+    @Request() req: AuthenticatedUser,
+  ) {
     const { meterId, command } = body;
-    const prosumerId = req.user.prosumerId;
+    const prosumerId: string = req.user.prosumerId;
 
     // Verify that the prosumer owns this device
     try {
-      const meter = await this.smartMetersService.findOne(meterId);
+      // const meter = await this.smartMetersService.findOne(meterId);
       const prosumers = await this.prosumersService.findByMeterId(meterId);
 
       if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
@@ -48,6 +60,9 @@ export class DeviceController {
         );
       }
     } catch (error) {
+      this.logger.error(
+        `Failed to send command to device ${meterId} for prosumer ${prosumerId}: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw new BadRequestException('Device not found or unauthorized');
     }
 
@@ -67,7 +82,7 @@ export class DeviceController {
   @Post('grid-control')
   async controlGrid(
     @Body() body: { meterId: string; mode: 'import' | 'export' | 'off' },
-    @Request() req,
+    @Request() req: AuthenticatedUser,
   ) {
     const command: DeviceCommandPayload = {
       grid: body.mode,
@@ -80,7 +95,7 @@ export class DeviceController {
   async resetEnergy(
     @Body()
     body: { meterId: string; type: 'all' | 'battery' | 'solar' | 'load' },
-    @Request() req,
+    @Request() req: AuthenticatedUser,
   ) {
     const command: DeviceCommandPayload = {
       energy: {
@@ -91,59 +106,25 @@ export class DeviceController {
     return this.sendDeviceCommand({ meterId: body.meterId, command }, req);
   }
 
-  @Post('configuration')
-  async updateConfiguration(
-    @Body() body: { meterId: string; sensorInterval?: number },
-    @Request() req,
-  ) {
-    const command: DeviceCommandPayload = {
-      mqtt: {
-        sensor_interval: body.sensorInterval,
-      },
-    };
-
-    return this.sendDeviceCommand({ meterId: body.meterId, command }, req);
-  }
-
-  @Get('commands/:meterId')
-  async getDeviceCommands(@Param('meterId') meterId: string, @Request() req) {
-    const prosumerId = req.user.prosumerId;
-
-    // Verify ownership
-    try {
-      const meter = await this.smartMetersService.findOne(meterId);
-      const prosumers = await this.prosumersService.findByMeterId(meterId);
-
-      if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
-        throw new BadRequestException('Unauthorized');
-      }
-    } catch (error) {
-      throw new BadRequestException('Device not found or unauthorized');
-    }
-
-    const commands = await this.deviceCommandsService.findAll({ meterId });
-
-    return {
-      success: true,
-      data: commands.sort(
-        (a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime(),
-      ),
-    };
-  }
-
   @Get('status/:meterId')
-  async getDeviceStatus(@Param('meterId') meterId: string, @Request() req) {
-    const prosumerId = req.user.prosumerId;
+  async getDeviceStatus(
+    @Param('meterId') meterId: string,
+    @Request() req: AuthenticatedUser,
+  ) {
+    const prosumerId: string = req.user.prosumerId;
 
     // Verify ownership
     try {
-      const meter = await this.smartMetersService.findOne(meterId);
+      // const meter = await this.smartMetersService.findOne(meterId);
       const prosumers = await this.prosumersService.findByMeterId(meterId);
 
       if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
         throw new BadRequestException('Unauthorized');
       }
     } catch (error) {
+      this.logger.error(
+        `Failed to fetch status for device ${meterId} for prosumer ${prosumerId}: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw new BadRequestException('Device not found or unauthorized');
     }
 

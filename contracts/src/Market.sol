@@ -1,7 +1,7 @@
 pragma solidity ^0.5.0;
 
-import "./ETK_ERC20.sol";
-import "./IDRS_ERC20.sol";
+import './ETK_ERC20.sol';
+import './IDRS_ERC20.sol';
 
 contract Market {
     ETK public etk_token;
@@ -25,7 +25,9 @@ contract Market {
         address indexed seller,
         uint256 amount,
         uint256 price,
-        uint256 timestamp
+        uint256 timestamp,
+        uint256 buyOrderId,
+        uint256 sellOrderId
     );
 
     event OrderCancelled(
@@ -33,7 +35,8 @@ contract Market {
         uint256 amount,
         uint256 price,
         bool isBuy,
-        uint256 timestamp
+        uint256 timestamp,
+        uint256 orderId
     );
 
     event OrderPlaced(
@@ -58,17 +61,17 @@ contract Market {
     ) public {
         require(
             buyOrders[_uuid].id == 0 && sellOrders[_uuid].id == 0,
-            "UUID already exists"
+            'UUID already exists'
         );
 
+        uint256 etkDecimals = etk_token.decimals();
+
         if (_isBuy) {
+            uint256 totalIDRS = (_amount * _price) /
+                (10 ** uint256(etkDecimals)); // Calculate total IDRS for the buy order
             require(
-                idrs_coin.transferFrom(
-                    msg.sender,
-                    address(this),
-                    _amount * _price
-                ),
-                "Payment failed"
+                idrs_coin.transferFrom(msg.sender, address(this), totalIDRS),
+                'Payment failed'
             );
             buyOrders[_uuid] = Order(
                 _uuid,
@@ -91,7 +94,7 @@ contract Market {
         } else {
             require(
                 etk_token.transferFrom(msg.sender, address(this), _amount),
-                "Token transfer failed"
+                'Token transfer failed'
             );
             sellOrders[_uuid] = Order(
                 _uuid,
@@ -119,6 +122,7 @@ contract Market {
 
     // Modify matchOrders to prioritize by timestamp for same price
     function matchOrders() internal {
+        uint256 etkDecimals = etk_token.decimals();
         uint i = 0;
         while (i < buyOrderIds.length) {
             uint j = 0;
@@ -135,16 +139,16 @@ contract Market {
                     // Transfer tokens from seller to buyer
                     require(
                         etk_token.transfer(buyOrder.user, matchedAmount),
-                        "Token transfer to buyer failed"
+                        'Token transfer to buyer failed'
                     );
 
+                    // uint256 totalIDRS = (order.amount * order.price) / (10 ** uint256(etkDecimals)); // Calculate total IDRS for the buy order
+                    uint256 totalIDRS = (matchedAmount * buyOrder.price) /
+                        (10 ** uint256(etkDecimals)); // Calculate total IDRS for the buy order
                     // Transfer payment from contract to seller
                     require(
-                        idrs_coin.transfer(
-                            sellOrder.user,
-                            matchedAmount * buyOrder.price
-                        ),
-                        "Payment transfer to seller failed"
+                        idrs_coin.transfer(sellOrder.user, totalIDRS),
+                        'Payment transfer to seller failed'
                     );
 
                     // Emit event for transaction
@@ -153,7 +157,9 @@ contract Market {
                         sellOrder.user,
                         matchedAmount,
                         buyOrder.price,
-                        block.timestamp
+                        block.timestamp,
+                        buyOrder.id,
+                        sellOrder.id
                     );
 
                     // Adjust order amounts
@@ -186,15 +192,15 @@ contract Market {
     }
 
     function cancelOrder(uint256 id, bool isBuy) public {
+        uint256 etkDecimals = etk_token.decimals();
         if (isBuy) {
             Order storage order = buyOrders[id];
-            require(order.user == msg.sender, "Not your order");
+            require(order.user == msg.sender, 'Not your order');
 
+            uint256 totalIDRS = (order.amount * order.price) /
+                (10 ** uint256(etkDecimals)); // Calculate total IDRS for the buy order
             // Refund IDRS to the user
-            require(
-                idrs_coin.transfer(msg.sender, order.amount * order.price),
-                "Refund failed"
-            );
+            require(idrs_coin.transfer(msg.sender, totalIDRS), 'Refund failed');
 
             // Emit event for cancellation
             emit OrderCancelled(
@@ -202,7 +208,8 @@ contract Market {
                 order.amount,
                 order.price,
                 true,
-                block.timestamp
+                block.timestamp,
+                id
             );
 
             // Remove the order
@@ -216,12 +223,12 @@ contract Market {
             }
         } else {
             Order storage order = sellOrders[id];
-            require(order.user == msg.sender, "Not your order");
+            require(order.user == msg.sender, 'Not your order');
 
             // Refund tokens to the user
             require(
                 etk_token.transfer(msg.sender, order.amount),
-                "Refund failed"
+                'Refund failed'
             );
 
             // Emit event for cancellation
@@ -230,7 +237,8 @@ contract Market {
                 order.amount,
                 order.price,
                 false,
-                block.timestamp
+                block.timestamp,
+                id
             );
 
             // Remove the order
@@ -245,7 +253,7 @@ contract Market {
         }
 
         // If the function reaches this point, the order was not found
-        revert("Order not found");
+        revert('Order not found');
     }
 
     function getBuyOrders()
@@ -287,25 +295,27 @@ contract Market {
     }
 
     function getMarketPrice() public view returns (uint256) {
-        uint256 totalAmount = 0;
-        uint256 totalValue = 0;
-
-        for (uint i = 0; i < buyOrderIds.length; i++) {
-            Order storage order = buyOrders[buyOrderIds[i]];
-            totalAmount += order.amount;
-            totalValue += order.amount * order.price;
+        if (sellOrderIds.length == 0) {
+            // No sell orders, try to get highest bid from buy orders
+            if (buyOrderIds.length == 0) {
+                return 0; // No buy orders either
+            }
+            uint256 highestBid = buyOrders[buyOrderIds[0]].price;
+            for (uint i = 1; i < buyOrderIds.length; i++) {
+                uint256 price = buyOrders[buyOrderIds[i]].price;
+                if (price > highestBid) {
+                    highestBid = price;
+                }
+            }
+            return highestBid;
         }
-
-        for (uint i = 0; i < sellOrderIds.length; i++) {
-            Order storage order = sellOrders[sellOrderIds[i]];
-            totalAmount += order.amount;
-            totalValue += order.amount * order.price;
+        uint256 lowestPrice = sellOrders[sellOrderIds[0]].price;
+        for (uint i = 1; i < sellOrderIds.length; i++) {
+            uint256 price = sellOrders[sellOrderIds[i]].price;
+            if (price < lowestPrice) {
+                lowestPrice = price;
+            }
         }
-
-        if (totalAmount == 0) {
-            return 0; // No orders, market price is undefined
-        }
-
-        return totalValue / totalAmount; // Weighted average price
+        return lowestPrice;
     }
 }

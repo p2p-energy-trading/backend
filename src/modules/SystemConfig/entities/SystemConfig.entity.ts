@@ -1,8 +1,4 @@
-import {
-  Entity,
-  Column,
-  PrimaryColumn,
-  } from 'typeorm';
+import { Entity, Column, PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class SystemConfig {
@@ -20,5 +16,4 @@ export class SystemConfig {
 
   @Column({ type: 'varchar', name: 'updated_by', nullable: true })
   updatedBy: string;
-
 }

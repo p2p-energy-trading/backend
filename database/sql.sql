@@ -7,25 +7,46 @@ CREATE TYPE order_type_enum AS ENUM ('BID', 'ASK');
 
 CREATE TYPE order_status_enum AS ENUM ('OPEN', 'PARTIALLY_FILLED', 'FILLED', 'CANCELLED');
 
-CREATE TYPE transaction_log_type_enum AS ENUM ('TRADE', 'SETTLEMENT', 'CONVERSION_IDR_IDRS');
+CREATE TYPE transaction_log_type_enum AS ENUM (
+    'ENERGY_SETTLEMENT',
+    'TOKEN_MINT',
+    'TOKEN_BURN',
+    'MARKET_ORDER',
+    'ORDER_PLACED',
+    'TRADE_EXECUTION',
+    'WALLET_CREATED',
+    'WALLET_IMPORTED',
+    'IDRS_CONVERSION',
+    'TOKEN_APPROVAL',
+    'DEVICE_COMMAND',
+    'ORDER_CANCELLED',
+    'CONTRACT_INTERACTION',
+    'SYSTEM_EVENT'
+);
+
+-- ENUM untuk blacklist types
+CREATE TYPE blacklist_type_enum AS ENUM ('TOKEN', 'USER');
+
+CREATE TYPE blacklist_reason_enum AS ENUM ('LOGOUT', 'LOGOUT_ALL_DEVICES', 'SECURITY_BREACH', 'ADMIN_ACTION', 'EXPIRED');
+
 
 CREATE TYPE currency_enum AS ENUM ('ETK', 'IDRS', 'IDR');
 
 -- Tambahan ENUM untuk status approval dan settlement types
 CREATE TYPE approval_status_enum AS ENUM ('PENDING', 'APPROVED', 'REJECTED', 'EXPIRED');
 
-CREATE TYPE settlement_trigger_enum AS ENUM ('SCHEDULED', 'MANUAL', 'AUTOMATIC');
+CREATE TYPE settlement_trigger_enum AS ENUM ('PERIODIC', 'MANUAL', 'THRESHOLD');
 
 CREATE TYPE wallet_import_method_enum AS ENUM ('GENERATED', 'IMPORTED');
 
 -- Additional ENUMs for MQTT message handling
-CREATE TYPE mqtt_topic_enum AS ENUM ('SENSORS', 'HEARTBEAT', 'STATUS', 'COMMAND', 'SETTLEMENT');
+CREATE TYPE mqtt_topic_enum AS ENUM ('SENSORS', 'STATUS', 'COMMAND', 'SETTLEMENT');
 
 CREATE TYPE mqtt_direction_enum AS ENUM ('INBOUND', 'OUTBOUND');
 
 CREATE TYPE command_status_enum AS ENUM ('SENT', 'ACKNOWLEDGED', 'FAILED', 'TIMEOUT');
 
-CREATE TYPE device_subsystem_enum AS ENUM ('GRID', 'BATTERY', 'SOLAR', 'LOAD', 'SYSTEM');
+CREATE TYPE device_subsystem_enum AS ENUM ('GRID_EXPORT', 'GRID_IMPORT', 'BATTERY', 'SOLAR', 'LOAD', 'SYSTEM');
 
 -- Tabel PROSUMERS
 CREATE TABLE PROSUMERS (
@@ -77,20 +98,6 @@ CREATE TABLE SMART_METERS (
 
 CREATE INDEX idx_smart_meters_prosumer_id ON SMART_METERS (prosumer_id);
 
--- Tabel ENERGY_READINGS
-CREATE TABLE ENERGY_READINGS (
-    reading_id BIGSERIAL PRIMARY KEY,
-    meter_id VARCHAR(255) NOT NULL,
-    timestamp TIMESTAMPTZ NOT NULL,
-    voltage NUMERIC(8, 2), -- Presisi 8 digit, 2 di belakang koma
-    current_amp NUMERIC(8, 3), -- Mengganti 'current' menjadi 'current_amp' agar lebih jelas
-    power_kw NUMERIC(10, 4),
-    flow_direction flow_direction_enum NOT NULL, -- Menggunakan tipe ENUM
-    CONSTRAINT fk_meter_reading FOREIGN KEY (meter_id) REFERENCES SMART_METERS (meter_id) ON DELETE CASCADE -- Jika meter dihapus, readingnya juga terhapus
-);
-
-CREATE INDEX idx_energy_readings_meter_id_timestamp ON ENERGY_READINGS (meter_id, timestamp DESC);
-
 -- Tabel ENERGY_SETTLEMENTS
 CREATE TABLE ENERGY_SETTLEMENTS (
     settlement_id BIGSERIAL PRIMARY KEY,
@@ -103,7 +110,7 @@ CREATE TABLE ENERGY_SETTLEMENTS (
     status transaction_status_enum DEFAULT 'PENDING' NOT NULL, -- Menggunakan tipe ENUM
     created_at_backend TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
     confirmed_at_on_chain TIMESTAMPTZ,
-    settlement_trigger settlement_trigger_enum DEFAULT 'AUTOMATIC' NOT NULL,
+    settlement_trigger settlement_trigger_enum DEFAULT 'PERIODIC' NOT NULL,
     raw_export_kwh NUMERIC(12, 4),
     raw_import_kwh NUMERIC(12, 4),
     validation_status VARCHAR(50) DEFAULT 'VALID',
@@ -134,6 +141,7 @@ CREATE TABLE TRADE_ORDERS_CACHE (
     updated_at_cache TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL, -- Diupdate oleh backend saat sinkronisasi
     blockchain_tx_hash_placed VARCHAR(128), -- Hash transaksi saat order ditempatkan (increased from 66 to 128)
     blockchain_tx_hash_filled VARCHAR(128), -- Hash transaksi saat order terisi penuh (increased from 66 to 128)
+    blockchain_tx_hash_cancelled VARCHAR(128), -- Hash transaksi saat order dibatalkan (increased from 66 to 128)
     CONSTRAINT fk_prosumer_order FOREIGN KEY (prosumer_id) REFERENCES PROSUMERS (prosumer_id) ON DELETE CASCADE,
     CONSTRAINT fk_wallet_order FOREIGN KEY (wallet_address) REFERENCES WALLETS (wallet_address) ON DELETE CASCADE -- Jika wallet dihapus, order terkait juga
 );
@@ -282,22 +290,22 @@ VALUES (
     ),
     (
         'MARKET_CONTRACT_ADDRESS',
-        '0x0000000000000000000000000000000000000000',
+        '0x78cAcf690DB56ee993705b4E97fDd4F57CcC590b',
         'Alamat smart contract Market.sol'
     ),
     (
         'ETK_CONTRACT_ADDRESS',
-        '0x0000000000000000000000000000000000000000',
+        '0xb0609300d3Aac342bD203F93d669f24bdc4C7f6a',
         'Alamat smart contract ETK_Token.sol'
     ),
     (
         'IDRS_CONTRACT_ADDRESS',
-        '0x0000000000000000000000000000000000000000',
+        '0xfe6deA698368eC2f1896827286B6eadfD7cA6fB4',
         'Alamat smart contract IDRS_Token.sol'
     ),
     (
         'ENERGY_CONVERTER_ADDRESS',
-        '0x0000000000000000000000000000000000000000',
+        '0x025e4abF3f5D838d4fc5087714Ff8D39431cf35c',
         'Alamat smart contract EnergyConverter.sol'
     ),
     (
@@ -307,12 +315,12 @@ VALUES (
     ),
     (
         'BLOCKCHAIN_NETWORK_ID',
-        '1337',
+        '10',
         'Network ID dari private Ethereum'
     ),
     (
         'MIN_SETTLEMENT_KWH',
-        '0.001',
+        '0.1',
         'Minimum kWh untuk memicu settlement'
     );
 
@@ -338,19 +346,6 @@ EXECUTE FUNCTION trigger_set_timestamp();
 
 -- Anda bisa menambahkan trigger serupa untuk tabel lain jika diperlukan
 -- atau biarkan ORM/aplikasi Anda yang menangani `updated_at`.
-
--- Tambahan constraint dan index untuk optimasi
-ALTER TABLE ENERGY_READINGS
-ADD CONSTRAINT chk_positive_power CHECK (power_kw >= 0);
-
-ALTER TABLE ENERGY_READINGS
-ADD CONSTRAINT chk_valid_voltage CHECK (voltage > 0);
-
-ALTER TABLE ENERGY_READINGS
-ADD CONSTRAINT chk_valid_current CHECK (current_amp >= 0);
-
--- Index tambahan untuk performa query
-CREATE INDEX idx_energy_readings_timestamp ON ENERGY_READINGS (timestamp DESC);
 
 CREATE INDEX idx_energy_settlements_period ON ENERGY_SETTLEMENTS (
     period_start_time,
@@ -386,7 +381,7 @@ INSERT INTO
 VALUES (
         'PROS001',
         'john.doe@energy.com',
-        '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LeChE.1J6.1J6.1J6',
+        '$2b$12$eWp8Yu.l9Wh43pxUuVJXA.vhgupCO5.3CtNzgzztLwjptNkyHZB22',
         'John Doe',
         '2024-01-15 08:00:00+07',
         '2024-01-15 08:00:00+07'
@@ -394,7 +389,7 @@ VALUES (
     (
         'PROS002',
         'jane.smith@energy.com',
-        '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LeChE.2J6.2J6.2J6',
+        '$2b$12$eWp8Yu.l9Wh43pxUuVJXA.vhgupCO5.3CtNzgzztLwjptNkyHZB22',
         'Jane Smith',
         '2024-01-16 09:30:00+07',
         '2024-01-16 09:30:00+07'
@@ -402,7 +397,7 @@ VALUES (
     (
         'PROS003',
         'bob.wilson@energy.com',
-        '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LeChE.3J6.3J6.3J6',
+        '$2b$12$eWp8Yu.l9Wh43pxUuVJXA.vhgupCO5.3CtNzgzztLwjptNkyHZB22',
         'Bob Wilson',
         '2024-01-17 10:15:00+07',
         '2024-01-17 10:15:00+07'
@@ -410,7 +405,7 @@ VALUES (
     (
         'PROS004',
         'alice.brown@energy.com',
-        '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LeChE.4J6.4J6.4J6',
+        '$2b$12$eWp8Yu.l9Wh43pxUuVJXA.vhgupCO5.3CtNzgzztLwjptNkyHZB22',
         'Alice Brown',
         '2024-01-18 11:45:00+07',
         '2024-01-18 11:45:00+07'
@@ -418,7 +413,7 @@ VALUES (
     (
         'PROS005',
         'charlie.davis@energy.com',
-        '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LeChE.5J6.5J6.5J6',
+        '$2b$12$eWp8Yu.l9Wh43pxUuVJXA.vhgupCO5.3CtNzgzztLwjptNkyHZB22',
         'Charlie Davis',
         '2024-01-19 14:20:00+07',
         '2024-01-19 14:20:00+07'
@@ -434,17 +429,17 @@ INSERT INTO
         created_at
     )
 VALUES (
-        '0x1234567890123456789012345678901234567890',
+        '0x54C14D3B8004F435EAC96093CdC288c7750bE7Ea',
         'PROS001',
         'John Primary Wallet',
-        'encrypted_key_1_very_long_encrypted_string',
+        '375d94aafc45e3642865c9beb2939e46e7e263db3355a27acba5fd3976cf7b52',
         '2024-01-15 08:30:00+07'
     ),
     (
-        '0x2345678901234567890123456789012345678901',
+        '0xFdCb4711CE01EEeDa950Ee80cFe364286615A17e',
         'PROS002',
         'Jane Main Wallet',
-        'encrypted_key_2_very_long_encrypted_string',
+        '3a4e16c3706eec96f018394580ee4b5f267c3a55717dc5c6e45c821d899a3407',
         '2024-01-16 10:00:00+07'
     ),
     (
@@ -455,10 +450,10 @@ VALUES (
         '2024-01-17 10:45:00+07'
     ),
     (
-        '0x4567890123456789012345678901234567890123',
+        '0xB2d6d1c54C5bb3f71d4cE5B0186338a0bB355d3F',
         'PROS004',
         'Alice Trading Wallet',
-        'encrypted_key_4_very_long_encrypted_string',
+        '967aa8eca3e07a132627ab8e1980a63abefdfe0649c3d3a2e33fe014930b8f0c',
         '2024-01-18 12:15:00+07'
     ),
     (
@@ -532,97 +527,6 @@ VALUES (
         '2024-06-09 15:35:00+07'
     );
 
--- Insert data dummy ENERGY_READINGS
-INSERT INTO
-    ENERGY_READINGS (
-        meter_id,
-        timestamp,
-        voltage,
-        current_amp,
-        power_kw,
-        flow_direction
-    )
-VALUES (
-        'METER001',
-        '2024-06-09 14:00:00+07',
-        220.50,
-        45.250,
-        9.9563,
-        'GENERATION'
-    ),
-    (
-        'METER001',
-        '2024-06-09 14:15:00+07',
-        219.80,
-        42.180,
-        9.2717,
-        'GENERATION'
-    ),
-    (
-        'METER001',
-        '2024-06-09 14:30:00+07',
-        221.20,
-        38.450,
-        8.5022,
-        'CONSUMPTION'
-    ),
-    (
-        'METER002',
-        '2024-06-09 14:00:00+07',
-        218.90,
-        52.340,
-        11.4579,
-        'GENERATION'
-    ),
-    (
-        'METER002',
-        '2024-06-09 14:15:00+07',
-        220.10,
-        48.920,
-        10.7665,
-        'GENERATION'
-    ),
-    (
-        'METER003',
-        '2024-06-09 14:00:00+07',
-        219.50,
-        35.670,
-        7.8306,
-        'CONSUMPTION'
-    ),
-    (
-        'METER003',
-        '2024-06-09 14:15:00+07',
-        220.80,
-        55.120,
-        12.1705,
-        'EXPORT'
-    ),
-    (
-        'METER004',
-        '2024-06-09 13:45:00+07',
-        217.30,
-        28.450,
-        6.1832,
-        'IMPORT'
-    ),
-    (
-        'METER005',
-        '2024-06-09 14:00:00+07',
-        222.10,
-        61.230,
-        13.5972,
-        'GENERATION'
-    ),
-    (
-        'METER005',
-        '2024-06-09 14:15:00+07',
-        221.80,
-        58.940,
-        13.0738,
-        'EXPORT'
-    );
-
 -- Insert data dummy ENERGY_SETTLEMENTS
 INSERT INTO
     ENERGY_SETTLEMENTS (
@@ -675,7 +579,7 @@ VALUES (
         '2024-06-08 23:59:59+07',
         5.9870,
         59.870000000000000000,
-        '0x456789012345678901234567890123456789012345678901234567890123456def',
+        '0xB2d6d1c54C5bb3f71d4cE5B0186338a0bB355d3F45678901234567890123456def',
         'PENDING',
         '2024-06-09 01:15:00+07',
         NULL
@@ -712,7 +616,7 @@ INSERT INTO
 VALUES (
         'ORDER001',
         'PROS001',
-        '0x1234567890123456789012345678901234567890',
+        '0x54C14D3B8004F435EAC96093CdC288c7750bE7Ea',
         'ASK',
         'ETK/IDRS',
         100.000000000000000000,
@@ -727,7 +631,7 @@ VALUES (
     (
         'ORDER002',
         'PROS002',
-        '0x2345678901234567890123456789012345678901',
+        '0xFdCb4711CE01EEeDa950Ee80cFe364286615A17e',
         'BID',
         'ETK/IDRS',
         150.000000000000000000,
@@ -757,7 +661,7 @@ VALUES (
     (
         'ORDER004',
         'PROS004',
-        '0x4567890123456789012345678901234567890123',
+        '0xB2d6d1c54C5bb3f71d4cE5B0186338a0bB355d3F',
         'BID',
         'ETK/IDRS',
         200.000000000000000000,
@@ -804,7 +708,7 @@ VALUES (
         'PROS001',
         'ORDER001',
         NULL,
-        'TRADE',
+        'TRADE_EXECUTION',
         'Sold 100 ETK at 15000 IDRS per ETK',
         100.000000000000000000,
         'ETK',
@@ -817,7 +721,7 @@ VALUES (
         'PROS001',
         NULL,
         1,
-        'SETTLEMENT',
+        'ENERGY_SETTLEMENT',
         'Energy settlement for period 2024-06-08',
         152.450000000000000000,
         'ETK',
@@ -830,7 +734,7 @@ VALUES (
         'PROS002',
         NULL,
         2,
-        'SETTLEMENT',
+        'ENERGY_SETTLEMENT',
         'Energy settlement for period 2024-06-08',
         223.680000000000000000,
         'ETK',
@@ -843,7 +747,7 @@ VALUES (
         'PROS003',
         NULL,
         3,
-        'SETTLEMENT',
+        'ENERGY_SETTLEMENT',
         'Energy consumption settlement for period 2024-06-08',
         8.125000000000000000,
         'ETK',
@@ -856,7 +760,7 @@ VALUES (
         'PROS005',
         NULL,
         5,
-        'SETTLEMENT',
+        'ENERGY_SETTLEMENT',
         'Energy settlement for period 2024-06-08',
         314.920000000000000000,
         'ETK',
@@ -869,7 +773,7 @@ VALUES (
         'PROS002',
         NULL,
         NULL,
-        'CONVERSION_IDR_IDRS',
+        'IDRS_CONVERSION',
         'Converted IDR to IDRS tokens',
         1000000.000000000000000000,
         'IDRS',
@@ -894,7 +798,7 @@ INSERT INTO
     )
 VALUES (
         'PROS001',
-        '0x1234567890123456789012345678901234567890',
+        '0x54C14D3B8004F435EAC96093CdC288c7750bE7Ea',
         '0x9999999999999999999999999999999999999999',
         '0x8888888888888888888888888888888888888888',
         1000.000000000000000000,
@@ -905,7 +809,7 @@ VALUES (
     ),
     (
         'PROS002',
-        '0x2345678901234567890123456789012345678901',
+        '0xFdCb4711CE01EEeDa950Ee80cFe364286615A17e',
         '0x9999999999999999999999999999999999999999',
         '0x7777777777777777777777777777777777777777',
         2000000.000000000000000000,
@@ -934,8 +838,8 @@ VALUES (
         'ORDER001',
         'PROS002',
         'PROS001',
-        '0x2345678901234567890123456789012345678901',
-        '0x1234567890123456789012345678901234567890',
+        '0xFdCb4711CE01EEeDa950Ee80cFe364286615A17e',
+        '0x54C14D3B8004F435EAC96093CdC288c7750bE7Ea',
         100.000000000000000000,
         15000.000000000000000000,
         1500000.000000000000000000,
@@ -958,7 +862,7 @@ INSERT INTO
     )
 VALUES (
         'PROS002',
-        '0x2345678901234567890123456789012345678901',
+        '0xFdCb4711CE01EEeDa950Ee80cFe364286615A17e',
         'ON_RAMP',
         1000000.00,
         1000000.000000000000000000,
@@ -1173,24 +1077,101 @@ CREATE INDEX idx_energy_detailed_subsystem ON ENERGY_READINGS_DETAILED (subsyste
 
 CREATE INDEX idx_energy_detailed_timestamp ON ENERGY_READINGS_DETAILED (timestamp DESC);
 
--- Tabel untuk Device Heartbeats
-CREATE TABLE DEVICE_HEARTBEATS (
-    heartbeat_id BIGSERIAL PRIMARY KEY,
-    meter_id VARCHAR(255) NOT NULL,
-    timestamp TIMESTAMPTZ NOT NULL,
-    uptime_seconds BIGINT,
-    free_heap_bytes BIGINT,
-    signal_strength INTEGER, -- WiFi RSSI
-    additional_metrics JSONB, -- for future extensibility
-    CONSTRAINT fk_heartbeat_meter FOREIGN KEY (meter_id) REFERENCES SMART_METERS (meter_id) ON DELETE CASCADE
-);
-
-CREATE INDEX idx_heartbeats_meter_timestamp ON DEVICE_HEARTBEATS (meter_id, timestamp DESC);
-
 -- Add foreign key constraint to ENERGY_SETTLEMENTS for MQTT message tracking
 ALTER TABLE ENERGY_SETTLEMENTS
 ADD CONSTRAINT fk_settlement_mqtt FOREIGN KEY (mqtt_message_id) REFERENCES MQTT_MESSAGE_LOGS (log_id) ON DELETE SET NULL;
 
+
+-- Tabel untuk Token Blacklist
+CREATE TABLE TOKEN_BLACKLIST (
+    blacklist_id BIGSERIAL PRIMARY KEY,
+    blacklist_type blacklist_type_enum NOT NULL,
+    prosumer_id VARCHAR(255) NOT NULL,
+    token_hash VARCHAR(255), -- SHA256 hash of token (for TOKEN type)
+    reason blacklist_reason_enum DEFAULT 'LOGOUT' NOT NULL,
+    ip_address INET,
+    user_agent TEXT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL, -- When this blacklist entry expires
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+    created_by VARCHAR(255), -- Who created this blacklist entry (system/admin)
+    notes TEXT,
+    CONSTRAINT fk_blacklist_prosumer FOREIGN KEY (prosumer_id) REFERENCES PROSUMERS (prosumer_id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_token_blacklist_prosumer ON TOKEN_BLACKLIST (prosumer_id);
+CREATE INDEX idx_token_blacklist_type ON TOKEN_BLACKLIST (blacklist_type);
+CREATE INDEX idx_token_blacklist_token_hash ON TOKEN_BLACKLIST (token_hash);
+CREATE INDEX idx_token_blacklist_expires ON TOKEN_BLACKLIST (expires_at);
+CREATE INDEX idx_token_blacklist_active ON TOKEN_BLACKLIST (is_active);
+CREATE INDEX idx_token_blacklist_created ON TOKEN_BLACKLIST (created_at DESC);
+
+-- Unique constraint untuk token blacklist (prevent duplicate token blacklisting)
+CREATE UNIQUE INDEX idx_token_blacklist_unique_token 
+ON TOKEN_BLACKLIST (token_hash) 
+WHERE blacklist_type = 'TOKEN' AND is_active = TRUE;
+
+-- Unique constraint untuk user blacklist (prevent duplicate user blacklisting)
+CREATE UNIQUE INDEX idx_token_blacklist_unique_user 
+ON TOKEN_BLACKLIST (prosumer_id) 
+WHERE blacklist_type = 'USER' AND is_active = TRUE;
+
+-- Function untuk cleanup expired blacklist entries
+CREATE OR REPLACE FUNCTION cleanup_expired_blacklist()
+RETURNS void AS $$
+BEGIN
+    UPDATE TOKEN_BLACKLIST 
+    SET is_active = FALSE
+    WHERE expires_at < CURRENT_TIMESTAMP 
+    AND is_active = TRUE;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Insert dummy data untuk TOKEN_BLACKLIST
+INSERT INTO TOKEN_BLACKLIST (
+    blacklist_type,
+    prosumer_id,
+    token_hash,
+    reason,
+    ip_address,
+    user_agent,
+    expires_at,
+    created_by,
+    notes
+) VALUES 
+(
+    'TOKEN',
+    'PROS001',
+    'sha256_hash_of_token_123456789abcdef',
+    'LOGOUT',
+    '192.168.1.100',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    CURRENT_TIMESTAMP + INTERVAL '1 hour',
+    'SYSTEM',
+    'Normal logout'
+),
+(
+    'USER',
+    'PROS002',
+    NULL,
+    'LOGOUT_ALL_DEVICES',
+    '192.168.1.101',
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
+    CURRENT_TIMESTAMP + INTERVAL '1 hour',
+    'SYSTEM',
+    'User requested logout from all devices'
+),
+(
+    'TOKEN',
+    'PROS003',
+    'sha256_hash_of_suspicious_token_abcdef123456789',
+    'SECURITY_BREACH',
+    '10.0.0.50',
+    'Unknown/Suspicious',
+    CURRENT_TIMESTAMP + INTERVAL '24 hours',
+    'ADMIN',
+    'Suspicious activity detected'
+);
 -- Enhanced dummy data for new IoT tables
 INSERT INTO
     MQTT_MESSAGE_LOGS (
@@ -1216,15 +1197,6 @@ VALUES (
         "load": {"daily_energy_wh": 9800, "total_energy_wh": 342156, "settlement_energy_wh": 980, "power": 1250}
     }'::jsonb,
         '2024-06-09 14:00:00+07',
-        NULL
-    ),
-    (
-        'METER001',
-        'HEARTBEAT',
-        'INBOUND',
-        'home/energy-monitor/heartbeat',
-        '{"timestamp": "2024-06-09T14:00:30Z", "uptime": 86400, "free_heap": 45000}'::jsonb,
-        '2024-06-09 14:00:30+07',
         NULL
     ),
     (
@@ -1334,10 +1306,10 @@ INSERT INTO
 VALUES (
         'METER001',
         '2024-06-09 14:00:00+07',
-        'GRID',
+        'GRID_EXPORT',
         15240.0,
         487632.0,
-        1524.0,
+        30,
         2500.0,
         '{"direction": "export", "frequency": 50.1, "power_factor": 0.95}'::jsonb,
         '{"export": {"daily_energy_wh": 15240, "power": 2500}}'::jsonb
@@ -1348,7 +1320,7 @@ VALUES (
         'SOLAR',
         12800.0,
         456789.0,
-        1280.0,
+        30.0,
         2800.0,
         '{"irradiance": 850, "panel_temp": 45.2, "efficiency": 0.18}'::jsonb,
         '{"solar": {"daily_energy_wh": 12800, "power": 2800}}'::jsonb
@@ -1378,11 +1350,11 @@ VALUES (
     (
         'METER002',
         '2024-06-09 14:05:00+07',
-        'GRID',
+        'GRID_IMPORT',
         22368.0,
         298451.0,
-        2236.8,
-        3500.0,
+        30.8,
+        30,
         '{"direction": "import", "frequency": 50.0, "power_factor": 0.90}'::jsonb,
         '{"import": {"daily_energy_wh": 22368, "power": 3500}}'::jsonb
     ),
@@ -1420,40 +1392,6 @@ VALUES (
         '{"load": {"daily_energy_wh": 22368, "power": 3500}}'::jsonb
     );
 
-INSERT INTO
-    DEVICE_HEARTBEATS (
-        meter_id,
-        timestamp,
-        uptime_seconds,
-        free_heap_bytes,
-        signal_strength,
-        additional_metrics
-    )
-VALUES (
-        'METER001',
-        '2024-06-09 14:00:30+07',
-        86400,
-        45000,
-        -45,
-        '{"cpu_usage": 15.5, "memory_usage": 62.3, "temperature": 42.5}'::jsonb
-    ),
-    (
-        'METER002',
-        '2024-06-09 14:00:35+07',
-        172800,
-        42000,
-        -38,
-        '{"cpu_usage": 12.8, "memory_usage": 58.1, "temperature": 40.2}'::jsonb
-    ),
-    (
-        'METER003',
-        '2024-06-09 14:00:40+07',
-        259200,
-        38500,
-        -52,
-        '{"cpu_usage": 18.2, "memory_usage": 71.4, "temperature": 44.8}'::jsonb
-    );
-
 -- Update existing smart meters with enhanced IoT data
 UPDATE SMART_METERS
 SET
@@ -1486,11 +1424,6 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_update_meter_heartbeat
-    AFTER INSERT ON DEVICE_HEARTBEATS
-    FOR EACH ROW
-    EXECUTE FUNCTION update_meter_last_heartbeat();
 
 -- Function to automatically update command status based on MQTT response
 CREATE OR REPLACE FUNCTION update_command_status_from_mqtt()

@@ -3,11 +3,11 @@ import {
   Post,
   Get,
   Body,
-  Param,
   UseGuards,
   Request,
   BadRequestException,
   Query,
+  Logger,
 } from '@nestjs/common';
 import { BlockchainService } from '../services/blockchain.service';
 import { EnergySettlementService } from '../services/energy-settlement.service';
@@ -15,8 +15,13 @@ import { WalletsService } from '../modules/Wallets/Wallets.service';
 import { TradeOrdersCacheService } from '../modules/TradeOrdersCache/TradeOrdersCache.service';
 import { MarketTradesService } from '../modules/MarketTrades/MarketTrades.service';
 import { JwtAuthGuard } from '../auth/guards/auth.guards';
-import { OrderType } from '../common/enums';
 import { ProsumersService } from 'src/modules/Prosumers/Prosumers.service';
+
+interface User extends Request {
+  user: {
+    prosumerId: string;
+  };
+}
 
 interface PlaceOrderRequest {
   walletAddress: string;
@@ -25,45 +30,11 @@ interface PlaceOrderRequest {
   price: number;
 }
 
-interface ApproveTokenRequest {
-  walletAddress: string;
-  tokenContract: string;
-  spenderContract: string;
-  amount: number;
-}
-
-interface MintTokenRequest {
-  walletAddress: string;
-  amount: number;
-}
-
-interface AuthorizeMeterRequest {
-  ownerWalletAddress: string;
-  meterId: string;
-  meterAddress: string;
-}
-
-interface UpdateConversionRatioRequest {
-  ownerWalletAddress: string;
-  newRatio: number;
-}
-
-interface UpdateMinSettlementRequest {
-  ownerWalletAddress: string;
-  newMinWh: number;
-}
-
-interface ProcessSettlementRequest {
-  walletAddress: string;
-  meterId: string;
-  prosumerAddress: string;
-  netEnergyWh: number;
-  settlementId: string;
-}
-
 @Controller('trading')
 @UseGuards(JwtAuthGuard)
 export class TradingController {
+  private readonly logger = new Logger(TradingController.name);
+
   constructor(
     private blockchainService: BlockchainService,
     private energySettlementService: EnergySettlementService,
@@ -73,29 +44,8 @@ export class TradingController {
     private prosumersService: ProsumersService,
   ) {}
 
-  @Post('approve')
-  async approveToken(@Body() body: ApproveTokenRequest, @Request() req) {
-    const prosumerId = req.user.prosumerId;
-
-    // Verify wallet ownership
-    await this.verifyWalletOwnership(body.walletAddress, prosumerId);
-
-    const txHash = await this.blockchainService.approveToken(
-      body.walletAddress,
-      body.tokenContract,
-      body.spenderContract,
-      body.amount,
-    );
-
-    return {
-      success: true,
-      transactionHash: txHash,
-      message: 'Token approval transaction sent',
-    };
-  }
-
   @Post('order')
-  async placeOrder(@Body() body: PlaceOrderRequest, @Request() req) {
+  async placeOrder(@Body() body: PlaceOrderRequest, @Request() req: User) {
     const prosumerId = req.user.prosumerId;
 
     // Verify wallet ownership
@@ -123,160 +73,8 @@ export class TradingController {
     };
   }
 
-  // New endpoint for processing energy settlements
-  @Post('settlement/process')
-  async processEnergySettlement(
-    @Body() body: ProcessSettlementRequest,
-    @Request() req,
-  ) {
-    const prosumerId = req.user.prosumerId;
-
-    // Verify wallet ownership
-    await this.verifyWalletOwnership(body.walletAddress, prosumerId);
-
-    const txHash = await this.blockchainService.processEnergySettlement(
-      body.walletAddress,
-      body.meterId,
-      body.prosumerAddress,
-      body.netEnergyWh,
-      body.settlementId,
-    );
-
-    return {
-      success: true,
-      transactionHash: txHash,
-      message: 'Energy settlement processed',
-    };
-  }
-
-  // New endpoint for manual settlement trigger
-  @Post('settlement/manual/:meterId')
-  async manualSettlement(@Param('meterId') meterId: string, @Request() req) {
-    const prosumerId = req.user.prosumerId;
-
-    const txHash = await this.energySettlementService.manualSettlement(
-      meterId,
-      prosumerId,
-    );
-
-    return {
-      success: true,
-      transactionHash: txHash,
-      message: txHash
-        ? 'Manual settlement processed'
-        : 'Settlement threshold not met',
-    };
-  }
-
-  // New endpoint for minting ETK tokens
-  @Post('tokens/etk/mint')
-  async mintETKTokens(@Body() body: MintTokenRequest, @Request() req) {
-    const prosumerId = req.user.prosumerId;
-
-    // Verify wallet ownership
-    await this.verifyWalletOwnership(body.walletAddress, prosumerId);
-
-    const txHash = await this.blockchainService.mintETKTokens(
-      body.walletAddress,
-      body.amount,
-    );
-
-    return {
-      success: true,
-      transactionHash: txHash,
-      message: 'ETK tokens minted',
-    };
-  }
-
-  // New endpoint for minting IDRS tokens
-  @Post('tokens/idrs/mint')
-  async mintIDRSTokens(@Body() body: MintTokenRequest, @Request() req) {
-    const prosumerId = req.user.prosumerId;
-
-    // Verify wallet ownership
-    await this.verifyWalletOwnership(body.walletAddress, prosumerId);
-
-    const txHash = await this.blockchainService.mintIDRSTokens(
-      body.walletAddress,
-      body.amount,
-    );
-
-    return {
-      success: true,
-      transactionHash: txHash,
-      message: 'IDRS tokens minted',
-    };
-  }
-
-  // New endpoint for authorizing meters (admin function)
-  @Post('meter/authorize')
-  async authorizeMeter(@Body() body: AuthorizeMeterRequest, @Request() req) {
-    const prosumerId = req.user.prosumerId;
-
-    // Verify wallet ownership
-    await this.verifyWalletOwnership(body.ownerWalletAddress, prosumerId);
-
-    const txHash = await this.blockchainService.authorizeMeter(
-      body.ownerWalletAddress,
-      body.meterId,
-      body.meterAddress,
-    );
-
-    return {
-      success: true,
-      transactionHash: txHash,
-      message: 'Meter authorized for settlements',
-    };
-  }
-
-  // New endpoint for updating conversion ratio (admin function)
-  @Post('config/conversion-ratio')
-  async updateConversionRatio(
-    @Body() body: UpdateConversionRatioRequest,
-    @Request() req,
-  ) {
-    const prosumerId = req.user.prosumerId;
-
-    // Verify wallet ownership
-    await this.verifyWalletOwnership(body.ownerWalletAddress, prosumerId);
-
-    const txHash = await this.blockchainService.updateConversionRatio(
-      body.ownerWalletAddress,
-      body.newRatio,
-    );
-
-    return {
-      success: true,
-      transactionHash: txHash,
-      message: 'Conversion ratio updated',
-    };
-  }
-
-  // New endpoint for updating minimum settlement threshold (admin function)
-  @Post('config/min-settlement')
-  async updateMinSettlement(
-    @Body() body: UpdateMinSettlementRequest,
-    @Request() req,
-  ) {
-    const prosumerId = req.user.prosumerId;
-
-    // Verify wallet ownership
-    await this.verifyWalletOwnership(body.ownerWalletAddress, prosumerId);
-
-    const txHash = await this.blockchainService.updateMinSettlement(
-      body.ownerWalletAddress,
-      body.newMinWh,
-    );
-
-    return {
-      success: true,
-      transactionHash: txHash,
-      message: 'Minimum settlement threshold updated',
-    };
-  }
-
   @Get('orders')
-  async getOrders(@Request() req, @Query('status') status?: string) {
+  async getOrders(@Request() req: User, @Query('status') status?: string) {
     const prosumerId = req.user.prosumerId;
 
     // Get user's wallets
@@ -296,33 +94,40 @@ export class TradingController {
     let filteredOrders = allOrders;
     if (status) {
       filteredOrders = allOrders.filter(
-        (order) => order.statusOnChain === status,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        (order: any) => order.statusOnChain === status,
       );
     }
 
     return {
       success: true,
       data: filteredOrders.sort(
-        (a, b) =>
-          new Date(b.createdAtOnChain).getTime() -
-          new Date(a.createdAtOnChain).getTime(),
+        (a: any, b: any) =>
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          new Date(b.createdAtOnChain as string).getTime() -
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          new Date(a.createdAtOnChain as string).getTime(),
       ),
     };
   }
 
-  @Get('orderbook')
-  async getOrderBook() {
+  @Get('orderbook-detailed')
+  async getOrderBookDetailed() {
     const allOrders = await this.tradeOrdersCacheService.findAll({
       statusOnChain: 'OPEN',
     });
 
     const buyOrders = allOrders
-      .filter((order) => order.orderType === OrderType.BID)
-      .sort((a, b) => b.priceIdrsPerEtk - a.priceIdrsPerEtk); // Highest price first for buy orders
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      .filter((order: any) => order.orderType === 'BID')
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      .sort((a: any, b: any) => b.priceIdrsPerEtk - a.priceIdrsPerEtk); // Highest price first for buy orders
 
     const sellOrders = allOrders
-      .filter((order) => order.orderType === OrderType.ASK)
-      .sort((a, b) => a.priceIdrsPerEtk - b.priceIdrsPerEtk); // Lowest price first for sell orders
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      .filter((order: any) => order.orderType === 'ASK')
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      .sort((a: any, b: any) => a.priceIdrsPerEtk - b.priceIdrsPerEtk); // Lowest price first for sell orders
 
     return {
       success: true,
@@ -333,8 +138,97 @@ export class TradingController {
     };
   }
 
+  @Get('orderbook')
+  async getOrderBook() {
+    const allOrders = await this.tradeOrdersCacheService.findAll({
+      statusOnChain: 'OPEN',
+    });
+
+    // Group buy orders by price and sum quantities
+    const buyOrdersMap = allOrders
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      .filter((order: any) => order.orderType === 'BID')
+      .reduce(
+        (acc, order: any) => {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          const price = Number(order.priceIdrsPerEtk);
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          const quantity = Number(order.amountEtk);
+          acc[price] = (acc[price] || 0) + quantity;
+          return acc;
+        },
+        {} as Record<number, number>,
+      );
+
+    // Group sell orders by price and sum quantities
+    const sellOrdersMap = allOrders
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      .filter((order: any) => order.orderType === 'ASK')
+      .reduce(
+        (acc, order: any) => {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          const price = Number(order.priceIdrsPerEtk);
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          const quantity = Number(order.amountEtk);
+          acc[price] = (acc[price] || 0) + quantity;
+          this.logger.debug(
+            `Accumulating sell order: price=${price}, quantity=${quantity}, total=${acc[price]}`,
+          );
+          return acc;
+        },
+        {} as Record<number, number>,
+      );
+
+    // Convert to arrays and sort
+    const buyOrders = Object.entries(buyOrdersMap)
+      .map(([price, quantity]) => ({
+        priceIdrsPerEtk: parseFloat(price),
+        totalAmountEtk: Number(quantity),
+        totalValueIdrs: parseFloat(price) * Number(quantity),
+      }))
+      .sort((a, b) => b.priceIdrsPerEtk - a.priceIdrsPerEtk); // Highest price first for buy orders
+
+    const sellOrders = Object.entries(sellOrdersMap)
+      .map(([price, quantity]) => ({
+        priceIdrsPerEtk: parseFloat(price),
+        totalAmountEtk: Number(quantity),
+        totalValueIdrs: parseFloat(price) * Number(quantity),
+      }))
+      .sort((a, b) => a.priceIdrsPerEtk - b.priceIdrsPerEtk); // Lowest price first for sell orders
+
+    // Calculate spread (difference between best bid and best ask)
+    const bestBid = buyOrders.length > 0 ? buyOrders[0].priceIdrsPerEtk : 0;
+    const bestAsk = sellOrders.length > 0 ? sellOrders[0].priceIdrsPerEtk : 0;
+    const spread = bestAsk > 0 && bestBid > 0 ? bestAsk - bestBid : 0;
+    const spreadPercentage = bestBid > 0 ? (spread / bestBid) * 100 : 0;
+
+    return {
+      success: true,
+      data: {
+        summary: {
+          totalBuyOrders: buyOrders.length,
+          totalSellOrders: sellOrders.length,
+          bestBidPrice: bestBid,
+          bestAskPrice: bestAsk,
+          spread: parseFloat(spread.toFixed(2)),
+          spreadPercentage: parseFloat(spreadPercentage.toFixed(2)),
+          totalBuyVolume: buyOrders.reduce(
+            (sum, order) => sum + order.totalAmountEtk,
+            0,
+          ),
+          totalSellVolume: sellOrders.reduce(
+            (sum, order) => sum + order.totalAmountEtk,
+            0,
+          ),
+        },
+        buyOrders: buyOrders.slice(0, 20), // Top 20 buy price levels
+        sellOrders: sellOrders.slice(0, 20), // Top 20 sell price levels
+      },
+    };
+  }
+
   @Get('trades')
-  async getTrades(@Request() req, @Query('limit') limit?: string) {
+  async getTrades(@Request() req: User, @Query('limit') limit?: string) {
     const prosumerId = req.user.prosumerId;
     const maxLimit = limit ? parseInt(limit) : 50;
 
@@ -357,150 +251,22 @@ export class TradingController {
     // Remove duplicates and sort by trade timestamp
     const uniqueTrades = allTrades
       .filter(
-        (trade, index, self) =>
-          index === self.findIndex((t) => t.tradeId === trade.tradeId),
+        (trade: any, index: number, self: any[]) =>
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          index === self.findIndex((t: any) => t.tradeId === trade.tradeId),
       )
       .sort(
-        (a, b) =>
-          new Date(b.tradeTimestamp).getTime() -
-          new Date(a.tradeTimestamp).getTime(),
+        (a: any, b: any) =>
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          new Date(b.tradeTimestamp as string).getTime() -
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          new Date(a.tradeTimestamp as string).getTime(),
       )
       .slice(0, maxLimit);
 
     return {
       success: true,
       data: uniqueTrades,
-    };
-  }
-
-  @Get('balances/:walletAddress')
-  async getWalletBalances(
-    @Param('walletAddress') walletAddress: string,
-    @Request() req,
-  ) {
-    const prosumerId = req.user.prosumerId;
-
-    // Verify wallet ownership
-    await this.verifyWalletOwnership(walletAddress, prosumerId);
-
-    const ethBalance =
-      await this.blockchainService.getEthBalance(walletAddress);
-    const etkBalance = await this.blockchainService.getTokenBalance(
-      walletAddress,
-      process.env.CONTRACT_ETK_TOKEN ||
-        '0x0000000000000000000000000000000000000000',
-    );
-    const idrsBalance = await this.blockchainService.getTokenBalance(
-      walletAddress,
-      process.env.CONTRACT_IDRS_TOKEN ||
-        '0x0000000000000000000000000000000000000000',
-    );
-
-    return {
-      success: true,
-      data: {
-        walletAddress,
-        balances: {
-          ETH: ethBalance,
-          ETK: etkBalance,
-          IDRS: idrsBalance,
-        },
-      },
-    };
-  }
-
-  // New endpoint for getting settlement history
-  @Get('settlements')
-  async getSettlementHistory(
-    @Request() req,
-    @Query('meterId') meterId?: string,
-    @Query('limit') limit?: string,
-  ) {
-    const prosumerId = req.user.prosumerId;
-    const maxLimit = limit ? parseInt(limit) : 50;
-
-    const settlements = await this.energySettlementService.getSettlementHistory(
-      meterId,
-      prosumerId,
-      maxLimit,
-    );
-
-    return {
-      success: true,
-      data: settlements,
-    };
-  }
-
-  // New endpoint for getting blockchain settlement details
-  @Get('settlement/:settlementId')
-  async getBlockchainSettlement(@Param('settlementId') settlementId: string) {
-    const settlement =
-      await this.energySettlementService.getBlockchainSettlement(settlementId);
-
-    return {
-      success: true,
-      data: settlement,
-    };
-  }
-
-  // New endpoint for getting conversion ratio
-  @Get('config/conversion-ratio')
-  async getConversionRatio() {
-    const ratio = await this.energySettlementService.getConversionRatio();
-
-    return {
-      success: true,
-      data: { conversionRatio: ratio },
-    };
-  }
-
-  // New endpoint for getting minimum settlement threshold
-  @Get('config/min-settlement')
-  async getMinSettlement() {
-    const minWh =
-      await this.energySettlementService.getMinimumSettlementThreshold();
-
-    return {
-      success: true,
-      data: { minSettlementWh: minWh },
-    };
-  }
-
-  // New endpoint for checking meter authorization
-  @Get('meter/:meterId/authorization')
-  async checkMeterAuthorization(@Param('meterId') meterId: string) {
-    const isAuthorized =
-      await this.energySettlementService.checkMeterAuthorization(meterId);
-
-    return {
-      success: true,
-      data: { meterId, isAuthorized },
-    };
-  }
-
-  // New endpoint for calculating ETK amount from energy
-  @Get('calculate/etk/:energyWh')
-  async calculateETKAmount(@Param('energyWh') energyWh: string) {
-    const etkAmount = await this.blockchainService.calculateEtkAmount(
-      parseInt(energyWh),
-    );
-
-    return {
-      success: true,
-      data: { energyWh: parseInt(energyWh), etkAmount },
-    };
-  }
-
-  // New endpoint for calculating energy from ETK amount
-  @Get('calculate/energy/:etkAmount')
-  async calculateEnergyAmount(@Param('etkAmount') etkAmount: string) {
-    const energyWh = await this.blockchainService.calculateEnergyWh(
-      parseFloat(etkAmount),
-    );
-
-    return {
-      success: true,
-      data: { etkAmount: parseFloat(etkAmount), energyWh },
     };
   }
 
@@ -515,13 +281,15 @@ export class TradingController {
     );
 
     const volume24h = trades24h.reduce(
-      (sum, trade) => sum + trade.tradedEtkAmount,
+      (sum, trade) => sum + Number(trade.tradedEtkAmount),
       0,
     );
     const avgPrice24h =
       trades24h.length > 0
-        ? trades24h.reduce((sum, trade) => sum + trade.priceIdrsPerEtk, 0) /
-          trades24h.length
+        ? trades24h.reduce(
+            (sum, trade) => sum + Number(trade.priceIdrsPerEtk),
+            0,
+          ) / trades24h.length
         : 0;
 
     const lastTrade = recentTrades.sort(
@@ -540,7 +308,7 @@ export class TradingController {
     return {
       success: true,
       data: {
-        lastPrice: lastTrade?.priceIdrsPerEtk || 0,
+        lastPrice: lastTrade ? Number(lastTrade.priceIdrsPerEtk) : 0,
         currentMarketPrice,
         volume24h,
         averagePrice24h: avgPrice24h,
@@ -553,13 +321,61 @@ export class TradingController {
     };
   }
 
+  @Post('cancel-order')
+  async cancelOrder(
+    @Body() body: { orderId: string; isBuyOrder: boolean },
+    @Request() req: User,
+  ) {
+    const prosumerId = req.user.prosumerId;
+
+    try {
+      // Get order from cache to verify ownership
+      const cachedOrder = await this.tradeOrdersCacheService.findOne(
+        body.orderId,
+      );
+
+      if (cachedOrder.prosumerId !== prosumerId) {
+        throw new BadRequestException(
+          'Unauthorized: You do not own this order',
+        );
+      }
+
+      if (cachedOrder.statusOnChain !== 'OPEN') {
+        throw new BadRequestException(
+          `Order is not open (current status: ${cachedOrder.statusOnChain})`,
+        );
+      }
+
+      // Verify wallet ownership
+      await this.verifyWalletOwnership(cachedOrder.walletAddress, prosumerId);
+
+      // Call blockchain cancel order function
+      const txHash = await this.blockchainService.cancelOrder(
+        cachedOrder.walletAddress,
+        body.orderId,
+        body.isBuyOrder,
+      );
+
+      return {
+        success: true,
+        transactionHash: txHash,
+        message: `Order ${body.orderId} cancellation submitted`,
+      };
+    } catch (error) {
+      this.logger.error('Error cancelling order:', error);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to cancel order');
+    }
+  }
+
   private async verifyWalletOwnership(
     walletAddress: string,
     prosumerId: string,
   ) {
     try {
-      const wallet = await this.walletsService.findOne(walletAddress);
-      // const prosumers = await this.walletsService.findProsumers(walletAddress);
+      // Verify wallet exists and user owns it
       const prosumers =
         await this.prosumersService.findByWalletAddress(walletAddress);
 

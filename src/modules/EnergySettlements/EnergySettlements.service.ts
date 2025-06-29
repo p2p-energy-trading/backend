@@ -61,10 +61,8 @@ export class EnergySettlementsService {
   }
 
   async findOne(settlementId: number): Promise<EnergySettlements> {
-    const relations = ['smartmeters', 'mqttmessagelogs', 'transactionlogsList'];
     const entity = await this.repo.findOne({
       where: { settlementId },
-      relations,
     });
     if (!entity) {
       throw new Error(

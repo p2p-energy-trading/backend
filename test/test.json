@@ -1,26 +1,317 @@
-{
-  "readingId": 52,
-  "meterId": "METER001",
-  "timestamp": "2025-06-18T02:06:00.022Z",
-  "subsystem": "GRID_EXPORT",
-  "dailyEnergyWh": "634.5980",
-  "totalEnergyWh": "634.5980",
-  "settlementEnergyWh": "634.5980",
-  "currentPowerW": "2973.0000",
-  "voltage": "3.98",
-  "currentAmp": "747.080",
-  "subsystemData": {
-    "active": true,
-    "backendReceivedAt": "2025-06-18T02:06:00.022Z",
-    "originalTimestamp": 2653404
+[
+  {
+    "date": "2025-06-20T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "GRID_EXPORT", "value": 9958.48 }]
+      }
+    ]
   },
-  "rawPayload": {
-    "power": 2973,
-    "active": true,
-    "current": 747.08,
-    "voltage": 3.9772,
-    "daily_energy_wh": 0.634598,
-    "total_energy_wh": 0.634598,
-    "settlement_energy_wh": 0.634598
+  {
+    "date": "2025-06-20T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "GRID_IMPORT", "value": 463.56 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-20T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "BATTERY", "value": 81978.98 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-20T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "SOLAR", "value": 106586.1 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-20T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "LOAD", "value": 82788.69 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-21T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "GRID_EXPORT", "value": 960.81 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-21T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "GRID_IMPORT", "value": 90.02 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-21T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "BATTERY", "value": 94940.92 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-21T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "SOLAR", "value": 101492.9 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-21T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "LOAD", "value": 94372.97 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-23T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "GRID_EXPORT", "value": 20.02 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-23T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "GRID_IMPORT", "value": 0 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-23T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "BATTERY", "value": 2321.86 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-23T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "SOLAR", "value": 2521.22 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-23T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "LOAD", "value": 2284.72 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-24T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "GRID_EXPORT", "value": 660.56 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-24T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "GRID_IMPORT", "value": 50.01 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-24T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "BATTERY", "value": 64057.96 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-24T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "SOLAR", "value": 77344.71 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-24T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "LOAD", "value": 64110.25 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-25T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "GRID_EXPORT", "value": 670.58 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-25T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "GRID_IMPORT", "value": 60 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-25T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "BATTERY", "value": 65894.06 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-25T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "SOLAR", "value": 77261.65 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-25T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "LOAD", "value": 63994.73 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-26T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "GRID_EXPORT", "value": 2129.63 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-26T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "GRID_IMPORT", "value": 30.01 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-26T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "BATTERY", "value": 27105.24 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-26T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "SOLAR", "value": 22786.47 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-26T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "LOAD", "value": 26584.14 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-27T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "GRID_EXPORT", "value": 2700.1 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-27T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "GRID_IMPORT", "value": 70.01 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-27T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "BATTERY", "value": 77792.89 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-27T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "SOLAR", "value": 55909.37 }]
+      }
+    ]
+  },
+  {
+    "date": "2025-06-27T17:00:00.000Z",
+    "meterData": [
+      {
+        "meterId": "METER001",
+        "data": [{ "subsystem": "LOAD", "value": 80383.06 }]
+      }
+    ]
   }
-}
+]

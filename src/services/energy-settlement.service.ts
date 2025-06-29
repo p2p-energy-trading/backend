@@ -1,6 +1,6 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
-// import { Cron, CronExpression } from '@nestjs/schedule';
-import { Cron } from '@nestjs/schedule';
+import { Cron, CronExpression } from '@nestjs/schedule';
+// import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { EnergySettlementsService } from '../modules/EnergySettlements/EnergySettlements.service';
 import { SmartMetersService } from '../modules/SmartMeters/SmartMeters.service';
@@ -40,8 +40,8 @@ export class EnergySettlementService {
   ) {}
 
   // Run every 5 minutes by default
-  @Cron('*/5 * * * * *')
-  // @Cron(CronExpression.EVERY_5_MINUTES)
+  // @Cron('*/5 * * * * *')
+  @Cron(CronExpression.EVERY_5_MINUTES)
   async periodicSettlement() {
     const isAutoSettlementEnabled =
       this.configService.get('AUTO_SETTLEMENT_ENABLED') === 'true';

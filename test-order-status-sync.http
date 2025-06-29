@@ -1,0 +1,66 @@
+### Test Enhanced Order Status Synchronization
+
+### 1. Test Place Buy Order
+POST http://localhost:3000/trading/order
+Content-Type: application/json
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+{
+  "walletAddress": "0x1234567890123456789012345678901234567890",
+  "orderType": "BID",
+  "quantity": 100,
+  "price": 50
+}
+
+### 2. Test Place Sell Order
+POST http://localhost:3000/trading/order
+Content-Type: application/json
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+{
+  "walletAddress": "0x1234567890123456789012345678901234567890", 
+  "orderType": "ASK",
+  "quantity": 50,
+  "price": 50
+}
+
+### 3. Test Get Orders with Status Filter
+GET http://localhost:3000/trading/orders?status=OPEN
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### 4. Test Get Orders with FILLED Status
+GET http://localhost:3000/trading/orders?status=FILLED
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### 5. Test Get Orders with PARTIALLY_FILLED Status
+GET http://localhost:3000/trading/orders?status=PARTIALLY_FILLED
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### 6. Test Cancel Order
+POST http://localhost:3000/trading/cancel-order
+Content-Type: application/json
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+{
+  "orderId": "123456789",
+  "isBuyOrder": true
+}
+
+### 7. Test Get Order Book (should show updated amounts for partial fills)
+GET http://localhost:3000/trading/orderbook
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### 8. Test Get Trades (should show order IDs)
+GET http://localhost:3000/trading/trades?limit=10
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+### Notes:
+# - Order status will automatically update when trades are executed:
+#   - OPEN: Order is active and waiting for matching
+#   - PARTIALLY_FILLED: Order has been partially matched
+#   - FILLED: Order has been completely matched
+#   - CANCELLED: Order has been cancelled by user
+# - The system synchronizes blockchain state with cache automatically
+# - Order amounts are updated to reflect remaining quantity after partial fills
+# - Transaction hashes are recorded for both order placement and completion
+# - Order IDs are now tracked in both TransactionCompleted and OrderCancelled events

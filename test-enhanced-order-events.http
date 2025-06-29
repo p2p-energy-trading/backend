@@ -1,0 +1,50 @@
+### Test Enhanced Order Events
+
+### 1. Test Order Cancellation with Order ID
+POST http://localhost:3000/trading/cancel-order
+Content-Type: application/json
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+{
+  "orderId": "1",
+  "orderType": "buy"
+}
+
+### 2. Test Order Placement (to get order IDs for testing)
+POST http://localhost:3000/trading/place-order
+Content-Type: application/json
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+{
+  "amount": 100,
+  "price": 50,
+  "orderType": "buy"
+}
+
+### 3. Test Sell Order Placement
+POST http://localhost:3000/trading/place-order
+Content-Type: application/json
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+{
+  "amount": 100,
+  "price": 50,
+  "orderType": "sell"
+}
+
+### 4. Test Order Cancellation for Sell Order
+POST http://localhost:3000/trading/cancel-order
+Content-Type: application/json
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+{
+  "orderId": "2",
+  "orderType": "sell"
+}
+
+### Notes:
+# - These tests will validate that order IDs are properly included in OrderCancelled events
+# - When orders match, TransactionCompleted events will include both buyOrderId and sellOrderId
+# - Check the backend logs to verify order IDs are being logged correctly
+# - Transaction logs should now include order ID information
+# - Monitor blockchain events to ensure proper order ID transmission

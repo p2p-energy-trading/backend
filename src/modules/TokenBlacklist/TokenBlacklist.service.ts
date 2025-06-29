@@ -40,13 +40,13 @@ export class BlacklistService {
     const tokenHash = this.hashToken(token);
     const expiresAt = new Date(Date.now() + this.getJwtExpirationMs());
 
-    this.logger.debug(
-      `Original token: ${token}, Prosumer ID: ${prosumerId}, Reason: ${reason}`,
-    );
+    // this.logger.debug(
+    //   `Original token: ${token}, Prosumer ID: ${prosumerId}, Reason: ${reason}`,
+    // );
 
-    this.logger.debug(
-      `Blacklisting token for prosumer ${prosumerId}: ${tokenHash}`,
-    );
+    // this.logger.debug(
+    //   `Blacklisting token for prosumer ${prosumerId}: ${tokenHash}`,
+    // );
 
     // Check if token is already blacklisted
     const existing = await this.blacklistRepository.findOne({
@@ -123,13 +123,13 @@ export class BlacklistService {
   // Check if token is blacklisted
   async isTokenBlacklisted(token: string): Promise<boolean> {
     try {
-      this.logger.debug(`Checking if token is blacklisted: ${token}`);
+      // this.logger.debug(`Checking if token is blacklisted: ${token}`);
       if (!token) {
         this.logger.warn('Token is empty or undefined');
         return false;
       }
       const tokenHash = this.hashToken(token);
-      this.logger.debug(`Hashed token: ${tokenHash}`);
+      // this.logger.debug(`Hashed token: ${tokenHash}`);
 
       const blacklisted = await this.blacklistRepository.findOne({
         where: {
@@ -140,9 +140,9 @@ export class BlacklistService {
         },
       });
 
-      this.logger.debug(
-        `Token ${tokenHash} is ${blacklisted ? 'blacklisted' : 'not blacklisted'}`,
-      );
+      // this.logger.debug(
+      //   `Token ${tokenHash} is ${blacklisted ? 'blacklisted' : 'not blacklisted'}`,
+      // );
 
       return !!blacklisted;
     } catch (error) {

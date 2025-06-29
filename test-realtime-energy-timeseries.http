@@ -1,0 +1,119 @@
+# Test Real-Time Energy Data with Time Series
+
+## Test 1: Test the new real-time energy endpoint with time series data
+GET http://localhost:3000/dashboard/real-time-energy
+Authorization: Bearer {{access_token}}
+
+### Expected Response:
+```json
+{
+  "currentGeneration": 0.0224,  // Solar power in kW
+  "currentConsumption": 0.4524, // Load power in kW  
+  "currentGridExport": 0.006,   // Grid export power in kW
+  "currentGridImport": 0.0008,  // Grid import power in kW
+  "batteryPower": 0.562,        // Battery power in kW (positive = discharging)
+  "netFlow": -0.4300,           // Net energy flow in kW
+  "lastUpdate": "2025-06-27T15:00:39.848Z",
+  "timeSeries": [
+    {
+      "timestamp": "2025-06-27T15:00:39.848Z",
+      "solar": 0.0224,     // Solar power in kW
+      "load": 0.4524,      // Load power in kW
+      "battery": 0.562,    // Battery power in kW
+      "gridExport": 0.006, // Grid export power in kW
+      "gridImport": 0.0008, // Grid import power in kW
+      "meterId": "METER001"
+    },
+    // ... up to 20 data points
+  ]
+}
+```
+
+###
+
+## Test 2: Test new service methods directly via GraphQL (if exposed)
+
+### Get latest complete sensor set
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query { latestCompleteSet(meterId: \"METER001\") { readingId meterId timestamp subsystem currentPowerW } }"
+}
+
+###
+
+### Get time series power data  
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query { timeSeriesPowerData(meterId: \"METER001\", dataPoints: 10) { timestamp solar load battery gridExport gridImport } }"
+}
+
+###
+
+## Test 3: Verify individual meter data patterns
+
+### Check if we get exactly 5 subsystems in latest reading
+GET http://localhost:3000/dashboard/real-time-energy
+Authorization: Bearer {{access_token}}
+
+### Expected Pattern:
+# Each MQTT message should create exactly 5 readings:
+# - SOLAR: Generation power
+# - LOAD: Consumption power  
+# - BATTERY: Battery power (positive = discharging, negative = charging)
+# - GRID_EXPORT: Power being exported to grid
+# - GRID_IMPORT: Power being imported from grid
+
+###
+
+## Test 4: Test multiple meters aggregation
+# If prosumer has multiple meters, powers should be aggregated
+
+GET http://localhost:3000/dashboard/real-time-energy
+Authorization: Bearer {{access_token}}
+
+### Expected Behavior:
+# - Powers from all meters are summed up
+# - Time series includes data from all meters
+# - Each time series point includes meterId for identification
+# - Data is sorted by timestamp (newest first)
+# - Only last 20 data points across all meters are returned
+
+###
+
+## Data Verification
+
+### Sample Database Query to verify data pattern:
+```sql
+-- Check latest readings for a meter (should be exactly 5 with same timestamp)
+SELECT readingId, meterId, timestamp, subsystem, currentPowerW 
+FROM ENERGY_READINGS_DETAILED 
+WHERE meterId = 'METER001' 
+ORDER BY timestamp DESC, subsystem ASC 
+LIMIT 5;
+
+-- Check distinct timestamps (each should have 5 rows)
+SELECT timestamp, COUNT(*) as subsystem_count
+FROM ENERGY_READINGS_DETAILED 
+WHERE meterId = 'METER001'
+GROUP BY timestamp 
+ORDER BY timestamp DESC 
+LIMIT 10;
+```
+
+### Power Value Mapping:
+- SOLAR.currentPowerW → currentGeneration
+- LOAD.currentPowerW → currentConsumption  
+- GRID_EXPORT.currentPowerW → currentGridExport
+- GRID_IMPORT.currentPowerW → currentGridImport
+- BATTERY.currentPowerW → batteryPower
+
+### Time Series Features:
+- Last 20 complete MQTT messages (timestamps)
+- Each timestamp has all 5 subsystem power values
+- Powers converted from Watts to kilowatts (divide by 1000)
+- Sorted newest first for real-time visualization
+- Includes meterId for multi-meter scenarios

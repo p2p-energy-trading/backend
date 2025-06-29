@@ -1,0 +1,27 @@
+### Test the optimized energy chart endpoint - 7 days (default)
+GET http://localhost:3000/dashboard/energy-chart
+Authorization: Bearer {{access_token}}
+
+### Test the optimized energy chart endpoint - 30 days
+GET http://localhost:3000/dashboard/energy-chart?days=30
+Authorization: Bearer {{access_token}}
+
+### Test the optimized energy chart endpoint - 1 day
+GET http://localhost:3000/dashboard/energy-chart?days=1
+Authorization: Bearer {{access_token}}
+
+### Test the optimized dashboard stats endpoint
+GET http://localhost:3000/dashboard/stats
+Authorization: Bearer {{access_token}}
+
+### Test both endpoints in sequence to compare performance
+GET http://localhost:3000/dashboard/stats
+Authorization: Bearer {{access_token}}
+
+###
+GET http://localhost:3000/dashboard/energy-chart
+Authorization: Bearer {{access_token}}
+
+### Test real-time energy data (not optimized in this iteration)
+GET http://localhost:3000/dashboard/real-time-energy
+Authorization: Bearer {{access_token}}

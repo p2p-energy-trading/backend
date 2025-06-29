@@ -1,0 +1,51 @@
+### Test EnergyReadingsDetailed findAll with Time Range Filtering
+
+# Test 1: Get readings from last hour using lastHours parameter
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query { energyReadingsDetailed(lastHours: 1, meterId: \"METER_001\") { readingId meterId timestamp subsystem currentPowerW } }"
+}
+
+###
+
+# Test 2: Get readings using timestampFrom and timestampTo
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query { energyReadingsDetailed(meterId: \"METER_001\", timestampFrom: \"2024-01-01T00:00:00Z\", timestampTo: \"2024-01-01T23:59:59Z\") { readingId meterId timestamp subsystem currentPowerW } }"
+}
+
+###
+
+# Test 3: Get readings from last 24 hours
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query { energyReadingsDetailed(lastHours: 24, meterId: \"METER_001\") { readingId meterId timestamp subsystem currentPowerW } }"
+}
+
+###
+
+# Test 4: Test dashboard real-time energy endpoint (which uses the enhanced findAll)
+GET http://localhost:3000/dashboard/real-time-energy
+Authorization: Bearer {{access_token}}
+
+###
+
+# Test 5: Test dashboard energy chart endpoint (which uses timestampFrom/timestampTo filtering)
+GET http://localhost:3000/dashboard/energy-chart?period=week
+Authorization: Bearer {{access_token}}
+
+###
+
+# Test 6: Verify the original findAll still works without filters
+POST http://localhost:3000/graphql
+Content-Type: application/json
+
+{
+  "query": "query { energyReadingsDetailed(meterId: \"METER_001\") { readingId meterId timestamp subsystem } }"
+}

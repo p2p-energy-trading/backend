@@ -234,7 +234,7 @@ type Query {
   TradeOrdersCache(orderId: String!): TradeOrdersCache!
   DeviceStatusSnapshotsAll(snapshotId: String, meterId: String, timestamp: String, wifiStatus: JSON, mqttStatus: JSON, gridMode: String, systemStatus: JSON, componentStatus: JSON, rawPayload: JSON): [DeviceStatusSnapshots!]!
   DeviceStatusSnapshots(snapshotId: Int!): DeviceStatusSnapshots!
-  EnergyReadingsDetailedAll(readingId: String, meterId: String, timestamp: String, subsystem: String, dailyEnergyWh: Float, totalEnergyWh: Float, settlementEnergyWh: Float, currentPowerW: Float, voltage: Float, currentAmp: Float, subsystemData: JSON, rawPayload: JSON): [EnergyReadingsDetailed!]!
+  EnergyReadingsDetailedAll(readingId: String, meterId: String, timestamp: String, timestampFrom: String, timestampTo: String, lastHours: Float, subsystem: String, dailyEnergyWh: Float, totalEnergyWh: Float, settlementEnergyWh: Float, currentPowerW: Float, voltage: Float, currentAmp: Float, subsystemData: JSON, rawPayload: JSON): [EnergyReadingsDetailed!]!
   EnergyReadingsDetailed(readingId: Int!): EnergyReadingsDetailed!
   EnergySettlementsAll(settlementId: String, meterId: String, periodStartTime: String, periodEndTime: String, netKwhFromGrid: Float, etkAmountCredited: Float, blockchainTxHash: String, status: String, createdAtBackend: String, confirmedAtOnChain: String, settlementTrigger: String, rawExportKwh: Float, rawImportKwh: Float, validationStatus: String, settlementDataSource: String, detailedEnergyBreakdown: JSON, mqttMessageId: String): [EnergySettlements!]!
   EnergySettlements(settlementId: Int!): EnergySettlements!
@@ -404,6 +404,7 @@ input CreateTradeOrdersCacheInput {
   updatedAtCache: String!
   blockchainTxHashPlaced: String
   blockchainTxHashFilled: String
+  blockchainTxHashCancelled: String
 }
 
 input CreateDeviceStatusSnapshotsInput {

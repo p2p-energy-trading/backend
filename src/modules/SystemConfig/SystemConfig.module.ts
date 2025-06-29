@@ -5,11 +5,7 @@ import { SystemConfigService } from './SystemConfig.service';
 import { SystemConfig } from './entities/SystemConfig.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      SystemConfig,
-    ]),
-  ],
+  imports: [TypeOrmModule.forFeature([SystemConfig])],
   providers: [SystemConfigResolver, SystemConfigService],
   exports: [SystemConfigService, TypeOrmModule],
 })
