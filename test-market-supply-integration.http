@@ -1,0 +1,14 @@
+### Test Market ETK Supply Endpoint
+GET http://localhost:3001/trading/market/etk-supply
+Authorization: Bearer {{access_token}}
+
+### Test Market IDRS Supply Endpoint
+GET http://localhost:3001/trading/market/idrs-supply
+Authorization: Bearer {{access_token}}
+
+### Test Market Liquidity Endpoint
+GET http://localhost:3001/trading/market/liquidity
+Authorization: Bearer {{access_token}}
+
+### Variables
+@access_token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9zdW1lcklkIjoiNzg1ODg5YzMtMDNhMS00ZGZjLTk3YjUtNjNjNGI3NTc3YjNhIiwiaWF0IjoxNzM1MDk1NjAwLCJleHAiOjE3MzUxODIwMDB9.CvOq6EhHHRFdRe3-pEBZJYMhqnhR8f8Rk9jHKlEE1cM

@@ -77,6 +77,18 @@ export class SmartMetersService {
     return entity;
   }
 
+  async findByProsumerId(prosumerId: string): Promise<SmartMeters[]> {
+    return this.repo.find({ where: { prosumerId } });
+  }
+
+  async updateLastSeen(meterId: string): Promise<SmartMeters> {
+    const meter = await this.findOne(meterId);
+    meter.lastSeen = new Date();
+    meter.lastHeartbeatAt = new Date();
+    meter.updatedAt = new Date();
+    return this.repo.save(meter);
+  }
+
   async create(input: CreateSmartMetersInput): Promise<SmartMeters> {
     // Convert input types to match entity types
     const createData: Partial<SmartMeters> = {

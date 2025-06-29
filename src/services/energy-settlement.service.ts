@@ -132,15 +132,24 @@ export class EnergySettlementService {
         prosumerId?: string;
       };
 
-      const wallets = await this.WalletsService.findAll({
-        prosumerId: prosumer.prosumerId,
-      });
+      // const wallets = await this.WalletsService.findAll({
+      //   prosumerId: prosumer.prosumerId,
+      // });
 
       // this.logger.debug(
       //   `Using prosumer Id ${prosumer.prosumerId} with wallet address ${wallets[0]?.walletAddress} for settlement`,
       // );
 
-      const walletAddress: string = wallets[0]?.walletAddress || '';
+      if (!prosumer.prosumerId) {
+        this.logger.warn(`No prosumer ID found for meter ${meterId}`);
+        return null;
+      }
+
+      const primaryWallet = await this.prosumersService.getPrimaryWallet(
+        prosumer.prosumerId,
+      );
+
+      const walletAddress: string = primaryWallet?.walletAddress || '';
       const prosumerAddress: string = walletAddress; // Prosumer address same as wallet for now
 
       if (!walletAddress) {
@@ -151,7 +160,9 @@ export class EnergySettlementService {
       // Verify meter is authorized on blockchain
       const isMeterAuthorized =
         await this.blockchainService.isMeterIdAuthorized(meterId);
-      if (!isMeterAuthorized) {
+      const isProsumerAuthorized =
+        await this.blockchainService.isMeterAuthorized(walletAddress);
+      if (!isMeterAuthorized || !isProsumerAuthorized) {
         this.logger.warn(`Meter ${meterId} is not authorized on blockchain`);
         // Auto-authorize the meter if needed (requires owner permissions)
         try {

@@ -105,6 +105,28 @@ export class ProsumersService {
     return this.findOne(savedEntity.prosumerId);
   }
 
+  async updatePrimaryWalletAddress(
+    prosumerId: string,
+    primaryWalletAddress: string,
+  ): Promise<Prosumers> {
+    const existing = await this.findOne(prosumerId);
+    existing.primaryWalletAddress = primaryWalletAddress;
+
+    await this.repo.save(existing);
+    return this.findOne(prosumerId);
+  }
+
+  async getPrimaryWallet(prosumerId: string): Promise<Wallets | null> {
+    const prosumer = await this.findOne(prosumerId);
+    const primaryWalletAddress = prosumer.primaryWalletAddress;
+    if (!primaryWalletAddress) {
+      return null;
+    }
+    return this.WalletsRepo.findOne({
+      where: { walletAddress: primaryWalletAddress },
+    });
+  }
+
   async update(
     prosumerId: string,
     input: CreateProsumersInput,

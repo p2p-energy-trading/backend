@@ -318,4 +318,33 @@ contract Market {
         }
         return lowestPrice;
     }
+
+    // Get total ETK supply held by the market contract
+    function getTotalETKSupplyInMarket() public view returns (uint256) {
+        return etk_token.balanceOf(address(this));
+    }
+
+    // Get total IDRS supply held by the market contract
+    function getTotalIDRSSupplyInMarket() public view returns (uint256) {
+        return idrs_coin.balanceOf(address(this));
+    }
+
+    // Get market liquidity information including token supplies and order counts
+    function getMarketLiquidity()
+        public
+        view
+        returns (
+            uint256 etkSupply,
+            uint256 idrsSupply,
+            uint256 buyOrderCount,
+            uint256 sellOrderCount
+        )
+    {
+        return (
+            etk_token.balanceOf(address(this)),
+            idrs_coin.balanceOf(address(this)),
+            buyOrderIds.length,
+            sellOrderIds.length
+        );
+    }
 }

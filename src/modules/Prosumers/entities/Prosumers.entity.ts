@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryColumn, OneToMany, OneToOne } from 'typeorm';
 import { BlockchainApprovals } from '../../BlockchainApprovals/entities/BlockchainApprovals.entity';
 import { DeviceCommands } from '../../DeviceCommands/entities/DeviceCommands.entity';
 import { IdrsConversions } from '../../IdrsConversions/entities/IdrsConversions.entity';
@@ -27,6 +27,9 @@ export class Prosumers {
 
   @Column({ type: 'timestamp', name: 'updated_at' })
   updatedAt: Date;
+
+  @Column({ type: 'varchar', name: 'primary_wallet_address', nullable: true })
+  primaryWalletAddress: string;
 
   @OneToMany(
     () => BlockchainApprovals,

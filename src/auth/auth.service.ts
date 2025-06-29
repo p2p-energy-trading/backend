@@ -16,6 +16,7 @@ import { TransactionType, WalletImportMethod } from '../common/enums';
 import { BlacklistService } from 'src/modules/TokenBlacklist/TokenBlacklist.service';
 import { BlacklistReason } from 'src/modules/TokenBlacklist/entities/TokenBlacklist.entity';
 import { Request } from 'express';
+import { SmartMetersService } from '../modules/SmartMeters/SmartMeters.service';
 
 interface ValidatedProsumer {
   prosumerId: string;
@@ -37,6 +38,7 @@ export class AuthService {
     private cryptoService: CryptoService,
     private transactionLogsService: TransactionLogsService,
     private blacklistService: BlacklistService,
+    private smartMetersService: SmartMetersService,
   ) {}
 
   async validateProsumer(
@@ -210,6 +212,7 @@ export class AuthService {
       walletName,
       encryptedPrivateKey,
       importMethod: WalletImportMethod.GENERATED,
+
       isActive: true,
       createdAt: new Date().toISOString(),
       lastUsedAt: new Date().toISOString(),
@@ -220,7 +223,7 @@ export class AuthService {
     try {
       const prosumer = await this.prosumersService.findOne(prosumerId);
       // const { passwordHash, ...profile } = prosumer;
-      const prosumerWithoutPassword = {
+      const profile = {
         prosumerId: prosumer.prosumerId,
         email: prosumer.email,
         name: prosumer.name,
@@ -230,14 +233,24 @@ export class AuthService {
 
       // Get associated wallets
       const wallets = await this.walletsService.findByProsumerId(prosumerId);
+      const meters = await this.smartMetersService.findByProsumerId(prosumerId);
 
       return {
-        prosumerWithoutPassword,
+        profile,
         wallets: wallets.map((wallet) => ({
           walletAddress: wallet.walletAddress,
           walletName: wallet.walletName,
           isActive: wallet.isActive,
           createdAt: wallet.createdAt,
+        })),
+        meters: meters.map((meter) => ({
+          meterId: meter.meterId,
+          location: meter.location,
+          status: meter.status,
+          createdAt: meter.createdAt.toISOString(),
+          lastSeen: meter.lastSeen ? meter.lastSeen.toISOString() : null,
+          deviceModel: meter.deviceModel,
+          deviceVersion: meter.deviceVersion,
         })),
       };
     } catch (error) {

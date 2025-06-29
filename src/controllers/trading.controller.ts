@@ -8,6 +8,7 @@ import {
   BadRequestException,
   Query,
   Logger,
+  Param,
 } from '@nestjs/common';
 import { BlockchainService } from '../services/blockchain.service';
 import { EnergySettlementService } from '../services/energy-settlement.service';
@@ -50,6 +51,9 @@ export class TradingController {
 
     // Verify wallet ownership
     await this.verifyWalletOwnership(body.walletAddress, prosumerId);
+
+    // Check if user has sufficient balance before placing order
+    await this.checkSufficientBalance(body);
 
     let txHash: string;
     if (body.orderType === 'BID') {
@@ -113,9 +117,8 @@ export class TradingController {
 
   @Get('orderbook-detailed')
   async getOrderBookDetailed() {
-    const allOrders = await this.tradeOrdersCacheService.findAll({
-      statusOnChain: 'OPEN',
-    });
+    const allOrders =
+      await this.tradeOrdersCacheService.findOpenOrPartiallyFilledOrders();
 
     const buyOrders = allOrders
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -140,9 +143,8 @@ export class TradingController {
 
   @Get('orderbook')
   async getOrderBook() {
-    const allOrders = await this.tradeOrdersCacheService.findAll({
-      statusOnChain: 'OPEN',
-    });
+    const allOrders =
+      await this.tradeOrdersCacheService.findOpenOrPartiallyFilledOrders();
 
     // Group buy orders by price and sum quantities
     const buyOrdersMap = allOrders
@@ -302,8 +304,10 @@ export class TradingController {
     const currentMarketPrice = await this.blockchainService.getMarketPrice();
 
     // Get token supply information
-    const etkTotalSupply = await this.blockchainService.getETKTotalSupply();
-    const idrsTotalSupply = await this.blockchainService.getIDRSTotalSupply();
+    // const etkTotalSupply = await this.blockchainService.getETKTotalSupply();
+    // const idrsTotalSupply = await this.blockchainService.getIDRSTotalSupply();
+
+    const marketLiquidity = await this.blockchainService.getMarketLiquidity();
 
     return {
       success: true,
@@ -313,10 +317,7 @@ export class TradingController {
         volume24h,
         averagePrice24h: avgPrice24h,
         tradesCount24h: trades24h.length,
-        tokenSupply: {
-          ETK: etkTotalSupply,
-          IDRS: idrsTotalSupply,
-        },
+        marketLiquidity,
       },
     };
   }
@@ -370,6 +371,64 @@ export class TradingController {
     }
   }
 
+  @Get('wallet/:walletAddress/balances')
+  async getTradingWalletBalances(
+    @Param('walletAddress') walletAddress: string,
+    @Request() req: User,
+  ) {
+    const prosumerId = req.user.prosumerId;
+
+    // Verify wallet ownership
+    await this.verifyWalletOwnership(walletAddress, prosumerId);
+
+    const balances = await this.getWalletBalances(walletAddress);
+
+    return {
+      success: true,
+      data: balances,
+      message: 'Wallet balances retrieved successfully',
+    };
+  }
+
+  @Get('market/etk-supply')
+  async getETKSupplyInMarket() {
+    try {
+      const etkSupply =
+        await this.blockchainService.getTotalETKSupplyInMarket();
+      return {
+        etkSupply,
+      };
+    } catch (error) {
+      this.logger.error('Error getting ETK supply in market:', error);
+      throw new BadRequestException('Failed to get ETK supply in market');
+    }
+  }
+
+  @Get('market/idrs-supply')
+  async getIDRSSupplyInMarket() {
+    try {
+      const idrsSupply =
+        await this.blockchainService.getTotalIDRSSupplyInMarket();
+      return {
+        idrsSupply,
+      };
+    } catch (error) {
+      this.logger.error('Error getting IDRS supply in market:', error);
+      throw new BadRequestException('Failed to get IDRS supply in market');
+    }
+  }
+
+  @Get('market/liquidity')
+  async getMarketLiquidity() {
+    try {
+      const liquidity = await this.blockchainService.getMarketLiquidity();
+      return liquidity;
+    } catch (error) {
+      this.logger.error('Error getting market liquidity:', error);
+      throw new BadRequestException('Failed to get market liquidity');
+    }
+  }
+
   private async verifyWalletOwnership(
     walletAddress: string,
     prosumerId: string,
@@ -389,6 +448,89 @@ export class TradingController {
         throw error;
       }
       throw new BadRequestException('Wallet not found');
+    }
+  }
+
+  private async checkSufficientBalance(orderRequest: PlaceOrderRequest) {
+    try {
+      // Get wallet balances using helper method
+      const balances = await this.getWalletBalances(orderRequest.walletAddress);
+
+      this.logger.debug(
+        `Wallet ${orderRequest.walletAddress} balances - ETK: ${balances.ETK}, IDRS: ${balances.IDRS}`,
+      );
+
+      if (orderRequest.orderType === 'BID') {
+        // For BID (buy) orders, need sufficient IDRS to pay
+        const totalCost = orderRequest.quantity * orderRequest.price;
+
+        if (balances.IDRS < totalCost) {
+          throw new BadRequestException(
+            `Insufficient IDRS balance. Required: ${totalCost.toFixed(
+              2,
+            )} IDRS, Available: ${balances.IDRS.toFixed(2)} IDRS`,
+          );
+        }
+
+        this.logger.log(
+          `BID order validation passed - Required: ${totalCost.toFixed(
+            2,
+          )} IDRS, Available: ${balances.IDRS.toFixed(2)} IDRS`,
+        );
+      } else if (orderRequest.orderType === 'ASK') {
+        // For ASK (sell) orders, need sufficient ETK to sell
+        if (balances.ETK < orderRequest.quantity) {
+          throw new BadRequestException(
+            `Insufficient ETK balance. Required: ${orderRequest.quantity.toFixed(
+              2,
+            )} ETK, Available: ${balances.ETK.toFixed(2)} ETK`,
+          );
+        }
+
+        this.logger.log(
+          `ASK order validation passed - Required: ${orderRequest.quantity.toFixed(
+            2,
+          )} ETK, Available: ${balances.ETK.toFixed(2)} ETK`,
+        );
+      }
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      this.logger.error('Error checking wallet balance:', error);
+      throw new BadRequestException(
+        'Failed to verify wallet balance. Please try again.',
+      );
+    }
+  }
+
+  private async getWalletBalances(walletAddress: string) {
+    try {
+      const [etkBalance, idrsBalance] = await Promise.all([
+        this.blockchainService.getTokenBalance(
+          walletAddress,
+          process.env.CONTRACT_ETK_TOKEN!,
+        ),
+        this.blockchainService.getTokenBalance(
+          walletAddress,
+          process.env.CONTRACT_IDRS_TOKEN!,
+        ),
+      ]);
+
+      return {
+        ETK: etkBalance,
+        IDRS: idrsBalance,
+      };
+    } catch (error) {
+      this.logger.warn(
+        `Failed to fetch balances for wallet ${walletAddress}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      return {
+        ETK: 0,
+        IDRS: 0,
+      };
     }
   }
 }

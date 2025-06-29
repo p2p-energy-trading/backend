@@ -1,0 +1,15 @@
+### Test the optimized dashboard stats endpoint with fixed historical totals
+GET http://localhost:3000/dashboard/stats
+Authorization: Bearer {{access_token}}
+
+### Test energy chart endpoint to compare with stats data
+GET http://localhost:3000/dashboard/energy-chart?days=30
+Authorization: Bearer {{access_token}}
+
+### Test energy summary endpoint (uses both stats and chart data)
+GET http://localhost:3000/dashboard/energy-summary?period=monthly
+Authorization: Bearer {{access_token}}
+
+### Test real-time energy data to compare current vs historical
+GET http://localhost:3000/dashboard/real-time-energy
+Authorization: Bearer {{access_token}}

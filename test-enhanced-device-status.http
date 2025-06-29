@@ -1,0 +1,48 @@
+### Test Enhanced Device Status Endpoint
+### Now uses MQTT sensor data for heartbeat detection with 10-second threshold
+
+# Test device status with MQTT sensor-based heartbeat
+GET http://localhost:3000/device/status/METER001
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+###
+
+# Expected Response Structure:
+# {
+#   "success": true,
+#   "data": {
+#     "meterId": "METER001",
+#     "lastHeartbeat": {
+#       "timestamp": "2024-01-15T10:30:00.000Z",
+#       "status": "alive" | "offline",
+#       "source": "mqtt_sensor"
+#     },
+#     "lastStatus": {
+#       // Latest device status snapshot data
+#     },
+#     "isOnline": true | false,
+#     "heartbeatThreshold": "10 seconds"
+#   }
+# }
+
+# Test with another meter
+GET http://localhost:3000/device/status/METER002
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+###
+
+# Test with non-existent meter (should return 400)
+GET http://localhost:3000/device/status/INVALID_METER
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+###
+
+# Key Changes from Previous Version:
+# 1. lastHeartbeat.timestamp now comes from latest MQTT sensor data
+# 2. lastHeartbeat.source indicates "mqtt_sensor" 
+# 3. Device is considered offline if no sensor data received in last 10 seconds
+# 4. heartbeatThreshold field documents the 10-second threshold
+# 5. More accurate real-time device status based on actual sensor activity

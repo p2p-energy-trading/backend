@@ -59,6 +59,13 @@ export class TradeOrdersCache {
   })
   blockchainTxHashFilled: string;
 
+  @Column({
+    type: 'varchar',
+    name: 'blockchain_tx_hash_cancelled',
+    nullable: true,
+  })
+  blockchainTxHashCancelled: string;
+
   @ManyToOne(() => Prosumers)
   @JoinColumn({ name: 'prosumer_id' })
   prosumers: Prosumers;

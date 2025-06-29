@@ -22,6 +22,7 @@ import {
   DeviceStatus,
   DeviceCommandPayload,
 } from '../common/interfaces';
+import { SmartMetersService } from 'src/modules/SmartMeters/SmartMeters.service';
 
 @Injectable()
 export class MqttService implements OnModuleInit, OnModuleDestroy {
@@ -40,6 +41,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     private deviceStatusSnapshotsService: DeviceStatusSnapshotsService,
     private deviceCommandsService: DeviceCommandsService,
     private cryptoService: CryptoService,
+    private smartMetersService: SmartMetersService,
   ) {}
 
   onModuleInit() {
@@ -100,6 +102,18 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
+  private async updateLastSeen(meterId: string) {
+    try {
+      // Update last seen timestamp for the meter
+      await this.smartMetersService.updateLastSeen(meterId);
+    } catch (error) {
+      this.logger.error(
+        `Failed to update last seen for meter ${meterId}:`,
+        error,
+      );
+    }
+  }
+
   private async handleMessage(topic: string, message: Buffer) {
     try {
       const payload = message.toString();
@@ -115,6 +129,9 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       // const meterId = 'METER001';
       // Log message
       await this.logMessage(topic, payload, meterId, MqttDirection.INBOUND);
+
+      // Update last seen timestamp for the meter
+      await this.updateLastSeen(meterId);
 
       // Process based on topic type
       if (topic.includes('sensors')) {

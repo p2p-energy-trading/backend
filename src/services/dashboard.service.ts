@@ -472,12 +472,6 @@ export class DashboardService {
 
       if (meterIds.length === 0) {
         return {
-          currentGeneration: 0,
-          currentConsumption: 0,
-          currentGridExport: 0,
-          currentGridImport: 0,
-          netFlow: 0,
-          batteryPower: 0,
           lastUpdate: null,
           timeSeries: [],
         };
@@ -494,16 +488,10 @@ export class DashboardService {
           ? Promise.resolve(new Map()) // Will use single-meter optimization below
           : this.energyReadingsDetailedService.findTimeSeriesForMultipleMeters(
               meterIds,
-              8,
+              20,
             ), // Reduced per-meter limit
       ]);
 
-      // Aggregate current power from all meters
-      let currentGeneration = 0; // SOLAR power
-      let currentConsumption = 0; // LOAD power
-      let currentGridExport = 0; // GRID_EXPORT power
-      let currentGridImport = 0; // GRID_IMPORT power
-      let batteryPower = 0; // BATTERY power (positive = discharging, negative = charging)
       let lastUpdate: string | null = null;
 
       // Process latest readings from all meters
@@ -515,33 +503,6 @@ export class DashboardService {
         );
 
         if (latestReadings.length > 0) {
-          // Process each subsystem from the latest complete set
-          for (const reading of latestReadings) {
-            const powerW = reading.currentPowerW || 0;
-
-            this.logger.debug(
-              `Processing ${reading.subsystem} with power ${powerW}W at ${reading.timestamp.toISOString()}`,
-            );
-
-            switch (reading.subsystem) {
-              case 'SOLAR':
-                currentGeneration += powerW;
-                break;
-              case 'LOAD':
-                currentConsumption += powerW;
-                break;
-              case 'GRID_EXPORT':
-                currentGridExport += powerW;
-                break;
-              case 'GRID_IMPORT':
-                currentGridImport += powerW;
-                break;
-              case 'BATTERY':
-                batteryPower += powerW;
-                break;
-            }
-          }
-
           // Update lastUpdate from the latest timestamp
           const latestTimestamp = latestReadings[0].timestamp.toISOString();
           if (!lastUpdate || latestTimestamp > lastUpdate) {
@@ -566,8 +527,10 @@ export class DashboardService {
             solar: point.solar / 1000, // Convert W to kW
             load: point.load / 1000, // Convert W to kW
             battery: point.battery / 1000, // Convert W to kW
+            batteryDirection: point.battery > 0 ? 'discharging' : 'charging',
             gridExport: point.gridExport / 1000, // Convert W to kW
             gridImport: point.gridImport / 1000, // Convert W to kW
+            netFlow: (point.gridExport - point.gridImport) / 1000, // Convert W to kW
             meterId: meterIds[0],
           }));
         } else {
@@ -639,24 +602,12 @@ export class DashboardService {
       }
 
       return {
-        currentGeneration: currentGeneration / 1000, // Convert W to kW
-        currentConsumption: currentConsumption / 1000, // Convert W to kW
-        currentGridExport: currentGridExport / 1000, // Convert W to kW
-        currentGridImport: currentGridImport / 1000, // Convert W to kW
-        batteryPower: batteryPower / 1000, // Convert W to kW (positive = discharging, negative = charging)
-        netFlow: (currentGeneration - currentConsumption) / 1000, // Convert W to kW
         lastUpdate,
         timeSeries,
       };
     } catch (error) {
       this.logger.error('Error getting real-time energy data:', error);
       return {
-        currentGeneration: 0,
-        currentConsumption: 0,
-        currentGridExport: 0,
-        currentGridImport: 0,
-        batteryPower: 0,
-        netFlow: 0,
         lastUpdate: null,
         timeSeries: [],
       };

@@ -7,6 +7,11 @@ import { EnergyReadingsDetailedArgs } from './dto/EnergyReadingsDetailed.args';
 import { SmartMeters } from '../SmartMeters/entities/SmartMeters.entity';
 import { GridSettlementData } from 'src/common/interfaces';
 
+// Subsystem data interfaces for proper type safety
+interface BatterySubsystemData {
+  state?: string;
+}
+
 @Injectable()
 export class EnergyReadingsDetailedService {
   private readonly Logger = new Logger(EnergyReadingsDetailedService.name);
@@ -625,6 +630,7 @@ export class EnergyReadingsDetailedService {
         'reading.timestamp',
         'reading.subsystem',
         'reading.currentPowerW',
+        'reading.subsystemData',
       ])
       .where('reading.meterId = :meterId', { meterId })
       .andWhere('reading.subsystem IN (:...subsystems)', {
@@ -668,21 +674,36 @@ export class EnergyReadingsDetailedService {
       const powerW = result.currentPowerW || 0;
 
       switch (result.subsystem) {
-        case 'SOLAR':
-          powerData.solar = powerW;
+        case 'SOLAR': {
+          powerData.solar = powerW; // Only count power if actively generating
           break;
-        case 'LOAD':
+        }
+        case 'LOAD': {
           powerData.load = powerW;
           break;
-        case 'BATTERY':
-          powerData.battery = powerW;
+        }
+        case 'BATTERY': {
+          // Extract complete subsystem data structure
+          const batteryData =
+            result.subsystemData as BatterySubsystemData | null;
+
+          const chargeState = batteryData?.state || 'unknown';
+
+          // Determine power direction based on charge state
+          const isCharging = chargeState === 'charging';
+
+          // Use charge state to determine power direction (positive for charging, negative for discharging)
+          powerData.battery = isCharging ? powerW : -powerW;
           break;
-        case 'GRID_EXPORT':
+        }
+        case 'GRID_EXPORT': {
           powerData.gridExport = powerW;
           break;
-        case 'GRID_IMPORT':
+        }
+        case 'GRID_IMPORT': {
           powerData.gridImport = powerW;
           break;
+        }
       }
     }
 
@@ -904,10 +925,16 @@ export class EnergyReadingsDetailedService {
 
   /**
    * Get optimized energy statistics for dashboard using latest readings only.
-   * Since MQTT data is cumulative, we only need the latest reading per subsystem.
+   * Since MQTT data is cumulative, we only need the latest reading per subsystem for today.
+   * For historical totals, we sum the latest daily_energy_wh from each day across all history.
    *
    * @param meterIds - Array of meter IDs
    * @returns Object with today and total energy statistics
+   *
+   * Logic:
+   * - Today stats: Latest daily_energy_wh per meter per subsystem for today
+   * - Total stats: Sum of latest daily_energy_wh from each day for each subsystem across all history
+   *   (e.g., if there are 40 days of data, sum the latest reading from each of those 40 days)
    */
   async findLatestEnergyStatsForDashboard(meterIds: string[]): Promise<{
     todayStats: {
@@ -946,14 +973,14 @@ export class EnergyReadingsDetailedService {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Use raw SQL for maximum performance - get latest reading per meter per subsystem for today and overall
+    // Use raw SQL for maximum performance - get latest reading per meter per subsystem for today and historical totals
     const rawQuery = `
       WITH latest_today AS (
+        -- Get latest reading per meter per subsystem for today
         SELECT DISTINCT ON ("meter_id", subsystem)
           "meter_id",
           subsystem,
-          "daily_energy_wh",
-          "total_energy_wh"
+          "daily_energy_wh"
         FROM energy_readings_detailed 
         WHERE "meter_id" = ANY($1)
           AND "timestamp" >= $2
@@ -962,16 +989,19 @@ export class EnergyReadingsDetailedService {
           AND "daily_energy_wh" IS NOT NULL
         ORDER BY "meter_id", subsystem, "timestamp" DESC
       ),
-      latest_total AS (
-        SELECT DISTINCT ON ("meter_id", subsystem)
+      daily_totals_historical AS (
+        -- Get latest reading per meter per subsystem per day for all history
+        SELECT DISTINCT ON (DATE("timestamp"), "meter_id", subsystem)
+          DATE("timestamp") as reading_date,
           "meter_id",
           subsystem,
-          "total_energy_wh"
+          "daily_energy_wh"
         FROM energy_readings_detailed 
         WHERE "meter_id" = ANY($1)
           AND subsystem IN ('SOLAR', 'LOAD', 'GRID_EXPORT', 'GRID_IMPORT')
-          AND "total_energy_wh" IS NOT NULL
-        ORDER BY "meter_id", subsystem, "timestamp" DESC
+          AND "daily_energy_wh" IS NOT NULL
+          AND "daily_energy_wh" > 0
+        ORDER BY DATE("timestamp"), "meter_id", subsystem, "timestamp" DESC
       ),
       today_aggregated AS (
         SELECT 
@@ -981,10 +1011,11 @@ export class EnergyReadingsDetailedService {
         GROUP BY subsystem
       ),
       total_aggregated AS (
+        -- Sum all daily totals from history across all days and meters
         SELECT 
           subsystem,
-          SUM("total_energy_wh") as total_energy_wh
-        FROM latest_total
+          SUM("daily_energy_wh") as total_energy_wh
+        FROM daily_totals_historical
         GROUP BY subsystem
       )
       SELECT 
@@ -1234,5 +1265,24 @@ export class EnergyReadingsDetailedService {
       totalEtkMinted: parseFloat(stats.total_etk_minted || '0') || 0,
       totalEtkBurned: parseFloat(stats.total_etk_burned || '0') || 0,
     };
+  }
+
+  /**
+   * Get the latest sensor data timestamp for heartbeat detection.
+   * Used to determine if a device is online based on MQTT sensor message frequency.
+   *
+   * @param meterId - The meter ID to check
+   * @returns Promise resolving to the latest sensor timestamp or null if no data found
+   */
+  async findLatestSensorTimestamp(meterId: string): Promise<Date | null> {
+    const result = await this.repo
+      .createQueryBuilder('reading')
+      .select('reading.timestamp')
+      .where('reading.meterId = :meterId', { meterId })
+      .orderBy('reading.timestamp', 'DESC')
+      .limit(1)
+      .getOne();
+
+    return result ? result.timestamp : null;
   }
 }

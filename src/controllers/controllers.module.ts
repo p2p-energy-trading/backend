@@ -18,6 +18,7 @@ import { DeviceStatusSnapshotsModule } from 'src/modules/DeviceStatusSnapshots/D
 import { TokenBlacklistModule } from 'src/modules/TokenBlacklist/TokenBlacklist.module';
 import { TransactionLogsModule } from 'src/modules/TransactionLogs/TransactionLogs.module';
 import { EnergySettlementsModule } from 'src/modules/EnergySettlements/EnergySettlements.module';
+import { EnergyReadingsDetailedModule } from 'src/modules/EnergyReadingsDetailed/EnergyReadingsDetailed.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { EnergySettlementsModule } from 'src/modules/EnergySettlements/EnergySet
     TokenBlacklistModule,
     TransactionLogsModule,
     EnergySettlementsModule,
+    EnergyReadingsDetailedModule,
   ],
   controllers: [
     EnergyController,

@@ -1,0 +1,52 @@
+### Test Refactored Real-Time Energy Data Endpoint
+### The timeSeries should now be an array of arrays, grouped by meter
+
+# Test real-time energy data with the new structure
+GET http://localhost:3000/dashboard/real-time-energy/12345
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+###
+
+# Expected Response Structure:
+# {
+#   "currentGeneration": number,
+#   "currentConsumption": number,
+#   "currentGridExport": number,
+#   "currentGridImport": number,
+#   "netFlow": number,
+#   "batteryPower": number,
+#   "lastUpdate": "2024-01-15T10:30:00.000Z",
+#   "timeSeries": [
+#     [
+#       // Time series array for meter 1
+#       {
+#         "timestamp": "2024-01-15T10:30:00.000Z",
+#         "solar": 2.5,
+#         "load": 1.8,
+#         "battery": -0.5,
+#         "batteryDirection": "charging",
+#         "gridExport": 0.2,
+#         "gridImport": 0.0,
+#         "netFlow": 0.2,
+#         "meterId": "meter_1"
+#       },
+#       // ... more time points for meter 1
+#     ],
+#     [
+#       // Time series array for meter 2 (if multiple meters)
+#       {
+#         "timestamp": "2024-01-15T10:30:00.000Z",
+#         "solar": 1.8,
+#         "load": 2.2,
+#         "battery": 0.3,
+#         "batteryDirection": "discharging",
+#         "gridExport": 0.0,
+#         "gridImport": 0.1,
+#         "netFlow": -0.1,
+#         "meterId": "meter_2"
+#       },
+#       // ... more time points for meter 2
+#     ]
+#   ]
+# }

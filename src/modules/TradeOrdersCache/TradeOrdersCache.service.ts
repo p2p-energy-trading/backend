@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { TradeOrdersCache } from './entities/TradeOrdersCache.entity';
 import { CreateTradeOrdersCacheInput } from './dto/TradeOrdersCache.input';
 import { TradeOrdersCacheArgs } from './dto/TradeOrdersCache.args';
@@ -50,6 +50,14 @@ export class TradeOrdersCacheService {
       where['blockchainTxHashFilled'] = args.blockchainTxHashFilled;
 
     return this.repo.find({ where });
+  }
+
+  async findOpenOrPartiallyFilledOrders() {
+    return this.repo.find({
+      where: {
+        statusOnChain: In(['OPEN', 'PARTIALLY_FILLED']),
+      },
+    });
   }
 
   async findOne(orderId: string): Promise<TradeOrdersCache> {
@@ -108,6 +116,7 @@ export class TradeOrdersCacheService {
       statusOnChain: input.statusOnChain,
       blockchainTxHashPlaced: input.blockchainTxHashPlaced,
       blockchainTxHashFilled: input.blockchainTxHashFilled,
+      blockchainTxHashCancelled: input.blockchainTxHashCancelled,
       createdAtOnChain: input.createdAtOnChain
         ? new Date(input.createdAtOnChain)
         : new Date(),

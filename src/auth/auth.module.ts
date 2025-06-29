@@ -12,6 +12,7 @@ import { WalletsModule } from '../modules/Wallets/Wallets.module';
 import { TransactionLogsModule } from '../modules/TransactionLogs/TransactionLogs.module';
 import { TokenBlacklistModule } from '../modules/TokenBlacklist/TokenBlacklist.module';
 import { CommonModule } from '../common/common.module';
+import { SmartMetersModule } from 'src/modules/SmartMeters/SmartMeters.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { CommonModule } from '../common/common.module';
     TransactionLogsModule,
     TokenBlacklistModule,
     CommonModule,
+    SmartMetersModule,
   ],
   providers: [AuthService, JwtStrategy, LocalStrategy, JwtAuthGuard],
   controllers: [AuthController],

@@ -59,6 +59,13 @@ export class TransactionLogsService {
     return entity;
   }
 
+  async findByTxHash(
+    blockchainTxHash: string,
+  ): Promise<TransactionLogs | undefined> {
+    const result = await this.repo.findOne({ where: { blockchainTxHash } });
+    return result ?? undefined;
+  }
+
   async create(input: CreateTransactionLogsInput): Promise<TransactionLogs> {
     // Convert input types to match entity types
     const createData: Partial<TransactionLogs> = {

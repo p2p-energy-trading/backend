@@ -16,6 +16,7 @@ import { JwtAuthGuard } from '../auth/guards/auth.guards';
 import { DeviceCommandPayload } from '../common/interfaces';
 import { ProsumersService } from 'src/modules/Prosumers/Prosumers.service';
 import { DeviceStatusSnapshotsService } from 'src/modules/DeviceStatusSnapshots/DeviceStatusSnapshots.service';
+import { EnergyReadingsDetailedService } from 'src/modules/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
 
 interface DeviceControlRequest {
   meterId: string;
@@ -39,6 +40,7 @@ export class DeviceController {
     private smartMetersService: SmartMetersService,
     private prosumersService: ProsumersService,
     private deviceStatusSnapshotsService: DeviceStatusSnapshotsService,
+    private energyReadingsDetailedService: EnergyReadingsDetailedService,
   ) {}
 
   @Post('control')
@@ -128,8 +130,7 @@ export class DeviceController {
       throw new BadRequestException('Device not found or unauthorized');
     }
 
-    // Get device info and latest status data
-    const meter = await this.smartMetersService.findOne(meterId);
+    // Get latest status data
     const statusSnapshots = await this.deviceStatusSnapshotsService.findAll({
       meterId,
     });
@@ -139,29 +140,37 @@ export class DeviceController {
         new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
     )[0];
 
-    // Use lastHeartbeatAt from SmartMeters entity instead of separate heartbeats
-    const lastHeartbeatTime = meter.lastHeartbeatAt;
+    // Get the latest sensor data timestamp from MQTT messages for heartbeat detection
+    const latestSensorTimestamp =
+      await this.energyReadingsDetailedService.findLatestSensorTimestamp(
+        meterId,
+      );
+
+    // Determine if device is online based on latest sensor data (10-second threshold)
     const isOnline =
-      lastHeartbeatTime &&
-      new Date().getTime() - new Date(lastHeartbeatTime).getTime() <
-        5 * 60 * 1000; // 5 minutes
+      latestSensorTimestamp &&
+      new Date().getTime() - latestSensorTimestamp.getTime() < 10 * 1000; // 10 seconds
+
+    this.logger.debug(
+      `Device ${meterId} - Latest sensor timestamp: ${latestSensorTimestamp?.toISOString()}, ` +
+        `Time since last sensor: ${latestSensorTimestamp ? new Date().getTime() - latestSensorTimestamp.getTime() : 'N/A'}ms, ` +
+        `Online: ${!!isOnline}`,
+    );
 
     return {
       success: true,
       data: {
         meterId,
-        lastHeartbeat:
-          lastHeartbeatTime != null
-            ? {
-                timestamp:
-                  lastHeartbeatTime instanceof Date
-                    ? lastHeartbeatTime.toISOString()
-                    : lastHeartbeatTime,
-                status: isOnline ? 'alive' : 'offline',
-              }
-            : null,
+        lastHeartbeat: latestSensorTimestamp
+          ? {
+              timestamp: latestSensorTimestamp.toISOString(),
+              status: isOnline ? 'alive' : 'offline',
+              source: 'mqtt_sensor', // Indicate this heartbeat comes from MQTT sensor data
+            }
+          : null,
         lastStatus: latestStatus,
         isOnline: !!isOnline,
+        heartbeatThreshold: '10 seconds', // Document the threshold used
       },
     };
   }

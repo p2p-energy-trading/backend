@@ -1,0 +1,92 @@
+### Test Trading Orders with Balance Validation
+### Enhanced trading endpoint that checks balance before placing orders
+
+# Test BID (Buy) order with sufficient IDRS balance
+POST http://localhost:3000/trading/order
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "walletAddress": "0x1234567890123456789012345678901234567890",
+  "orderType": "BID",
+  "quantity": 10.0,
+  "price": 500.0
+}
+
+###
+
+# Test ASK (Sell) order with sufficient ETK balance
+POST http://localhost:3000/trading/order
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "walletAddress": "0x1234567890123456789012345678901234567890",
+  "orderType": "ASK",
+  "quantity": 5.0,
+  "price": 550.0
+}
+
+###
+
+# Test BID order with insufficient IDRS balance (should fail)
+POST http://localhost:3000/trading/order
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "walletAddress": "0x1234567890123456789012345678901234567890",
+  "orderType": "BID",
+  "quantity": 1000.0,
+  "price": 1000.0
+}
+
+###
+
+# Test ASK order with insufficient ETK balance (should fail)
+POST http://localhost:3000/trading/order
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "walletAddress": "0x1234567890123456789012345678901234567890",
+  "orderType": "ASK",
+  "quantity": 1000.0,
+  "price": 500.0
+}
+
+###
+
+# Check wallet balances first using the new trading endpoint
+GET http://localhost:3000/trading/wallet/0x1234567890123456789012345678901234567890/balances
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+###
+
+# Expected Error Responses for Insufficient Balance:
+
+# For BID with insufficient IDRS:
+# {
+#   "statusCode": 400,
+#   "message": "Insufficient IDRS balance. Required: 1000000.00 IDRS, Available: 1500.00 IDRS",
+#   "error": "Bad Request"
+# }
+
+# For ASK with insufficient ETK:
+# {
+#   "statusCode": 400,
+#   "message": "Insufficient ETK balance. Required: 1000.00 ETK, Available: 25.50 ETK", 
+#   "error": "Bad Request"
+# }
+
+# Expected Success Response:
+# {
+#   "success": true,
+#   "transactionHash": "0xabc123...",
+#   "message": "BID order placed"
+# }

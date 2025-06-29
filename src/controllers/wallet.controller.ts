@@ -414,6 +414,35 @@ export class WalletController {
     };
   }
 
+  // Change Settlement Primary Wallet
+  // This endpoint allows a prosumer to change their primary wallet for settlement purposes.
+  // It verifies ownership of the wallet and updates the primary wallet in the prosumer's profile
+  @Post(':walletAddress/primary')
+  async changePrimaryWallet(
+    @Param('walletAddress') walletAddress: string,
+    @Request() req: User,
+  ) {
+    const prosumerId = req.user.prosumerId;
+    // Verify ownership
+    const prosumers =
+      await this.prosumersService.findByWalletAddress(walletAddress);
+
+    if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
+      throw new BadRequestException('Unauthorized');
+    }
+
+    // Update primary wallet in prosumer's profile
+    await this.prosumersService.updatePrimaryWalletAddress(
+      prosumerId,
+      walletAddress,
+    );
+
+    return {
+      success: true,
+      message: 'Primary wallet changed successfully',
+    };
+  }
+
   @Post(':walletAddress/deactivate')
   async deactivateWallet(
     @Param('walletAddress') walletAddress: string,
@@ -448,10 +477,12 @@ export class WalletController {
     };
   }
 
-  private async getWalletBalances(walletAddress: string) {
+  @Get(':walletAddress/balances')
+  async getWalletBalances(@Param('walletAddress') walletAddress: string) {
     try {
-      const [ethBalance, etkBalance, idrsBalance] = await Promise.all([
-        this.blockchainService.getEthBalance(walletAddress),
+      this.logger.log(`Fetched balances for wallet ${walletAddress}`);
+      const [etkBalance, idrsBalance] = await Promise.all([
+        // this.blockchainService.getEthBalance(walletAddress),
         this.blockchainService.getTokenBalance(
           walletAddress,
           process.env.CONTRACT_ETK_TOKEN!,
@@ -463,7 +494,6 @@ export class WalletController {
       ]);
 
       return {
-        ETH: ethBalance,
         ETK: etkBalance,
         IDRS: idrsBalance,
       };
@@ -474,7 +504,6 @@ export class WalletController {
         }`,
       );
       return {
-        ETH: 0,
         ETK: 0,
         IDRS: 0,
       };

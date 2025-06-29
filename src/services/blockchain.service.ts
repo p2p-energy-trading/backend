@@ -53,6 +53,10 @@ export class BlockchainService {
     // New methods for getting individual order details
     'function buyOrders(uint256 id) external view returns (uint256, address, uint256, uint256, uint256)',
     'function sellOrders(uint256 id) external view returns (uint256, address, uint256, uint256, uint256)',
+    // New methods for market supply and liquidity
+    'function getTotalETKSupplyInMarket() external view returns (uint256)',
+    'function getTotalIDRSSupplyInMarket() external view returns (uint256)',
+    'function getMarketLiquidity() external view returns (uint256, uint256, uint256, uint256)',
     'event OrderPlaced(uint256 indexed id, address indexed user, uint256 amount, uint256 price, bool isBuy, uint256 timestamp)',
     'event TransactionCompleted(address indexed buyer, address indexed seller, uint256 amount, uint256 price, uint256 timestamp, uint256 buyOrderId, uint256 sellOrderId)',
     'event OrderCancelled(address indexed user, uint256 amount, uint256 price, bool isBuy, uint256 timestamp, uint256 orderId)',
@@ -383,28 +387,28 @@ export class BlockchainService {
         settlementIdBytes32,
       )) as ethers.ContractTransactionResponse;
 
-      // Log transaction
-      await this.transactionLogsService.create({
-        prosumerId:
-          (await this.getProsumerIdByWallet(prosumerAddress)) || 'UNKNOWN',
-        transactionType:
-          netEnergyWh > 0
-            ? TransactionType.TOKEN_MINT
-            : TransactionType.TOKEN_BURN,
-        description: JSON.stringify({
-          meterId,
-          prosumerAddress,
-          netEnergyWh,
-          settlementId,
-          txHash: tx.hash,
-          action: `Energy settlement processing - ${netEnergyWh > 0 ? 'Export (Mint)' : 'Import (Burn)'}`,
-        }),
-        amountPrimary: Math.abs(netEnergyWh / 1000), // Convert Wh to kWh
-        currencyPrimary: 'ETK',
-        blockchainTxHash: tx.hash,
-        transactionTimestamp: new Date().toISOString(),
-        relatedSettlementId: originalSettlementId,
-      });
+      // // Log transaction
+      // await this.transactionLogsService.create({
+      //   prosumerId:
+      //     (await this.getProsumerIdByWallet(prosumerAddress)) || 'UNKNOWN',
+      //   transactionType:
+      //     netEnergyWh > 0
+      //       ? TransactionType.TOKEN_MINT
+      //       : TransactionType.TOKEN_BURN,
+      //   description: JSON.stringify({
+      //     meterId,
+      //     prosumerAddress,
+      //     netEnergyWh,
+      //     settlementId,
+      //     txHash: tx.hash,
+      //     action: `Energy settlement processing - ${netEnergyWh > 0 ? 'Export (Mint)' : 'Import (Burn)'}`,
+      //   }),
+      //   amountPrimary: Math.abs(netEnergyWh / 1000), // Convert Wh to kWh
+      //   currencyPrimary: 'ETK',
+      //   blockchainTxHash: tx.hash,
+      //   transactionTimestamp: new Date().toISOString(),
+      //   relatedSettlementId: originalSettlementId,
+      // });
 
       this.logger.log(
         `Settlement processing transaction sent: ${tx.hash} for meter ${meterId}`,
@@ -1241,6 +1245,29 @@ export class BlockchainService {
         blockchainTxHashPlaced: extractedTxHash,
       });
 
+      const logTransaction =
+        await this.transactionLogsService.findByTxHash(extractedTxHash);
+
+      // update log transaction if it exists
+      if (logTransaction) {
+        await this.transactionLogsService.update(logTransaction.logId, {
+          prosumerId: logTransaction.prosumerId,
+          transactionType: logTransaction.transactionType,
+          description: logTransaction.description,
+          amountPrimary: logTransaction.amountPrimary,
+          currencyPrimary: logTransaction.currencyPrimary,
+          amountSecondary: logTransaction.amountSecondary,
+          currencySecondary: logTransaction.currencySecondary,
+          blockchainTxHash: logTransaction.blockchainTxHash,
+          transactionTimestamp:
+            logTransaction.transactionTimestamp instanceof Date
+              ? logTransaction.transactionTimestamp.toISOString()
+              : logTransaction.transactionTimestamp,
+          relatedOrderId: id.toString(),
+          relatedSettlementId: logTransaction.relatedSettlementId,
+        });
+      }
+
       this.logger.log(
         `Order placed: ${id.toString()} by ${user} (${isBuy ? 'BUY' : 'SELL'}) - ${amountEtk} ETK @ ${priceIdrs} IDRS`,
       );
@@ -1295,6 +1322,27 @@ export class BlockchainService {
         blockchainTxHash: extractedTxHash,
         tradeTimestamp: new Date(Number(timestamp) * 1000).toISOString(),
         createdAt: new Date().toISOString(),
+      });
+
+      await this.transactionLogsService.create({
+        prosumerId: buyerProsumerId,
+        transactionType: TransactionType.TRADE_EXECUTION,
+        description: JSON.stringify({
+          buyer,
+          seller,
+          amountEtk,
+          priceIdrs,
+          buyOrderId: buyOrderId.toString(),
+          sellOrderId: sellOrderId.toString(),
+          txHash: extractedTxHash,
+          action: `Trade completed between ${buyer} and ${seller}`,
+        }),
+        amountPrimary: amountEtk,
+        currencyPrimary: 'ETK',
+        amountSecondary: amountEtk * priceIdrs,
+        currencySecondary: 'IDRS',
+        blockchainTxHash: extractedTxHash,
+        transactionTimestamp: new Date(Number(timestamp) * 1000).toISOString(),
       });
 
       // Update order status in cache for both buy and sell orders
@@ -1738,6 +1786,7 @@ export class BlockchainService {
         currencyPrimary: isBuy ? 'IDRS' : 'ETK',
         blockchainTxHash: tx.hash,
         transactionTimestamp: new Date().toISOString(),
+        // relatedOrderId: uuid.toString(),
       });
 
       return tx.hash;
@@ -1759,6 +1808,39 @@ export class BlockchainService {
       return Number(marketPrice) / 100; // Convert from wei (2 decimals)
     } catch (error) {
       this.logger.error('Error getting market price:', error);
+      throw error;
+    }
+  }
+
+  async getTotalETKSupplyInMarket(): Promise<number> {
+    try {
+      const contract = new ethers.Contract(
+        this.config.contracts.market,
+        this.marketABI,
+        this.provider,
+      );
+
+      const etkSupply = (await contract.getTotalETKSupplyInMarket()) as bigint;
+      return Number(etkSupply) / Math.pow(10, 18); // Convert from wei to ETK
+    } catch (error) {
+      this.logger.error('Error getting ETK supply in market:', error);
+      throw error;
+    }
+  }
+
+  async getTotalIDRSSupplyInMarket(): Promise<number> {
+    try {
+      const contract = new ethers.Contract(
+        this.config.contracts.market,
+        this.marketABI,
+        this.provider,
+      );
+
+      const idrsSupply =
+        (await contract.getTotalIDRSSupplyInMarket()) as bigint;
+      return Number(idrsSupply) / Math.pow(10, 18); // Convert from wei to IDRS
+    } catch (error) {
+      this.logger.error('Error getting IDRS supply in market:', error);
       throw error;
     }
   }
@@ -1909,6 +1991,39 @@ export class BlockchainService {
         `Error updating order status in cache for ${orderId}:`,
         error,
       );
+    }
+  }
+
+  async getMarketLiquidity(): Promise<{
+    etkSupply: number;
+    idrsSupply: number;
+    buyOrderCount: number;
+    sellOrderCount: number;
+  }> {
+    try {
+      const contract = new ethers.Contract(
+        this.config.contracts.market,
+        this.marketABI,
+        this.provider,
+      );
+
+      const [etkSupply, idrsSupply, buyOrderCount, sellOrderCount] =
+        (await contract.getMarketLiquidity()) as [
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+        ];
+
+      return {
+        etkSupply: Number(etkSupply) / 100, // Convert from wei (2 decimals)
+        idrsSupply: Number(idrsSupply) / 100, // Convert from wei (2 decimals)
+        buyOrderCount: Number(buyOrderCount),
+        sellOrderCount: Number(sellOrderCount),
+      };
+    } catch (error) {
+      this.logger.error('Error getting market liquidity:', error);
+      throw error;
     }
   }
 }

@@ -1,0 +1,25 @@
+### Test Market Supply Functions
+### This file tests the new smart contract functions for getting token supply in the market
+
+### Variables
+@baseUrl = http://localhost:3000
+
+### Test 1: Get ETK Supply in Market
+GET {{baseUrl}}/blockchain/market/etk-supply
+Accept: application/json
+
+### Test 2: Get IDRS Supply in Market  
+GET {{baseUrl}}/blockchain/market/idrs-supply
+Accept: application/json
+
+### Test 3: Get Market Liquidity (all supplies and order counts)
+GET {{baseUrl}}/blockchain/market/liquidity
+Accept: application/json
+
+### Test 4: Get Current Market Price (for reference)
+GET {{baseUrl}}/blockchain/market/price
+Accept: application/json
+
+### Test 5: Get Order Book Summary (for comparison)
+GET {{baseUrl}}/trading/order-book-summary
+Accept: application/json
