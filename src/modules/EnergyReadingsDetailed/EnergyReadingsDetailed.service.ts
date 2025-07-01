@@ -1154,14 +1154,12 @@ export class EnergyReadingsDetailedService {
     }
 
     const [deviceResults, settlementResults] = await Promise.all([
-      this.repo.query(deviceStatsQuery, [meterIds]) as Promise<
-        DeviceStatsResult[]
-      >,
+      this.repo.query(deviceStatsQuery, [meterIds]),
       this.repo.query(settlementStatsQuery, [
         meterIds,
         today.toISOString(),
         tomorrow.toISOString(),
-      ]) as Promise<SettlementCountResult[]>,
+      ]),
     ]);
 
     const deviceStats = deviceResults[0] || {
@@ -1238,11 +1236,11 @@ export class EnergyReadingsDetailedService {
       total_etk_burned: string | null;
     }
 
-    const results = (await this.repo.query(settlementStatsQuery, [
+    const results = await this.repo.query(settlementStatsQuery, [
       meterIds,
       today.toISOString(),
       tomorrow.toISOString(),
-    ])) as SettlementStatsResult[];
+    ]);
 
     const stats = results[0] || {
       total_settlements: '0',

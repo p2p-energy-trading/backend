@@ -225,7 +225,8 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
             dailyEnergyWh: subsystemData.daily_energy_wh * 1000 * 10,
             totalEnergyWh: subsystemData.total_energy_wh * 1000 * 10,
             settlementEnergyWh: subsystemData.settlement_energy_wh * 1000 * 10,
-            currentPowerW: subsystemData.power * 10,
+            currentPowerW:
+              subsystemData.power < 10 ? 0 : subsystemData.power * 10,
             voltage: subsystemData.voltage,
             currentAmp: subsystemData.current,
             subsystemData: JSON.stringify({

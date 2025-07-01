@@ -227,6 +227,7 @@ export class AuthService {
         prosumerId: prosumer.prosumerId,
         email: prosumer.email,
         name: prosumer.name,
+        primaryWalletAddress: prosumer.primaryWalletAddress,
         createdAt: prosumer.createdAt.toISOString(),
         updatedAt: prosumer.updatedAt.toISOString(),
       };

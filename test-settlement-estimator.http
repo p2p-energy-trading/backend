@@ -1,0 +1,42 @@
+### Test Settlement Estimator Endpoint
+
+### 1. Login to get access token
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "password"
+}
+
+### 2. Get Settlement Estimator (for all meters owned by prosumer)
+GET http://localhost:3000/energy/settlement-estimator
+Authorization: Bearer {{access_token}}
+
+### 3. Get Settlement Estimator for specific meter
+GET http://localhost:3000/energy/settlement-estimator?meterId=METER001
+Authorization: Bearer {{access_token}}
+
+### 4. Expected Response Format:
+# {
+#   "success": true,
+#   "data": {
+#     "meterId": "METER001",
+#     "status": "EXPORTING",
+#     "periodMinutes": 5,
+#     "currentPowerKw": 4.3,
+#     "averagePowerKw": 3.98,
+#     "estimatedEtkAtSettlement": 0.663,
+#     "currentRunningEtk": 0.255,
+#     "periodStartTime": "00:00",
+#     "currentTime": "03:51", 
+#     "periodEndTime": "05:00",
+#     "progressPercentage": 76.2,
+#     "timeRemaining": "01:09",
+#     "netEnergyWh": 2236.8
+#   }
+# }
+
+### 5. Test Settlement History (for context)
+GET http://localhost:3000/energy/settlement/history?limit=5
+Authorization: Bearer {{access_token}}

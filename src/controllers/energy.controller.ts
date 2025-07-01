@@ -125,4 +125,73 @@ export class EnergyController {
       throw new BadRequestException('Failed to retrieve settlement');
     }
   }
+
+  @Get('settlement-estimator')
+  async getSettlementEstimator(
+    @Request() req: AuthenticatedUser,
+    @Query('meterId') meterId?: string,
+  ) {
+    try {
+      const prosumerId = req.user.prosumerId;
+
+      // If no meterId provided, get the first meter owned by the prosumer
+      let targetMeterId = meterId;
+      if (!targetMeterId) {
+        // Get prosumer's first meter
+        const userMeters =
+          await this.energySettlementService.getSettlementHistory(
+            undefined,
+            prosumerId,
+            1,
+          );
+
+        if (!userMeters || userMeters.length === 0) {
+          throw new NotFoundException('No meters found for this prosumer');
+        }
+
+        // Extract meterId from the first settlement record
+        targetMeterId = userMeters[0].meterId;
+      }
+
+      // Verify the meter belongs to the prosumer
+      const userSettlements =
+        await this.energySettlementService.getSettlementHistory(
+          targetMeterId,
+          prosumerId,
+          1,
+        );
+
+      if (!userSettlements || userSettlements.length === 0) {
+        throw new NotFoundException('Meter not found or unauthorized access');
+      }
+
+      // Get settlement estimator data
+      const estimatorData =
+        await this.energySettlementService.getSettlementEstimator(
+          targetMeterId,
+        );
+
+      if (!estimatorData) {
+        throw new NotFoundException(
+          'Unable to retrieve settlement estimator data',
+        );
+      }
+
+      return {
+        success: true,
+        data: {
+          meterId: targetMeterId,
+          ...estimatorData,
+        },
+      };
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to retrieve settlement estimator');
+    }
+  }
 }
