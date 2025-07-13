@@ -1,0 +1,36 @@
+### Test Enhanced Settlement Estimator
+GET http://localhost:3000/energy/settlement-estimator?meterId=METER001
+Content-Type: application/json
+
+### Expected enhanced response structure:
+# {
+#   "data": {
+#     "meterId": "METER001",
+#     "status": "IMPORTING",
+#     "periodMinutes": 5,
+#     "currentPowerKw": -19.4,
+#     "averagePowerKw": -12.26,    // Now from logged power data, not time series
+#     "estimatedEtkAtSettlement": 0.05,  // Based on rate of change and remaining time
+#     "currentRunningEtk": 0.02,   // Based on actual settlementEnergyWh
+#     "periodStartTime": "23:05",
+#     "currentTime": "23:05",
+#     "periodEndTime": "23:10",
+#     "progressPercentage": 19.3,
+#     "timeRemaining": "04:02",
+#     "netEnergyWh": -1430.0,      // Now from settlementEnergyWh (gridExport - gridImport)
+#     "settlementEnergyWh": {
+#       "solar": "27844.9500",
+#       "load": "25246.4100",
+#       "battery": "24354.9800",
+#       "gridExport": "260.2700",
+#       "gridImport": "1690.2700"
+#     }
+#   }
+# }
+
+### Key Changes:
+# 1. netEnergyWh = settlementEnergyWh.gridExport - settlementEnergyWh.gridImport
+# 2. currentRunningEtk = actual ETK from accumulated settlement energy
+# 3. estimatedEtkAtSettlement = projected based on power rate and remaining time
+# 4. averagePowerKw = from logged power data array (updated every minute)
+# 5. Power log arrays are reset after each settlement

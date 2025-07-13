@@ -3,6 +3,7 @@ import { MqttService } from './mqtt.service';
 import { BlockchainService } from './blockchain.service';
 import { EnergySettlementService } from './energy-settlement.service';
 import { DashboardService } from './dashboard.service';
+import { PriceCacheService } from './price-cache.service';
 // import { DeviceMonitoringService } from './device-monitoring.service';
 import { HealthCheckService } from './health-check.service';
 import { MqttMessageLogsModule } from '../modules/MqttMessageLogs/MqttMessageLogs.module';
@@ -36,12 +37,16 @@ import { ProsumersModule } from 'src/modules/Prosumers/Prosumers.module';
     EnergySettlementsModule,
     SmartMetersModule,
     ProsumersModule,
+    // DeviceMonitoringModule, // Uncomment if you have a DeviceMonitoringModule
+
+    // DashboardService,
   ],
   providers: [
     MqttService,
     BlockchainService,
     EnergySettlementService,
     DashboardService,
+    PriceCacheService,
     // DeviceMonitoringService,
     HealthCheckService,
   ],
@@ -50,6 +55,7 @@ import { ProsumersModule } from 'src/modules/Prosumers/Prosumers.module';
     BlockchainService,
     EnergySettlementService,
     DashboardService,
+    PriceCacheService,
     // DeviceMonitoringService,
     HealthCheckService,
   ],

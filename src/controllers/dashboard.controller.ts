@@ -64,9 +64,9 @@ export class DashboardController {
   async getRealTimeEnergyData(@Request() req: AuthenticatedUser) {
     const prosumerId = req.user.prosumerId;
 
-    this.logger.debug(
-      `Fetching real-time energy data for prosumer ${prosumerId}`,
-    );
+    // this.logger.debug(
+    //   `Fetching real-time energy data for prosumer ${prosumerId}`,
+    // );
 
     const realTimeData =
       await this.dashboardService.getRealTimeEnergyData(prosumerId);

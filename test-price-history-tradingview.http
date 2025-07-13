@@ -1,0 +1,113 @@
+### Test Price History Endpoints for TradingView
+
+### Get Real-time Price Data (Update every second)
+GET http://localhost:3000/trading/price-history/realtime
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+### Get Price History - 1 second candles (for real-time chart)
+GET http://localhost:3000/trading/price-history?interval=1s&limit=300
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+### Get Price History - 1 minute candles
+GET http://localhost:3000/trading/price-history?interval=1m&limit=100
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+### Get Price History - 5 minute candles
+GET http://localhost:3000/trading/price-history?interval=5m&limit=288
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+### Get Price History - 1 hour candles
+GET http://localhost:3000/trading/price-history?interval=1h&limit=168
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+### Get Price History - 1 day candles
+GET http://localhost:3000/trading/price-history?interval=1d&limit=30
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+### Get Price Candles (Optimized for TradingView)
+GET http://localhost:3000/trading/price-history/candles?interval=1m&limit=500
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+### Get Price Candles - 5 minute
+GET http://localhost:3000/trading/price-history/candles?interval=5m&limit=300
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+### Get Price History with Date Range
+GET http://localhost:3000/trading/price-history?interval=1m&from=2025-07-03T00:00:00Z&to=2025-07-03T23:59:59Z&limit=1440
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+### Expected Response Structure for TradingView Lightweight Charts:
+# {
+#   "success": true,
+#   "data": [
+#     {
+#       "time": "2025-07-03T14:30:00.000Z",
+#       "open": 1500.00,
+#       "high": 1520.00,
+#       "low": 1495.00,
+#       "close": 1510.00,
+#       "volume": 125.5,
+#       "trades": 15
+#     }
+#   ],
+#   "metadata": {
+#     "interval": "1m",
+#     "limit": 100,
+#     "from": "2025-07-03T00:00:00.000Z",
+#     "to": "2025-07-03T23:59:59.000Z",
+#     "count": 100,
+#     "generatedAt": "2025-07-03T16:30:00.000Z"
+#   }
+# }
+
+### Real-time Price Data Response Structure:
+# {
+#   "success": true,
+#   "data": {
+#     "price": 1510.25,
+#     "timestamp": "2025-07-03T16:30:15.000Z",
+#     "change24h": 25.50,
+#     "changePercent24h": 1.72,
+#     "volume24h": 2450.75,
+#     "trades": [
+#       {
+#         "price": 1510.25,
+#         "volume": 10.5,
+#         "timestamp": "2025-07-03T16:30:15.000Z",
+#         "side": "buy"
+#       }
+#     ]
+#   }
+# }
+
+### Performance Features:
+# 1. Per-second price caching for real-time updates
+# 2. OHLCV candle generation from tick data
+# 3. In-memory cache for 1s, 1m, 5m intervals
+# 4. Database fallback for historical data
+# 5. Automatic cache cleanup to prevent memory leaks
+# 6. TradingView Lightweight Charts compatible format
+
+### Cache Strategy:
+# - 1s data: Cached for 1 hour (3600 points)
+# - 1m data: Cached for 24 hours (1440 points)  
+# - 5m data: Cached for 1 week (2016 points)
+# - 1h data: Cached for 30 days (720 points)
+# - Automatic candle generation from lower timeframes
+# - Memory-efficient with automatic cleanup
+
+### TradingView Integration:
+# Frontend can call:
+# - /trading/price-history/realtime every 1-2 seconds for live price
+# - /trading/price-history/candles?interval=1m for chart data
+# - Use WebSocket alternative not needed (REST API sufficient)
+# - Cached responses ensure low latency and high performance

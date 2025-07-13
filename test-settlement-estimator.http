@@ -1,4 +1,4 @@
-### Test Settlement Estimator Endpoint
+### Test Settlement Estimator Endpoint (Optimized with getRealTimeEnergyData)
 
 ### 1. Login to get access token
 POST http://localhost:3000/auth/login
@@ -9,23 +9,23 @@ Content-Type: application/json
   "password": "password"
 }
 
-### 2. Get Settlement Estimator (for all meters owned by prosumer)
+### 2. Get Settlement Estimator (for all meters owned by prosumer) - OPTIMIZED
 GET http://localhost:3000/energy/settlement-estimator
 Authorization: Bearer {{access_token}}
 
-### 3. Get Settlement Estimator for specific meter
+### 3. Get Settlement Estimator for specific meter - FAST RESPONSE
 GET http://localhost:3000/energy/settlement-estimator?meterId=METER001
 Authorization: Bearer {{access_token}}
 
-### 4. Expected Response Format:
+### 4. Expected Response Format (with optimized data):
 # {
 #   "success": true,
 #   "data": {
 #     "meterId": "METER001",
 #     "status": "EXPORTING",
 #     "periodMinutes": 5,
-#     "currentPowerKw": 4.3,
-#     "averagePowerKw": 3.98,
+#     "currentPowerKw": 4.3,          // From getRealTimeEnergyData index 0
+#     "averagePowerKw": 3.98,         // Average from first 5 data points
 #     "estimatedEtkAtSettlement": 0.663,
 #     "currentRunningEtk": 0.255,
 #     "periodStartTime": "00:00",
@@ -37,6 +37,19 @@ Authorization: Bearer {{access_token}}
 #   }
 # }
 
-### 5. Test Settlement History (for context)
+### 5. Test Real-time Energy Data (used internally for fast calculation)
+GET http://localhost:3000/dashboard/real-time-energy
+Authorization: Bearer {{access_token}}
+
+### 6. Test Settlement History (for context)
 GET http://localhost:3000/energy/settlement/history?limit=5
 Authorization: Bearer {{access_token}}
+
+### Performance Notes:
+# - ZERO settlement database queries - pure real-time calculation  
+# - Uses optimized getRealTimeEnergyData for ultra-fast power calculation
+# - Mathematical estimation: power × time = energy (no database lookup)
+# - Current power from index 0 (most recent data)
+# - Average power from first 5 data points for stability
+# - Status based on real-time power flow, not accumulated energy
+# - Running ETK calculated proportionally to time progress

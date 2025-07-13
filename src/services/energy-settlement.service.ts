@@ -12,6 +12,7 @@ import { SettlementTrigger, TransactionStatus } from '../common/enums';
 import { DeviceCommandPayload } from '../common/interfaces';
 import { WalletsService } from 'src/modules/Wallets/Wallets.service';
 import { ProsumersService } from 'src/modules/Prosumers/Prosumers.service';
+import { DashboardService } from './dashboard.service';
 
 interface SettlementReadingsData {
   exportEnergyWh: number;
@@ -34,23 +35,13 @@ interface SettlementEstimatorData {
   progressPercentage: number;
   timeRemaining: string;
   netEnergyWh: number;
-}
-
-interface SettlementEstimatorCache {
-  meterId: string;
-  periodStartTime: Date;
-  basePowerKw: number;
-  baseNetEnergyWh: number;
-  lastUpdateTime: Date;
-  settlementIntervalMinutes: number;
-  conversionRatio: number;
-  lastPowerReading: number;
-  // Cached data to avoid database calls
-  cachedExportPowerW: number;
-  cachedImportPowerW: number;
-  cachedExportEnergyWh: number;
-  cachedImportEnergyWh: number;
-  lastDataFetch: Date;
+  settlementEnergyWh?: {
+    solar: number;
+    load: number;
+    battery: number;
+    gridExport: number;
+    gridImport: number;
+  };
 }
 
 @Injectable()
@@ -58,8 +49,28 @@ export class EnergySettlementService {
   private readonly logger = new Logger(EnergySettlementService.name);
   private readonly defaultSettlementInterval = 5; // minutes
 
-  // In-memory cache for settlement estimator optimization
-  private readonly estimatorCache = new Map<string, SettlementEstimatorCache>();
+  // Power logging arrays for each meter (reset after settlement)
+  private powerLogArrays = new Map<
+    string,
+    Array<{ timestamp: Date; powerKw: number }>
+  >();
+
+  // Hourly energy history with caching for performance
+  private hourlyHistoryCache = new Map<
+    string,
+    {
+      data: {
+        solar: number;
+        consumption: number;
+        battery: number;
+        gridExport: number;
+        gridImport: number;
+        net: number;
+      };
+      timestamp: Date;
+      hour: number;
+    }
+  >();
 
   constructor(
     private configService: ConfigService,
@@ -72,6 +83,8 @@ export class EnergySettlementService {
     private transactionLogsService: TransactionLogsService,
     private prosumersService: ProsumersService,
     private readonly WalletsService: WalletsService, // Assuming this is imported correctly
+    @Inject(forwardRef(() => DashboardService))
+    private dashboardService: DashboardService,
   ) {}
 
   // Run every 5 minutes by default
@@ -87,6 +100,45 @@ export class EnergySettlementService {
     this.logger.log('Starting periodic energy settlement');
     // this.logger.log('test2');
     await this.processAllMetersSettlement(SettlementTrigger.PERIODIC);
+  }
+
+  // Log power data every minute for all meters
+  @Cron(CronExpression.EVERY_SECOND)
+  async logPowerData() {
+    try {
+      const activeMeters = await this.smartMetersService.findAll();
+
+      for (const meter of activeMeters) {
+        const meterId = meter.meterId;
+
+        // Get prosumer for this meter
+        const prosumers = await this.prosumersService.findByMeterId(meterId);
+        if (!prosumers || prosumers.length === 0) continue;
+
+        const prosumer = prosumers[0] as { prosumerId?: string };
+        if (!prosumer.prosumerId) continue;
+
+        // Get current real-time data
+        const realTimeData = await this.dashboardService.getRealTimeEnergyData(
+          prosumer.prosumerId,
+        );
+
+        if (!realTimeData.timeSeries || realTimeData.timeSeries.length === 0)
+          continue;
+
+        // Get current power (netFlow)
+        const latestData = realTimeData.timeSeries[0] as {
+          netFlow?: number;
+          [key: string]: any;
+        };
+        const currentPowerKw = Number(latestData?.netFlow) || 0;
+
+        // Add to power log array
+        this.addPowerLog(meterId, currentPowerKw);
+      }
+    } catch (error) {
+      this.logger.error('Error logging power data:', error);
+    }
   }
 
   async getSettlementIdDbByTxHash(txHash: string): Promise<number | null> {
@@ -317,13 +369,13 @@ export class EnergySettlementService {
       });
 
       // Send reset command to device to clear settlement counters
-      // await this.sendSettlementResetCommand(
-      //   meterId,
-      //   prosumer?.prosumerId as string,
-      // );
+      await this.sendSettlementResetCommand(
+        meterId,
+        prosumer?.prosumerId || '',
+      );
 
-      // Reset in-memory cache for this meter when settlement is completed
-      this.resetEstimatorCache(meterId);
+      // Clear power log array after successful settlement
+      this.clearPowerLog(meterId);
 
       // return null;
 
@@ -494,28 +546,87 @@ export class EnergySettlementService {
     meterId?: string,
     prosumerId?: string,
     limit: number = 50,
-  ) {
+    scope: 'own' | 'public' | 'all' = 'own',
+  ): Promise<any[]> {
     try {
-      const filters: { meterId?: string } = {};
-      if (meterId) {
-        filters.meterId = meterId;
-      }
-      if (prosumerId) {
-        // Get meters owned by prosumer
+      this.logger.debug(
+        `Getting settlement history for meterId: ${meterId}, prosumerId: ${prosumerId}, limit: ${limit}, scope: ${scope}`,
+      );
+
+      let settlements: any[] = [];
+
+      if (scope === 'public') {
+        // Get all public settlements (all prosumers) - remove sensitive data
+        const allSettlements = await this.energySettlementsService.findAll();
+
+        // Remove sensitive information for public view
+        settlements = (allSettlements || []).map((settlement: any) => ({
+          ...settlement,
+          // Keep only public data, remove prosumer-specific details if needed
+          settlementId: settlement.settlementId,
+          meterId: settlement.meterId
+            ? settlement.meterId.substring(0, 8) + '...'
+            : settlement.meterId, // Partially hide meterId
+          periodStartTime: settlement.periodStartTime,
+          periodEndTime: settlement.periodEndTime,
+          netKwhFromGrid: settlement.netKwhFromGrid,
+          etkAmountCredited: settlement.etkAmountCredited,
+          status: settlement.status,
+          createdAtBackend: settlement.createdAtBackend,
+          // Remove blockchainTxHash and other sensitive data for public view
+        }));
+      } else if (scope === 'all') {
+        // Get all settlements for admin/debug purposes
+        const allSettlements = await this.energySettlementsService.findAll();
+        settlements = allSettlements || [];
+      } else {
+        // Default: Get only user's own settlements (scope === 'own')
+        if (!prosumerId) {
+          throw new Error('Prosumer ID is required for own settlements');
+        }
+
+        // Get all meters owned by prosumer
         const meters = await this.smartMetersService.findAll({ prosumerId });
-        if (meters.length > 0) {
-          // This would need to be implemented as an 'IN' query in the actual service
-          const firstMeter = meters[0] as { meterId?: string };
-          filters.meterId = firstMeter?.meterId; // Simplified for now
+
+        if (!meters || meters.length === 0) {
+          this.logger.warn(`No meters found for prosumer ${prosumerId}`);
+          return [];
+        }
+
+        this.logger.debug(
+          `Found ${meters.length} meters for prosumer ${prosumerId}`,
+        );
+
+        // If specific meterId is provided, filter by that meter
+        if (meterId) {
+          // Verify the meter belongs to the prosumer
+          const userMeter = meters.find((m: any) => m.meterId === meterId);
+          if (!userMeter) {
+            this.logger.warn(
+              `Meter ${meterId} not found for prosumer ${prosumerId}`,
+            );
+            return [];
+          }
+
+          // Get settlements for specific meter
+          const allSettlements = await this.energySettlementsService.findAll();
+          settlements = (allSettlements || []).filter(
+            (s: any) => s.meterId === meterId,
+          );
+        } else {
+          // Get settlements for all user's meters
+          const meterIds = meters.map((m: any) => m.meterId);
+          const allSettlements = await this.energySettlementsService.findAll();
+          settlements = (allSettlements || []).filter((s: any) =>
+            meterIds.includes(s.meterId),
+          );
         }
       }
-
-      const settlements = await this.energySettlementsService.findAll();
 
       // Sort by creation date, most recent first
       return settlements
         .sort(
-          (a, b) =>
+          (a: any, b: any) =>
             new Date(b.createdAtBackend).getTime() -
             new Date(a.createdAtBackend).getTime(),
         )
@@ -593,96 +704,80 @@ export class EnergySettlementService {
     }
   }
 
-  // New method to get settlement estimator data (ultra-optimized version)
-  /**
-   * ULTRA-FAST Settlement Estimator - ZERO database calls, cache-only
-   * This method NEVER blocks on database or blockchain calls for sub-100ms response
-   */
-  getSettlementEstimator(
+  // New method to get settlement estimator data (optimized with getRealTimeEnergyData)
+  async getSettlementEstimator(
     meterId: string,
   ): Promise<SettlementEstimatorData | null> {
     try {
-      this.logger.debug(
-        `Getting cache-only settlement estimator for meter ${meterId}`,
+      // this.logger.debug(`Getting settlement estimator for meter ${meterId}`);
+
+      // Get prosumer ID from meter to use optimized getRealTimeEnergyData
+      const prosumers = await this.prosumersService.findByMeterId(meterId);
+      if (!prosumers || prosumers.length === 0) {
+        this.logger.warn(`No prosumer found for meter ${meterId}`);
+        return null;
+      }
+
+      const prosumer = prosumers[0] as { prosumerId?: string };
+      if (!prosumer.prosumerId) {
+        this.logger.warn(`Invalid prosumer data for meter ${meterId}`);
+        return null;
+      }
+
+      // Use optimized getRealTimeEnergyData for fast power data retrieval
+      const realTimeData = await this.dashboardService.getRealTimeEnergyData(
+        prosumer.prosumerId,
       );
 
-      const now = new Date();
+      if (!realTimeData.timeSeries || realTimeData.timeSeries.length === 0) {
+        this.logger.warn(`No real-time data found for meter ${meterId}`);
+        return null;
+      }
+
+      // Get current power from index 0 (most recent data) with type safety
+      const latestData = realTimeData.timeSeries[0] as {
+        netFlow?: number;
+        gridExport?: number;
+        gridImport?: number;
+        settlementEnergyWh?: {
+          solar: number;
+          load: number;
+          battery: number;
+          gridExport: number;
+          gridImport: number;
+        };
+        [key: string]: any;
+      };
+      const currentPowerKw: number = Number(latestData?.netFlow) || 0;
+
+      // Extract settlement energy data from latest reading
+      const settlementEnergyWh = latestData?.settlementEnergyWh || {
+        solar: 0,
+        load: 0,
+        battery: 0,
+        gridExport: 0,
+        gridImport: 0,
+      };
+
+      // Calculate actual net energy from settlement energy (gridExport - gridImport)
+      const actualNetEnergyWh =
+        Number(settlementEnergyWh.gridExport) -
+        Number(settlementEnergyWh.gridImport);
+
+      // Get average power from logged power data (not from time series)
+      const averagePowerKw = this.getAveragePowerFromLog(meterId);
+
+      // this.logger.debug(
+      //   `Settlement data for meter ${meterId}: ActualNet=${actualNetEnergyWh}Wh, Current=${currentPowerKw}kW, Average=${averagePowerKw}kW (from power log)`,
+      // );
+
+      // Calculate estimated net energy from real-time data (simulate settlement calculation)
+      // Using settlement period timing and power rate calculation
       const settlementIntervalMinutes: number =
         Number(this.configService.get('SETTLEMENT_INTERVAL_MINUTES')) || 5;
 
-      // CRITICAL: ONLY read from cache, NEVER block on database calls
-      let cache = this.estimatorCache.get(meterId);
-
-      // If no cache exists, trigger background update and return fallback data
-      if (!cache) {
-        this.logger.debug(
-          `No cache for meter ${meterId}, triggering background update`,
-        );
-        // Trigger background cache population (fire and forget)
-        this.updateCacheInBackground(meterId, settlementIntervalMinutes).catch(
-          (error) =>
-            this.logger.error(
-              `Background cache update failed for meter ${meterId}:`,
-              error,
-            ),
-        );
-
-        // Return fallback data immediately
-        return Promise.resolve(
-          this.getFallbackEstimatorData(
-            meterId,
-            settlementIntervalMinutes,
-            now,
-          ),
-        );
-      }
-
-      // Check if cache is stale (older than 30 seconds)
-      const cacheAgeMs = now.getTime() - cache.lastDataFetch.getTime();
-      if (cacheAgeMs > 30000) {
-        this.logger.debug(
-          `Cache stale for meter ${meterId}, triggering background refresh`,
-        );
-        // Trigger background refresh (fire and forget)
-        this.updateCacheInBackground(meterId, settlementIntervalMinutes).catch(
-          (error) =>
-            this.logger.error(
-              `Background cache refresh failed for meter ${meterId}:`,
-              error,
-            ),
-        );
-      }
-
-      // Check if we're in a new settlement period
-      const shouldResetCache = this.shouldResetCacheForNewPeriod(
-        cache,
-        now,
-        settlementIntervalMinutes,
-      );
-
-      if (shouldResetCache) {
-        this.logger.debug(
-          `New settlement period for meter ${meterId}, resetting cache`,
-        );
-        // Reset cache for new period
-        cache = this.resetCacheForNewPeriod(
-          cache,
-          now,
-          settlementIntervalMinutes,
-        );
-        this.estimatorCache.set(meterId, cache);
-      }
-
-      // Calculate current power and energy from CACHED readings (NO database calls)
-      const currentPowerKw =
-        (cache.cachedExportPowerW - cache.cachedImportPowerW) / 1000;
-      const netEnergyWh =
-        cache.cachedExportEnergyWh - cache.cachedImportEnergyWh;
-
-      // Update cache timestamp but keep all data
-      cache.lastUpdateTime = now;
-
-      // Pre-calculate time values (avoid repeated calculations)
+      // Get settlement period timing
+      const now = new Date();
       const currentMinutes = now.getMinutes();
       const periodStartMinute =
         Math.floor(currentMinutes / settlementIntervalMinutes) *
@@ -690,443 +785,329 @@ export class EnergySettlementService {
       const periodStart = new Date(now);
       periodStart.setMinutes(periodStartMinute, 0, 0);
 
+      const elapsedMs = now.getTime() - periodStart.getTime();
+
+      // Calculate remaining time
       const periodEnd = new Date(periodStart);
       periodEnd.setMinutes(
         periodStart.getMinutes() + settlementIntervalMinutes,
       );
-
-      const totalPeriodMs = settlementIntervalMinutes * 60 * 1000;
-      const elapsedMs = now.getTime() - periodStart.getTime();
       const remainingMs = periodEnd.getTime() - now.getTime();
+      const remainingHours = remainingMs / (1000 * 60 * 60);
 
+      // Current running ETK is based on actual settlement energy already accumulated
+      const currentRunningEtk = await this.blockchainService.calculateEtkAmount(
+        Math.floor(Math.abs(actualNetEnergyWh)),
+      );
+
+      // this.logger.debug(
+      //   `currentRunningEtk for meter ${meterId}: ${currentRunningEtk} ETK`,
+      // );
+
+      // Estimate final settlement based on current power rate and remaining time
+      // If we have average power from logs, use it to project remaining energy
+      let estimatedAdditionalEnergyWh = 0;
+      if (averagePowerKw !== 0 && remainingHours > 0) {
+        estimatedAdditionalEnergyWh = averagePowerKw * remainingHours * 1000;
+      }
+
+      // Fix formatting
+      const estimatedFinalNetEnergyWh =
+        actualNetEnergyWh + estimatedAdditionalEnergyWh;
+      const estimatedEtkAtSettlement =
+        await this.blockchainService.calculateEtkAmount(
+          Math.floor(Math.abs(estimatedFinalNetEnergyWh)),
+        );
+
+      // this.logger.debug(
+      //   `Settlement calculation for meter ${meterId}: ActualNet=${actualNetEnergyWh}Wh, Current=${currentPowerKw}kW, Average=${averagePowerKw}kW, EstimatedFinal=${estimatedFinalNetEnergyWh}Wh`,
+      // );
+
+      // Determine status based on current power flow
+      let status: 'EXPORTING' | 'IMPORTING' | 'IDLE' = 'IDLE';
+      if (currentPowerKw > 0.05) {
+        // Threshold for export (50W)
+        status = 'EXPORTING';
+      } else if (currentPowerKw < -0.05) {
+        // Threshold for import (-50W)
+        status = 'IMPORTING';
+      }
+
+      // Calculate progress percentage
+      const totalPeriodMs = settlementIntervalMinutes * 60 * 1000;
       const progressPercentage = Math.min(
         100,
         Math.max(0, (elapsedMs / totalPeriodMs) * 100),
       );
+
+      // Calculate time remaining
       const remainingMinutes = Math.floor(remainingMs / (60 * 1000));
       const remainingSeconds = Math.floor((remainingMs % (60 * 1000)) / 1000);
       const timeRemaining = `${remainingMinutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
 
-      // Simple running average with cache
-      const averagePowerKw = (cache.basePowerKw + currentPowerKw) / 2;
-
-      // Determine status (optimized thresholds)
-      let status: 'EXPORTING' | 'IMPORTING' | 'IDLE' = 'IDLE';
-      if (netEnergyWh > 50) {
-        status = 'EXPORTING';
-      } else if (netEnergyWh < -50) {
-        status = 'IMPORTING';
-      }
-
-      // Use cached conversion ratio (no blockchain call)
-      const estimatedEtkAtSettlement =
-        cache.conversionRatio > 0
-          ? Math.abs(netEnergyWh) / cache.conversionRatio
-          : 0;
-
-      return Promise.resolve({
+      return {
         status,
         periodMinutes: settlementIntervalMinutes,
-        currentPowerKw: Math.round(currentPowerKw * 100) / 100,
+        currentPowerKw: Math.round(currentPowerKw * 100) / 100, // Round to 2 decimal places
         averagePowerKw: Math.round(averagePowerKw * 100) / 100,
         estimatedEtkAtSettlement:
-          Math.round(estimatedEtkAtSettlement * 1000) / 1000,
-        currentRunningEtk: Math.round(estimatedEtkAtSettlement * 1000) / 1000,
-        periodStartTime: periodStart.toTimeString().substr(0, 5),
+          Math.round(estimatedEtkAtSettlement * 1000) / 1000, // Round to 3 decimal places
+        currentRunningEtk: Math.round(currentRunningEtk * 1000) / 1000,
+        periodStartTime: periodStart.toTimeString().substr(0, 5), // HH:MM format
         currentTime: now.toTimeString().substr(0, 5),
         periodEndTime: periodEnd.toTimeString().substr(0, 5),
-        progressPercentage: Math.round(progressPercentage * 10) / 10,
+        progressPercentage: Math.round(progressPercentage * 10) / 10, // Round to 1 decimal place
         timeRemaining,
-        netEnergyWh: Math.round(netEnergyWh * 10) / 10,
-      });
-    } catch (error) {
-      this.logger.error(
-        `Error getting ultra-optimized settlement estimator for meter ${meterId}:`,
-        error,
-      );
-      return Promise.resolve(null);
-    }
-  }
-
-  // Ultra-optimized method to get ONLY GRID_EXPORT and GRID_IMPORT latest readings
-  private async getLatestGridReadingsOptimized(meterId: string): Promise<{
-    exportPowerW: number;
-    importPowerW: number;
-    exportEnergyWh: number;
-    importEnergyWh: number;
-  } | null> {
-    try {
-      // Get latest readings for GRID_EXPORT and GRID_IMPORT subsystems in parallel
-      const [exportReading, importReading] = await Promise.all([
-        this.energyReadingsDetailedService.findLatestByMeterIdAndSubsystem(
-          meterId,
-          'GRID_EXPORT',
-        ),
-        this.energyReadingsDetailedService.findLatestByMeterIdAndSubsystem(
-          meterId,
-          'GRID_IMPORT',
-        ),
-      ]);
-
-      const exportPowerW = exportReading?.currentPowerW || 0;
-      const importPowerW = importReading?.currentPowerW || 0;
-      const exportEnergyWh = exportReading?.settlementEnergyWh || 0;
-      const importEnergyWh = importReading?.settlementEnergyWh || 0;
-
-      return {
-        exportPowerW,
-        importPowerW,
-        exportEnergyWh,
-        importEnergyWh,
+        netEnergyWh: Math.round(actualNetEnergyWh * 10) / 10, // Use actual settlement energy
+        settlementEnergyWh,
       };
     } catch (error) {
       this.logger.error(
-        `Error getting optimized grid readings for meter ${meterId}:`,
+        `Error getting settlement estimator for meter ${meterId}:`,
         error,
       );
       return null;
     }
   }
 
-  // Optimized cache initialization with minimal database calls
-  private async initializeEstimatorCacheOptimized(
-    meterId: string,
-    settlementIntervalMinutes: number,
-  ): Promise<void> {
-    try {
-      const now = new Date();
-
-      // Get initial grid readings (only 2 subsystems)
-      const gridReadings = await this.getLatestGridReadingsOptimized(meterId);
-      let basePowerKw = 0;
-
-      if (gridReadings) {
-        basePowerKw =
-          (gridReadings.exportPowerW - gridReadings.importPowerW) / 1000;
-      }
-
-      // Use cached conversion ratio or get it once and cache it
-      let conversionRatio = 100; // Default fallback
-      try {
-        conversionRatio = await this.blockchainService.getConversionRatio();
-      } catch (error) {
-        this.logger.warn(
-          `Failed to get conversion ratio, using default: ${error}`,
-        );
-      }
-
-      // Calculate period start time
-      const currentMinutes = now.getMinutes();
-      const periodStartMinute =
-        Math.floor(currentMinutes / settlementIntervalMinutes) *
-        settlementIntervalMinutes;
-      const periodStart = new Date(now);
-      periodStart.setMinutes(periodStartMinute, 0, 0);
-
-      const cacheData: SettlementEstimatorCache = {
-        meterId,
-        periodStartTime: periodStart,
-        basePowerKw,
-        baseNetEnergyWh: 0,
-        lastUpdateTime: now,
-        settlementIntervalMinutes,
-        conversionRatio,
-        lastPowerReading: basePowerKw,
-        cachedExportPowerW: gridReadings?.exportPowerW || 0,
-        cachedImportPowerW: gridReadings?.importPowerW || 0,
-        cachedExportEnergyWh: gridReadings?.exportEnergyWh || 0,
-        cachedImportEnergyWh: gridReadings?.importEnergyWh || 0,
-        lastDataFetch: now,
-      };
-
-      this.estimatorCache.set(meterId, cacheData);
-      this.logger.debug(
-        `Initialized optimized estimator cache for meter ${meterId}`,
-      );
-    } catch (error) {
-      this.logger.error(
-        `Error initializing optimized estimator cache for meter ${meterId}:`,
-        error,
-      );
+  // Power logging utility methods
+  private addPowerLog(meterId: string, powerKw: number) {
+    if (!this.powerLogArrays.has(meterId)) {
+      this.powerLogArrays.set(meterId, []);
     }
-  }
 
-  // Helper method to initialize estimator cache
-  private async initializeEstimatorCache(
-    meterId: string,
-    settlementIntervalMinutes: number,
-  ): Promise<void> {
-    try {
-      const now = new Date();
+    const powerLog = this.powerLogArrays.get(meterId)!;
+    const now = new Date();
 
-      // Get initial power reading
-      const latestReading =
-        await this.energyReadingsDetailedService.findRecentByMeterId(
-          meterId,
-          1,
-        );
-      let basePowerKw = 0;
-      let exportPower = 0;
-      let importPower = 0;
+    // Add current power reading
+    powerLog.push({ timestamp: now, powerKw });
 
-      if (latestReading && latestReading.length > 0) {
-        const reading = latestReading[0];
-        exportPower =
-          reading.subsystem === 'GRID_EXPORT' ? reading.currentPowerW || 0 : 0;
-        importPower =
-          reading.subsystem === 'GRID_IMPORT' ? reading.currentPowerW || 0 : 0;
-        basePowerKw = (exportPower - importPower) / 1000;
-      }
-
-      // Get conversion ratio (cache it for performance)
-      let conversionRatio = 100; // Default fallback
-      try {
-        conversionRatio = await this.blockchainService.getConversionRatio();
-      } catch (error) {
-        this.logger.warn(
-          `Failed to get conversion ratio, using default: ${error}`,
-        );
-      }
-
-      // Calculate period start time
-      const currentMinutes = now.getMinutes();
-      const periodStartMinute =
-        Math.floor(currentMinutes / settlementIntervalMinutes) *
-        settlementIntervalMinutes;
-      const periodStart = new Date(now);
-      periodStart.setMinutes(periodStartMinute, 0, 0);
-
-      const cacheData: SettlementEstimatorCache = {
-        meterId,
-        periodStartTime: periodStart,
-        basePowerKw,
-        baseNetEnergyWh: 0,
-        lastUpdateTime: now,
-        settlementIntervalMinutes,
-        conversionRatio,
-        lastPowerReading: basePowerKw,
-        cachedExportPowerW: exportPower,
-        cachedImportPowerW: importPower,
-        cachedExportEnergyWh: 0,
-        cachedImportEnergyWh: 0,
-        lastDataFetch: now,
-      };
-
-      this.estimatorCache.set(meterId, cacheData);
-      this.logger.debug(`Initialized estimator cache for meter ${meterId}`);
-    } catch (error) {
-      this.logger.error(
-        `Error initializing estimator cache for meter ${meterId}:`,
-        error,
-      );
-    }
-  }
-
-  /**
-   * Updates cache in the background without blocking the main endpoint
-   */
-  private async updateCacheInBackground(
-    meterId: string,
-    settlementIntervalMinutes: number,
-  ): Promise<void> {
-    try {
-      this.logger.debug(`Background cache update for meter ${meterId}`);
-
-      // Get latest grid readings
-      const gridReadings = await this.getLatestGridReadingsOptimized(meterId);
-      if (!gridReadings) {
-        this.logger.warn(
-          `No grid readings found for background update meter ${meterId}`,
-        );
-        return;
-      }
-
-      // Get conversion ratio if needed
-      let conversionRatio = 100; // Default fallback
-      try {
-        conversionRatio = await this.blockchainService.getConversionRatio();
-      } catch (error) {
-        this.logger.warn(
-          `Failed to get conversion ratio in background update: ${error}`,
-        );
-      }
-
-      const now = new Date();
-
-      // Calculate period start time
-      const currentMinutes = now.getMinutes();
-      const periodStartMinute =
-        Math.floor(currentMinutes / settlementIntervalMinutes) *
-        settlementIntervalMinutes;
-      const periodStart = new Date(now);
-      periodStart.setMinutes(periodStartMinute, 0, 0);
-
-      const currentPowerKw =
-        (gridReadings.exportPowerW - gridReadings.importPowerW) / 1000;
-
-      const cacheData: SettlementEstimatorCache = {
-        meterId,
-        periodStartTime: periodStart,
-        basePowerKw: currentPowerKw,
-        baseNetEnergyWh: 0,
-        lastUpdateTime: now,
-        settlementIntervalMinutes,
-        conversionRatio,
-        lastPowerReading: currentPowerKw,
-        cachedExportPowerW: gridReadings.exportPowerW,
-        cachedImportPowerW: gridReadings.importPowerW,
-        cachedExportEnergyWh: gridReadings.exportEnergyWh,
-        cachedImportEnergyWh: gridReadings.importEnergyWh,
-        lastDataFetch: now,
-      };
-
-      this.estimatorCache.set(meterId, cacheData);
-      this.logger.debug(`Background cache updated for meter ${meterId}`);
-    } catch (error) {
-      this.logger.error(
-        `Error in background cache update for meter ${meterId}:`,
-        error,
-      );
-    }
-  }
-
-  /**
-   * Returns fallback estimator data when cache is not available
-   */
-  private getFallbackEstimatorData(
-    meterId: string,
-    settlementIntervalMinutes: number,
-    now: Date,
-  ): SettlementEstimatorData {
-    this.logger.debug(`Returning fallback data for meter ${meterId}`);
-
-    // Calculate time values for current period
-    const currentMinutes = now.getMinutes();
-    const periodStartMinute =
-      Math.floor(currentMinutes / settlementIntervalMinutes) *
-      settlementIntervalMinutes;
-    const periodStart = new Date(now);
-    periodStart.setMinutes(periodStartMinute, 0, 0);
-
-    const periodEnd = new Date(periodStart);
-    periodEnd.setMinutes(periodStart.getMinutes() + settlementIntervalMinutes);
-
-    const totalPeriodMs = settlementIntervalMinutes * 60 * 1000;
-    const elapsedMs = now.getTime() - periodStart.getTime();
-    const remainingMs = periodEnd.getTime() - now.getTime();
-
-    const progressPercentage = Math.min(
-      100,
-      Math.max(0, (elapsedMs / totalPeriodMs) * 100),
+    // Keep only last 10 minutes of data (for settlement period estimation)
+    const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
+    const filteredLog = powerLog.filter(
+      (entry) => entry.timestamp >= tenMinutesAgo,
     );
-    const remainingMinutes = Math.floor(remainingMs / (60 * 1000));
-    const remainingSeconds = Math.floor((remainingMs % (60 * 1000)) / 1000);
-    const timeRemaining = `${remainingMinutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-
-    return {
-      status: 'IDLE',
-      periodMinutes: settlementIntervalMinutes,
-      currentPowerKw: 0,
-      averagePowerKw: 0,
-      estimatedEtkAtSettlement: 0,
-      currentRunningEtk: 0,
-      periodStartTime: periodStart.toTimeString().substr(0, 5),
-      currentTime: now.toTimeString().substr(0, 5),
-      periodEndTime: periodEnd.toTimeString().substr(0, 5),
-      progressPercentage: Math.round(progressPercentage * 10) / 10,
-      timeRemaining,
-      netEnergyWh: 0,
-    };
+    this.powerLogArrays.set(meterId, filteredLog);
   }
 
-  /**
-   * Resets cache for a new settlement period while preserving what we can
-   */
-  private resetCacheForNewPeriod(
-    existingCache: SettlementEstimatorCache,
-    now: Date,
-    settlementIntervalMinutes: number,
-  ): SettlementEstimatorCache {
-    // Calculate new period start time
-    const currentMinutes = now.getMinutes();
-    const periodStartMinute =
-      Math.floor(currentMinutes / settlementIntervalMinutes) *
-      settlementIntervalMinutes;
-    const periodStart = new Date(now);
-    periodStart.setMinutes(periodStartMinute, 0, 0);
+  private getAveragePowerFromLog(meterId: string): number {
+    const powerLog = this.powerLogArrays.get(meterId) || [];
+    if (powerLog.length === 0) return 0;
 
-    // Keep most data but reset period-specific values
-    return {
-      ...existingCache,
-      periodStartTime: periodStart,
-      baseNetEnergyWh: 0,
-      lastUpdateTime: now,
-    };
+    const sum = powerLog.reduce((total, entry) => total + entry.powerKw, 0);
+    return sum / powerLog.length;
   }
 
-  /**
-   * Helper method to check if cache should be reset for new period
-   */
-  private shouldResetCacheForNewPeriod(
-    cache: SettlementEstimatorCache,
-    now: Date,
-    settlementIntervalMinutes: number,
-  ): boolean {
-    const currentMinutes = now.getMinutes();
-    const currentPeriodStartMinute =
-      Math.floor(currentMinutes / settlementIntervalMinutes) *
-      settlementIntervalMinutes;
-    const cachedPeriodStartMinute = cache.periodStartTime.getMinutes();
-
-    // Reset if we're in a new settlement period
-    return currentPeriodStartMinute !== cachedPeriodStartMinute;
+  private clearPowerLog(meterId: string) {
+    this.powerLogArrays.set(meterId, []);
   }
 
-  /**
-   * Background cache refresh every 30 seconds to keep estimator data fresh
-   */
-  @Cron('*/30 * * * * *')
-  async refreshEstimatorCacheBackground() {
-    try {
-      const cacheMeters = Array.from(this.estimatorCache.keys());
-      if (cacheMeters.length === 0) {
-        return; // No meters to update
+  private async calculateHourlyEnergyTotals(
+    meterIds: string[],
+    hourDate: Date,
+  ): Promise<{
+    solar: number;
+    consumption: number;
+    battery: number;
+    gridExport: number;
+    gridImport: number;
+    net: number;
+  }> {
+    const startHour = new Date(hourDate);
+    startHour.setMinutes(0, 0, 0); // Ensure hour starts at XX:00:00
+
+    const endHour = new Date(startHour);
+    endHour.setHours(startHour.getHours() + 1);
+
+    // Calculate total energy consumed/produced per hour using: Energy = Avg Power × 1 Hour
+    // This approach is more reliable since settlement_energy_wh resets every 5 minutes
+    const rawQuery = `
+      WITH hourly_data AS (
+        SELECT 
+          "meter_id",
+          subsystem,
+          AVG("current_power_w") as avg_power_w,
+          COUNT(*) as reading_count
+        FROM energy_readings_detailed 
+        WHERE "meter_id" = ANY($1)
+          AND timestamp >= $2 
+          AND timestamp < $3
+          AND subsystem IN ('SOLAR', 'LOAD', 'BATTERY', 'GRID_EXPORT', 'GRID_IMPORT')
+        GROUP BY "meter_id", subsystem
+      )
+      SELECT 
+        subsystem,
+        SUM(avg_power_w) as total_avg_power_w,
+        SUM(reading_count) as total_readings
+      FROM hourly_data
+      GROUP BY subsystem;
+    `;
+
+    interface HourlyResult {
+      subsystem: string;
+      total_avg_power_w: number;
+      total_readings: number;
+    }
+
+    const results: HourlyResult[] = await this.energyReadingsDetailedService[
+      'repo'
+    ].query(rawQuery, [meterIds, startHour, endHour]);
+
+    // Initialize values (in kWh)
+    let solar = 0;
+    let consumption = 0; // LOAD
+    let battery = 0;
+    let gridExport = 0;
+    let gridImport = 0;
+
+    // Process results: Energy (kWh) = Average Power (W) × 1 hour / 1000
+    for (const result of results) {
+      const avgPowerW = result.total_avg_power_w || 0;
+      const energyKwh = avgPowerW / 1000; // Convert W to kW, then × 1 hour = kWh
+
+      switch (result.subsystem) {
+        case 'SOLAR':
+          solar = energyKwh;
+          break;
+        case 'LOAD':
+          consumption = energyKwh;
+          break;
+        case 'BATTERY':
+          battery = energyKwh;
+          break;
+        case 'GRID_EXPORT':
+          gridExport = energyKwh;
+          break;
+        case 'GRID_IMPORT':
+          gridImport = energyKwh;
+          break;
       }
+    }
 
-      this.logger.debug(`Refreshing cache for ${cacheMeters.length} meters`);
+    const net = gridExport - gridImport;
 
-      // Update caches in parallel for better performance
-      const updatePromises = cacheMeters.map((meterId) => {
-        const cache = this.estimatorCache.get(meterId);
-        if (cache) {
-          return this.updateCacheInBackground(
-            meterId,
-            cache.settlementIntervalMinutes,
-          );
-        }
-        return Promise.resolve();
-      });
+    return {
+      solar: Math.round(solar * 1000) / 1000, // Round to 3 decimal places for kWh
+      consumption: Math.round(consumption * 1000) / 1000,
+      battery: Math.round(battery * 1000) / 1000,
+      gridExport: Math.round(gridExport * 1000) / 1000,
+      gridImport: Math.round(gridImport * 1000) / 1000,
+      net: Math.round(net * 1000) / 1000,
+    };
+  }
 
-      await Promise.allSettled(updatePromises);
-      this.logger.debug(`Background cache refresh completed`);
-    } catch (error) {
-      this.logger.error('Error in background cache refresh:', error);
+  private cleanOldCacheEntries() {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    for (const [key, value] of this.hourlyHistoryCache.entries()) {
+      if (value.timestamp < sevenDaysAgo) {
+        this.hourlyHistoryCache.delete(key);
+      }
     }
   }
 
-  /**
-   * Method to reset estimator cache when settlement is completed
-   */
-  private resetEstimatorCache(meterId: string): void {
-    this.estimatorCache.delete(meterId);
-    this.logger.debug(`Reset estimator cache for meter ${meterId}`);
+  // Clean cache periodically (run once per hour)
+  @Cron('0 0 * * * *') // Run at the start of every hour
+  cleanCacheHourly() {
+    this.cleanOldCacheEntries();
+    this.logger.debug('Hourly cache cleanup completed');
   }
 
-  /**
-   * Method to clear all estimator cache (useful for maintenance)
-   */
-  public clearAllEstimatorCache(): void {
-    this.estimatorCache.clear();
-    this.logger.log('Cleared all estimator cache');
+  async getHourlyEnergyHistory(
+    prosumerId: string,
+    hours: number = 24,
+    meterId?: string,
+  ): Promise<
+    Array<{
+      hour: string;
+      timestamp: string;
+      solar: number;
+      consumption: number;
+      battery: number;
+      gridExport: number;
+      gridImport: number;
+      net: number;
+    }>
+  > {
+    try {
+      // Get prosumer's meters
+      const devices = await this.smartMetersService.findAll({ prosumerId });
+      let meterIds: string[] = devices.map(
+        (d: { meterId: string }) => d.meterId,
+      );
+
+      if (meterId) {
+        // Verify meter belongs to prosumer
+        if (!meterIds.includes(meterId)) {
+          throw new Error('Unauthorized access to meter');
+        }
+        meterIds = [meterId];
+      }
+
+      if (meterIds.length === 0) {
+        return [];
+      }
+
+      const now = new Date();
+      const result: Array<{
+        hour: string;
+        timestamp: string;
+        solar: number;
+        consumption: number;
+        battery: number;
+        gridExport: number;
+        gridImport: number;
+        net: number;
+      }> = [];
+
+      // Generate last N hours (always use XX:00:00 format)
+      for (let i = hours - 1; i >= 0; i--) {
+        const hourDate = new Date(now.getTime() - i * 60 * 60 * 1000);
+        hourDate.setMinutes(0, 0, 0); // Always set to XX:00:00 format
+
+        const hourKey = `${prosumerId}_${meterId || 'all'}_${hourDate.getFullYear()}_${hourDate.getMonth()}_${hourDate.getDate()}_${hourDate.getHours()}`;
+
+        let hourData: {
+          solar: number;
+          consumption: number;
+          battery: number;
+          gridExport: number;
+          gridImport: number;
+          net: number;
+        };
+
+        // Check cache for non-current hour data
+        if (i > 0 && this.hourlyHistoryCache.has(hourKey)) {
+          const cached = this.hourlyHistoryCache.get(hourKey)!;
+          hourData = cached.data;
+        } else {
+          // Calculate fresh data
+          hourData = await this.calculateHourlyEnergyTotals(meterIds, hourDate);
+
+          // Cache only non-current hour data
+          if (i > 0) {
+            this.hourlyHistoryCache.set(hourKey, {
+              data: hourData,
+              timestamp: new Date(),
+              hour: hourDate.getHours(),
+            });
+          }
+        }
+
+        result.push({
+          hour: `${hourDate.getHours().toString().padStart(2, '0')}:00`, // Always XX:00 format
+          timestamp: hourDate.toISOString(),
+          ...hourData,
+        });
+      }
+
+      // Clean old cache entries (keep only last 7 days)
+      this.cleanOldCacheEntries();
+
+      return result;
+    } catch (error) {
+      this.logger.error('Error getting hourly energy history:', error);
+      return [];
+    }
   }
 }

@@ -8,6 +8,7 @@ import {
   Request,
   BadRequestException,
   Logger,
+  Query,
 } from '@nestjs/common';
 import { ethers } from 'ethers';
 import { WalletsService } from '../modules/Wallets/Wallets.service';
@@ -494,6 +495,8 @@ export class WalletController {
       ]);
 
       return {
+        success: true,
+        message: `Balances fetched successfully for wallet ${walletAddress}`,
         ETK: etkBalance,
         IDRS: idrsBalance,
       };
@@ -504,9 +507,288 @@ export class WalletController {
         }`,
       );
       return {
+        success: false,
+        message: `Failed to fetch balances for wallet ${walletAddress}`,
         ETK: 0,
         IDRS: 0,
       };
+    }
+  }
+
+  @Get('transactions/idrs')
+  async getIdrsTransactionHistory(
+    @Request() req: User,
+    @Query('limit') limit?: string,
+    @Query('transactionType') transactionType?: string,
+    @Query('scope') scope?: 'own' | 'public' | 'all',
+  ) {
+    const prosumerId = req.user.prosumerId;
+
+    try {
+      const maxLimit = limit ? parseInt(limit) : 50;
+      const validScope = scope || 'own'; // Default to 'own' if not specified
+
+      // Validate scope parameter
+      if (!['own', 'public', 'all'].includes(validScope)) {
+        throw new BadRequestException(
+          'Invalid scope parameter. Must be one of: own, public, all',
+        );
+      }
+
+      // Log admin scope access
+      if (validScope === 'all') {
+        this.logger.warn(
+          `User ${prosumerId} requested 'all' scope for IDRS transaction history`,
+        );
+      }
+
+      let transactions: any[] = [];
+
+      if (validScope === 'public') {
+        // Get all public IDRS transactions (anonymized)
+        const allTransactions = await this.transactionLogsService.findAll({
+          currencyPrimary: 'IDRS',
+          transactionType: transactionType || undefined,
+        });
+
+        // Anonymize sensitive data for public view
+        transactions = allTransactions.map((tx: any) => ({
+          logId: tx.logId,
+          transactionType: tx.transactionType,
+          description: tx.description,
+          amountPrimary: tx.amountPrimary,
+          currencyPrimary: tx.currencyPrimary,
+          amountSecondary: tx.amountSecondary,
+          currencySecondary: tx.currencySecondary,
+          transactionTimestamp: tx.transactionTimestamp,
+          // Hide sensitive information
+          prosumerId: tx.prosumerId
+            ? tx.prosumerId.substring(0, 8) + '...'
+            : null,
+          blockchainTxHash: tx.blockchainTxHash
+            ? tx.blockchainTxHash.substring(0, 10) + '...'
+            : null,
+        }));
+      } else if (validScope === 'all') {
+        // Get all IDRS transactions (admin view)
+        transactions = await this.transactionLogsService.findAll({
+          currencyPrimary: 'IDRS',
+          transactionType: transactionType || undefined,
+        });
+      } else {
+        // Default: Get only user's own IDRS transactions
+        transactions = await this.transactionLogsService.findAll({
+          prosumerId,
+          currencyPrimary: 'IDRS',
+          transactionType: transactionType || undefined,
+        });
+      }
+
+      // Format the response to match expected structure
+      const formattedTransactions = transactions.map((tx: any) => {
+        let parsedDescription: Record<string, any> = {};
+        try {
+          parsedDescription = JSON.parse(tx.description || '{}') as Record<
+            string,
+            any
+          >;
+        } catch {
+          // If description is not valid JSON, use as string
+          parsedDescription = { message: tx.description };
+        }
+
+        return {
+          logId: tx.logId,
+          transactionType: tx.transactionType,
+          description: (parsedDescription.message as string) || tx.description,
+          details: validScope === 'public' ? {} : parsedDescription, // Hide details for public
+          amountPrimary: tx.amountPrimary,
+          currencyPrimary: tx.currencyPrimary,
+          amountSecondary: tx.amountSecondary,
+          currencySecondary: tx.currencySecondary,
+          blockchainTxHash: tx.blockchainTxHash,
+          transactionTimestamp: tx.transactionTimestamp,
+          ...(validScope !== 'own' && { prosumerId: tx.prosumerId }), // Include prosumerId for non-own scopes
+        };
+      });
+
+      // Sort by timestamp (newest first) and limit results
+      const sortedTransactions = formattedTransactions
+        .sort(
+          (a, b) =>
+            new Date(b.transactionTimestamp).getTime() -
+            new Date(a.transactionTimestamp).getTime(),
+        )
+        .slice(0, maxLimit);
+
+      return {
+        success: true,
+        data: sortedTransactions,
+        metadata: {
+          scope: validScope,
+          prosumerId: validScope === 'own' ? prosumerId : 'multiple',
+          currencyPrimary: 'IDRS',
+          transactionType: transactionType || 'all',
+          limit: maxLimit,
+          count: sortedTransactions.length,
+        },
+        message: `IDRS transaction history fetched successfully (${validScope} scope)`,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      this.logger.error(
+        `Error fetching IDRS transaction history for prosumer ${prosumerId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      throw new BadRequestException('Failed to fetch IDRS transaction history');
+    }
+  }
+
+  @Get('transactions/token-minting')
+  async getTokenMintingHistory(
+    @Request() req: User,
+    @Query('limit') limit?: string,
+    @Query('tokenType') tokenType?: string, // 'ETK' or 'IDRS'
+    @Query('scope') scope?: 'own' | 'public' | 'all',
+  ) {
+    const prosumerId = req.user.prosumerId;
+
+    try {
+      const maxLimit = limit ? parseInt(limit) : 50;
+      const validScope = scope || 'own'; // Default to 'own' if not specified
+
+      // Validate scope parameter
+      if (!['own', 'public', 'all'].includes(validScope)) {
+        throw new BadRequestException(
+          'Invalid scope parameter. Must be one of: own, public, all',
+        );
+      }
+
+      // Log admin scope access
+      if (validScope === 'all') {
+        this.logger.warn(
+          `User ${prosumerId} requested 'all' scope for token minting history`,
+        );
+      }
+
+      let mintTransactions: any[] = [];
+      let burnTransactions: any[] = [];
+
+      // Build query parameters based on scope
+      const baseQueryParams: {
+        prosumerId?: string;
+        currencyPrimary?: string;
+        transactionType?: string;
+      } = {};
+
+      // Add prosumerId only for 'own' scope
+      if (validScope === 'own') {
+        baseQueryParams.prosumerId = prosumerId;
+      }
+
+      // Filter by token type if specified
+      if (tokenType) {
+        baseQueryParams.currencyPrimary = tokenType.toUpperCase();
+      }
+
+      // Get both minting and burning transactions
+      [mintTransactions, burnTransactions] = await Promise.all([
+        this.transactionLogsService.findAll({
+          ...baseQueryParams,
+          transactionType: 'TOKEN_MINT',
+        }),
+        this.transactionLogsService.findAll({
+          ...baseQueryParams,
+          transactionType: 'TOKEN_BURN',
+        }),
+      ]);
+
+      // Combine transactions
+      let allTransactions = [...mintTransactions, ...burnTransactions];
+
+      // Apply anonymization for public scope
+      if (validScope === 'public') {
+        allTransactions = allTransactions.map((tx: any) => ({
+          ...tx,
+          // Anonymize sensitive data
+          prosumerId: tx.prosumerId
+            ? tx.prosumerId.substring(0, 8) + '...'
+            : null,
+          blockchainTxHash: tx.blockchainTxHash
+            ? tx.blockchainTxHash.substring(0, 10) + '...'
+            : null,
+        }));
+      }
+
+      // Format the response
+      const formattedTransactions = allTransactions.map((tx: any) => {
+        let parsedDescription: { message?: string; [key: string]: any } = {};
+        try {
+          parsedDescription = JSON.parse(tx.description || '{}') as {
+            message?: string;
+            [key: string]: any;
+          };
+        } catch {
+          parsedDescription = { message: tx.description };
+        }
+
+        return {
+          logId: tx.logId,
+          transactionType: tx.transactionType,
+          description: (parsedDescription.message as string) || tx.description,
+          details: validScope === 'public' ? {} : parsedDescription, // Hide details for public
+          amountPrimary: tx.amountPrimary,
+          currencyPrimary: tx.currencyPrimary,
+          amountSecondary: tx.amountSecondary,
+          currencySecondary: tx.currencySecondary,
+          blockchainTxHash: tx.blockchainTxHash,
+          transactionTimestamp: tx.transactionTimestamp,
+          // Add additional fields for better UI display
+          transactionDirection:
+            tx.transactionType === 'TOKEN_MINT' ? 'IN' : 'OUT',
+          transactionLabel:
+            tx.transactionType === 'TOKEN_MINT' ? 'Minting' : 'Burning',
+          ...(validScope !== 'own' && { prosumerId: tx.prosumerId }), // Include prosumerId for non-own scopes
+        };
+      });
+
+      // Sort by timestamp (newest first) and limit results
+      const sortedTransactions = formattedTransactions
+        .sort(
+          (a, b) =>
+            new Date(b.transactionTimestamp).getTime() -
+            new Date(a.transactionTimestamp).getTime(),
+        )
+        .slice(0, maxLimit);
+
+      return {
+        success: true,
+        data: sortedTransactions,
+        metadata: {
+          scope: validScope,
+          prosumerId: validScope === 'own' ? prosumerId : 'multiple',
+          tokenType: tokenType || 'all',
+          limit: maxLimit,
+          count: sortedTransactions.length,
+          transactionTypes: ['TOKEN_MINT', 'TOKEN_BURN'],
+        },
+        message: `Token minting/burning history fetched successfully (${validScope} scope)`,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      this.logger.error(
+        `Error fetching token minting history for prosumer ${prosumerId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      throw new BadRequestException(
+        'Failed to fetch token minting/burning history',
+      );
     }
   }
 }

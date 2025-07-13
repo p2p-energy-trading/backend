@@ -1,0 +1,30 @@
+### Test Price History Duplicates Fix
+### Endpoint: Get 1-minute price history to check for duplicates
+
+### Test 1: Get 1-minute price history (should have no duplicates now)
+GET {{baseUrl}}/trading/price-history?interval=1m&limit=50
+Authorization: Bearer {{accessToken}}
+
+### Test 2: Get 5-minute price history
+GET {{baseUrl}}/trading/price-history?interval=5m&limit=20
+Authorization: Bearer {{accessToken}}
+
+### Test 3: Get 1-hour price history
+GET {{baseUrl}}/trading/price-history?interval=1h&limit=24
+Authorization: Bearer {{accessToken}}
+
+### Test 4: Get price candles for 1 minute
+GET {{baseUrl}}/trading/price-candles?interval=1m&limit=50
+Authorization: Bearer {{accessToken}}
+
+### Test 5: Get price candles for 5 minutes
+GET {{baseUrl}}/trading/price-candles?interval=5m&limit=20
+Authorization: Bearer {{accessToken}}
+
+### Test 6: Check current price
+GET {{baseUrl}}/trading/current-price
+Authorization: Bearer {{accessToken}}
+
+### Variables for local testing
+@baseUrl = http://localhost:3000
+@accessToken = your_access_token_here

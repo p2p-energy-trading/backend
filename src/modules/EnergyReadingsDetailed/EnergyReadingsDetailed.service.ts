@@ -466,6 +466,13 @@ export class EnergyReadingsDetailedService {
         battery: number;
         gridExport: number;
         gridImport: number;
+        settlementEnergy: {
+          solar: number;
+          load: number;
+          battery: number;
+          gridExport: number;
+          gridImport: number;
+        };
       }>
     >
   > {
@@ -481,6 +488,7 @@ export class EnergyReadingsDetailedService {
           timestamp,
           subsystem,
           "current_power_w" as "currentPowerW",
+          "settlement_energy_wh" as "settlementEnergyWh",
           ROW_NUMBER() OVER (
             PARTITION BY "meter_id", timestamp 
             ORDER BY "reading_id"
@@ -497,7 +505,8 @@ export class EnergyReadingsDetailedService {
         "meterId",
         timestamp,
         subsystem,
-        "currentPowerW"
+        "currentPowerW",
+        "settlementEnergyWh"
       FROM ranked_readings 
       WHERE timestamp_rank <= $2
         AND rn_per_timestamp = 1
@@ -509,6 +518,7 @@ export class EnergyReadingsDetailedService {
       timestamp: Date;
       subsystem: string;
       currentPowerW: number;
+      settlementEnergyWh: number;
     }
 
     const results: RawTimeSeriesResult[] = await this.repo.query(rawQuery, [
@@ -528,6 +538,13 @@ export class EnergyReadingsDetailedService {
           battery: number;
           gridExport: number;
           gridImport: number;
+          settlementEnergy: {
+            solar: number;
+            load: number;
+            battery: number;
+            gridExport: number;
+            gridImport: number;
+          };
         }
       >
     >();
@@ -550,27 +567,40 @@ export class EnergyReadingsDetailedService {
           battery: 0,
           gridExport: 0,
           gridImport: 0,
+          settlementEnergy: {
+            solar: 0,
+            load: 0,
+            battery: 0,
+            gridExport: 0,
+            gridImport: 0,
+          },
         });
       }
 
       const timestampData = meterData.get(timestamp)!;
       const powerW = row.currentPowerW || 0;
+      const settlementWh = row.settlementEnergyWh || 0;
 
       switch (row.subsystem) {
         case 'SOLAR':
           timestampData.solar = powerW;
+          timestampData.settlementEnergy.solar = settlementWh;
           break;
         case 'LOAD':
           timestampData.load = powerW;
+          timestampData.settlementEnergy.load = settlementWh;
           break;
         case 'BATTERY':
           timestampData.battery = powerW;
+          timestampData.settlementEnergy.battery = settlementWh;
           break;
         case 'GRID_EXPORT':
           timestampData.gridExport = powerW;
+          timestampData.settlementEnergy.gridExport = settlementWh;
           break;
         case 'GRID_IMPORT':
           timestampData.gridImport = powerW;
+          timestampData.settlementEnergy.gridImport = settlementWh;
           break;
       }
     }
@@ -585,6 +615,13 @@ export class EnergyReadingsDetailedService {
         battery: number;
         gridExport: number;
         gridImport: number;
+        settlementEnergy: {
+          solar: number;
+          load: number;
+          battery: number;
+          gridExport: number;
+          gridImport: number;
+        };
       }>
     >();
 
@@ -621,6 +658,13 @@ export class EnergyReadingsDetailedService {
       battery: number;
       gridExport: number;
       gridImport: number;
+      settlementEnergy: {
+        solar: number;
+        load: number;
+        battery: number;
+        gridExport: number;
+        gridImport: number;
+      };
     }>
   > {
     // Single optimized query to get the latest complete data sets
@@ -631,6 +675,7 @@ export class EnergyReadingsDetailedService {
         'reading.subsystem',
         'reading.currentPowerW',
         'reading.subsystemData',
+        'reading.settlementEnergyWh',
       ])
       .where('reading.meterId = :meterId', { meterId })
       .andWhere('reading.subsystem IN (:...subsystems)', {
@@ -654,6 +699,13 @@ export class EnergyReadingsDetailedService {
         battery: number;
         gridExport: number;
         gridImport: number;
+        settlementEnergy: {
+          solar: number;
+          load: number;
+          battery: number;
+          gridExport: number;
+          gridImport: number;
+        };
       }
     >();
 
@@ -667,19 +719,29 @@ export class EnergyReadingsDetailedService {
           battery: 0,
           gridExport: 0,
           gridImport: 0,
+          settlementEnergy: {
+            solar: 0,
+            load: 0,
+            battery: 0,
+            gridExport: 0,
+            gridImport: 0,
+          },
         });
       }
 
       const powerData = timestampMap.get(timestampKey)!;
       const powerW = result.currentPowerW || 0;
+      const settlementWh = result.settlementEnergyWh || 0;
 
       switch (result.subsystem) {
         case 'SOLAR': {
           powerData.solar = powerW; // Only count power if actively generating
+          powerData.settlementEnergy.solar = settlementWh;
           break;
         }
         case 'LOAD': {
           powerData.load = powerW;
+          powerData.settlementEnergy.load = settlementWh;
           break;
         }
         case 'BATTERY': {
@@ -694,14 +756,17 @@ export class EnergyReadingsDetailedService {
 
           // Use charge state to determine power direction (positive for charging, negative for discharging)
           powerData.battery = isCharging ? powerW : -powerW;
+          powerData.settlementEnergy.battery = settlementWh;
           break;
         }
         case 'GRID_EXPORT': {
           powerData.gridExport = powerW;
+          powerData.settlementEnergy.gridExport = settlementWh;
           break;
         }
         case 'GRID_IMPORT': {
           powerData.gridImport = powerW;
+          powerData.settlementEnergy.gridImport = settlementWh;
           break;
         }
       }

@@ -17,6 +17,7 @@ import { TradeOrdersCacheService } from '../modules/TradeOrdersCache/TradeOrders
 import { MarketTradesService } from '../modules/MarketTrades/MarketTrades.service';
 import { JwtAuthGuard } from '../auth/guards/auth.guards';
 import { ProsumersService } from 'src/modules/Prosumers/Prosumers.service';
+import { PriceCacheService } from '../services/price-cache.service';
 
 interface User extends Request {
   user: {
@@ -43,6 +44,7 @@ export class TradingController {
     private tradeOrdersCacheService: TradeOrdersCacheService,
     private marketTradesService: MarketTradesService,
     private prosumersService: ProsumersService,
+    private priceCacheService: PriceCacheService,
   ) {}
 
   @Post('order')
@@ -78,41 +80,102 @@ export class TradingController {
   }
 
   @Get('orders')
-  async getOrders(@Request() req: User, @Query('status') status?: string) {
+  async getOrders(
+    @Request() req: User,
+    @Query('status') status?: string,
+    @Query('scope') scope?: 'own' | 'public' | 'all',
+    @Query('limit') limit?: string,
+  ) {
     const prosumerId = req.user.prosumerId;
+    const validScope = scope || 'own'; // Default to 'own' if not specified
+    const maxLimit = limit ? parseInt(limit) : 50; // Default limit to 50
 
-    // Get user's wallets
-    const wallets = await this.walletsService.findAll({ prosumerId });
-    const walletAddresses = wallets.map((w) => w.walletAddress);
+    try {
+      // Validate scope parameter
+      if (!['own', 'public', 'all'].includes(validScope)) {
+        throw new BadRequestException(
+          'Invalid scope parameter. Must be one of: own, public, all',
+        );
+      }
 
-    // Get orders for all user's wallets
-    const allOrders: any[] = [];
-    for (const walletAddress of walletAddresses) {
-      const orders = await this.tradeOrdersCacheService.findAll({
-        walletAddress: walletAddress,
-      });
-      allOrders.push(...orders);
+      // Log admin scope access
+      if (validScope === 'all') {
+        this.logger.warn(`User ${prosumerId} requested 'all' scope for orders`);
+      }
+
+      let allOrders: any[] = [];
+
+      if (validScope === 'own') {
+        // Get user's own orders only
+        const wallets = await this.walletsService.findAll({ prosumerId });
+        const walletAddresses = wallets.map((w) => w.walletAddress);
+
+        // Get orders for all user's wallets
+        for (const walletAddress of walletAddresses) {
+          const orders = await this.tradeOrdersCacheService.findAll({
+            walletAddress: walletAddress,
+          });
+          allOrders.push(...orders);
+        }
+      } else if (validScope === 'public') {
+        // Get all orders with anonymized data
+        const orders = await this.tradeOrdersCacheService.findAll({});
+
+        // Anonymize sensitive data for public view
+        allOrders = orders.map((order: any) => ({
+          ...order,
+          // Anonymize sensitive information
+          walletAddress: order.walletAddress
+            ? order.walletAddress.substring(0, 10) + '...'
+            : null,
+          prosumerId: order.prosumerId
+            ? order.prosumerId.substring(0, 8) + '...'
+            : null,
+          blockchainTxHash: order.blockchainTxHash
+            ? order.blockchainTxHash.substring(0, 12) + '...'
+            : null,
+        }));
+      } else {
+        // Get all orders with full data (admin/debug)
+        allOrders = await this.tradeOrdersCacheService.findAll({});
+      }
+
+      // Filter by status if provided
+      let filteredOrders = allOrders;
+      if (status) {
+        filteredOrders = allOrders.filter(
+          (order: any) => order.statusOnChain === status,
+        );
+      }
+
+      // Sort by creation date and apply limit
+      const sortedOrders = filteredOrders
+        .sort(
+          (a: any, b: any) =>
+            new Date(b.createdAtOnChain as string).getTime() -
+            new Date(a.createdAtOnChain as string).getTime(),
+        )
+        .slice(0, maxLimit);
+
+      return {
+        success: true,
+        data: sortedOrders,
+        metadata: {
+          scope: validScope,
+          prosumerId: validScope === 'own' ? prosumerId : 'multiple',
+          status: status || 'all',
+          limit: maxLimit,
+          count: sortedOrders.length,
+        },
+        message: `Orders retrieved successfully (${validScope} scope)`,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      this.logger.error('Error getting orders:', error);
+      throw new BadRequestException('Failed to retrieve orders');
     }
-
-    // Filter by status if provided
-    let filteredOrders = allOrders;
-    if (status) {
-      filteredOrders = allOrders.filter(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        (order: any) => order.statusOnChain === status,
-      );
-    }
-
-    return {
-      success: true,
-      data: filteredOrders.sort(
-        (a: any, b: any) =>
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          new Date(b.createdAtOnChain as string).getTime() -
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          new Date(a.createdAtOnChain as string).getTime(),
-      ),
-    };
   }
 
   @Get('orderbook-detailed')
@@ -230,46 +293,104 @@ export class TradingController {
   }
 
   @Get('trades')
-  async getTrades(@Request() req: User, @Query('limit') limit?: string) {
+  async getTrades(
+    @Request() req: User,
+    @Query('limit') limit?: string,
+    @Query('scope') scope?: 'own' | 'public' | 'all',
+  ) {
     const prosumerId = req.user.prosumerId;
     const maxLimit = limit ? parseInt(limit) : 50;
+    const validScope = scope || 'own'; // Default to 'own' if not specified
 
-    // Get user's wallets
-    const wallets = await this.walletsService.findAll({ prosumerId });
-    const walletAddresses = wallets.map((w) => w.walletAddress);
+    try {
+      // Validate scope parameter
+      if (!['own', 'public', 'all'].includes(validScope)) {
+        throw new BadRequestException(
+          'Invalid scope parameter. Must be one of: own, public, all',
+        );
+      }
 
-    // Get trades involving user's wallets
-    const allTrades: any[] = [];
-    for (const walletAddress of walletAddresses) {
-      const buyTrades = await this.marketTradesService.findAll({
-        buyerWalletAddress: walletAddress,
-      });
-      const sellTrades = await this.marketTradesService.findAll({
-        sellerWalletAddress: walletAddress,
-      });
-      allTrades.push(...buyTrades, ...sellTrades);
+      // Log admin scope access
+      if (validScope === 'all') {
+        this.logger.warn(`User ${prosumerId} requested 'all' scope for trades`);
+      }
+
+      let allTrades: any[] = [];
+
+      if (validScope === 'own') {
+        // Get user's own trades only
+        const wallets = await this.walletsService.findAll({ prosumerId });
+        const walletAddresses = wallets.map((w) => w.walletAddress);
+
+        // Get trades involving user's wallets
+        for (const walletAddress of walletAddresses) {
+          const buyTrades = await this.marketTradesService.findAll({
+            buyerWalletAddress: walletAddress,
+          });
+          const sellTrades = await this.marketTradesService.findAll({
+            sellerWalletAddress: walletAddress,
+          });
+          allTrades.push(...buyTrades, ...sellTrades);
+        }
+      } else if (validScope === 'public') {
+        // Get all trades with anonymized data
+        const trades = await this.marketTradesService.findAll({});
+
+        // Anonymize sensitive data for public view
+        allTrades = trades.map((trade: any) => ({
+          ...trade,
+          // Anonymize wallet addresses and sensitive information
+          buyerWalletAddress: trade.buyerWalletAddress
+            ? trade.buyerWalletAddress.substring(0, 10) + '...'
+            : null,
+          sellerWalletAddress: trade.sellerWalletAddress
+            ? trade.sellerWalletAddress.substring(0, 10) + '...'
+            : null,
+          blockchainTxHash: trade.blockchainTxHash
+            ? trade.blockchainTxHash.substring(0, 12) + '...'
+            : null,
+          // Keep trading data for market analysis
+          tradedEtkAmount: trade.tradedEtkAmount,
+          priceIdrsPerEtk: trade.priceIdrsPerEtk,
+          tradeTimestamp: trade.tradeTimestamp,
+          tradeId: trade.tradeId,
+        }));
+      } else {
+        // Get all trades with full data (admin/debug)
+        allTrades = await this.marketTradesService.findAll({});
+      }
+
+      // Remove duplicates and sort by trade timestamp
+      const uniqueTrades = allTrades
+        .filter(
+          (trade: any, index: number, self: any[]) =>
+            index === self.findIndex((t: any) => t.tradeId === trade.tradeId),
+        )
+        .sort(
+          (a: any, b: any) =>
+            new Date(b.tradeTimestamp as string).getTime() -
+            new Date(a.tradeTimestamp as string).getTime(),
+        )
+        .slice(0, maxLimit);
+
+      return {
+        success: true,
+        data: uniqueTrades,
+        metadata: {
+          scope: validScope,
+          prosumerId: validScope === 'own' ? prosumerId : 'multiple',
+          limit: maxLimit,
+          count: uniqueTrades.length,
+        },
+        message: `Trades retrieved successfully (${validScope} scope)`,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      this.logger.error('Error getting trades:', error);
+      throw new BadRequestException('Failed to retrieve trades');
     }
-
-    // Remove duplicates and sort by trade timestamp
-    const uniqueTrades = allTrades
-      .filter(
-        (trade: any, index: number, self: any[]) =>
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          index === self.findIndex((t: any) => t.tradeId === trade.tradeId),
-      )
-      .sort(
-        (a: any, b: any) =>
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          new Date(b.tradeTimestamp as string).getTime() -
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          new Date(a.tradeTimestamp as string).getTime(),
-      )
-      .slice(0, maxLimit);
-
-    return {
-      success: true,
-      data: uniqueTrades,
-    };
   }
 
   @Get('market-stats')
@@ -426,6 +547,150 @@ export class TradingController {
     } catch (error) {
       this.logger.error('Error getting market liquidity:', error);
       throw new BadRequestException('Failed to get market liquidity');
+    }
+  }
+
+  @Get('price-history')
+  async getPriceHistory(
+    @Query('interval') interval: string = '1m', // 1s, 1m, 5m, 15m, 1h, 1d
+    @Query('limit') limit: string = '1000',
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    try {
+      const maxLimit = Math.min(parseInt(limit) || 1000, 5000); // Max 5000 candles
+      const startTime = from
+        ? new Date(from)
+        : new Date(Date.now() - 24 * 60 * 60 * 1000); // Default 24h ago
+      const endTime = to ? new Date(to) : new Date();
+
+      // Try to get from cache first for better performance
+      let priceHistory;
+      if (['1s', '1m', '5m'].includes(interval) && !from && !to) {
+        // Use cache for real-time intervals
+        if (interval === '1s' || interval === '1m') {
+          priceHistory = this.priceCacheService.getPriceHistory(
+            interval,
+            maxLimit,
+          );
+        } else {
+          priceHistory = this.priceCacheService.getPriceCandles(
+            interval,
+            maxLimit,
+          );
+        }
+      } else {
+        // Use database for historical data
+        priceHistory = await this.marketTradesService.getPriceHistory(
+          interval,
+          maxLimit,
+          startTime,
+          endTime,
+        );
+      }
+
+      return {
+        success: true,
+        data: priceHistory,
+        metadata: {
+          interval,
+          limit: maxLimit,
+          from: startTime.toISOString(),
+          to: endTime.toISOString(),
+          count: priceHistory.length,
+        },
+      };
+    } catch (error) {
+      this.logger.error('Error getting price history:', error);
+      throw new BadRequestException('Failed to retrieve price history');
+    }
+  }
+
+  @Get('price-history/realtime')
+  async getRealTimePriceData() {
+    try {
+      // Get cached current price for better performance
+      const currentPrice = this.priceCacheService.getCurrentPrice();
+
+      // Get last 100 trades for real-time price feed
+      const recentTrades = await this.marketTradesService.findRecentTrades(100);
+
+      // Calculate price change from 24h ago
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const trades24h = recentTrades.filter(
+        (trade) => new Date(trade.tradeTimestamp) > yesterday,
+      );
+
+      const priceChange24h =
+        trades24h.length > 0
+          ? currentPrice -
+            Number(trades24h[trades24h.length - 1].priceIdrsPerEtk)
+          : 0;
+
+      const priceChangePercent =
+        trades24h.length > 0
+          ? (priceChange24h /
+              Number(trades24h[trades24h.length - 1].priceIdrsPerEtk)) *
+            100
+          : 0;
+
+      return {
+        success: true,
+        data: {
+          price: currentPrice,
+          timestamp: new Date().toISOString(),
+          change24h: Math.round(priceChange24h * 100) / 100,
+          changePercent24h: Math.round(priceChangePercent * 100) / 100,
+          volume24h: trades24h.reduce(
+            (sum, trade) => sum + Number(trade.tradedEtkAmount),
+            0,
+          ),
+          trades: recentTrades.slice(0, 20).map((trade) => ({
+            price: Number(trade.priceIdrsPerEtk),
+            volume: Number(trade.tradedEtkAmount),
+            timestamp: trade.tradeTimestamp,
+            side: 'unknown', // Will be populated when trade side is available
+          })),
+        },
+      };
+    } catch (error) {
+      this.logger.error('Error getting real-time price data:', error);
+      throw new BadRequestException('Failed to retrieve real-time price data');
+    }
+  }
+
+  @Get('price-history/candles')
+  async getPriceCandles(
+    @Query('interval') interval: string = '1m',
+    @Query('limit') limit: string = '300',
+  ) {
+    try {
+      const maxLimit = Math.min(parseInt(limit) || 300, 1000);
+
+      // Try cache first for supported intervals
+      let candles;
+      if (['1m', '5m', '1h'].includes(interval)) {
+        candles = this.priceCacheService.getPriceCandles(interval, maxLimit);
+      } else {
+        candles = await this.marketTradesService.getPriceCandles(
+          interval,
+          maxLimit,
+        );
+      }
+
+      return {
+        success: true,
+        data: candles,
+        metadata: {
+          interval,
+          limit: maxLimit,
+          count: candles.length,
+          generatedAt: new Date().toISOString(),
+        },
+      };
+    } catch (error) {
+      this.logger.error('Error getting price candles:', error);
+      throw new BadRequestException('Failed to retrieve price candles');
     }
   }
 

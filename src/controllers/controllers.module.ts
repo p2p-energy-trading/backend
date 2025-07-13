@@ -5,7 +5,9 @@ import { TradingController } from './trading.controller';
 import { WalletController } from './wallet.controller';
 import { DashboardController } from './dashboard.controller';
 import { HealthController } from './health.controller';
+import { SmartMeterController } from './smart-meter.controller';
 import { ServicesModule } from '../services/services.module';
+import { AuthModule } from '../auth/auth.module';
 import { WalletsModule } from '../modules/Wallets/Wallets.module';
 import { IdrsConversionsModule } from '../modules/IdrsConversions/IdrsConversions.module';
 import { SmartMetersModule } from '../modules/SmartMeters/SmartMeters.module';
@@ -23,6 +25,7 @@ import { EnergyReadingsDetailedModule } from 'src/modules/EnergyReadingsDetailed
 @Module({
   imports: [
     ServicesModule,
+    AuthModule,
     WalletsModule,
     IdrsConversionsModule,
     SmartMetersModule,
@@ -44,6 +47,7 @@ import { EnergyReadingsDetailedModule } from 'src/modules/EnergyReadingsDetailed
     WalletController,
     DashboardController,
     HealthController,
+    SmartMeterController,
   ],
 })
 export class ControllersModule {}

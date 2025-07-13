@@ -1,0 +1,118 @@
+###
+# Test Enhanced Transaction History API with Scope Parameters
+# Author: EnerLink Backend Team
+# Date: 2025-01-12
+# Description: Test wallet transaction history with new scope parameters for transparency
+
+###
+# ======================
+# IDRS TRANSACTION HISTORY TESTS
+# ======================
+
+###
+# 1. Get Own IDRS Transaction History (Default)
+GET {{baseUrl}}/wallet/transactions/idrs
+Authorization: Bearer {{accessToken}}
+
+###
+# 2. Get Own IDRS Transaction History with Specific Transaction Type
+GET {{baseUrl}}/wallet/transactions/idrs?transactionType=TOKEN_MINT&scope=own
+Authorization: Bearer {{accessToken}}
+
+###
+# 3. Get Public IDRS Transaction History (All Prosumers - Anonymized)
+GET {{baseUrl}}/wallet/transactions/idrs?scope=public&limit=20
+Authorization: Bearer {{accessToken}}
+
+###
+# 4. Get All IDRS Transaction History (Admin/Debug)
+GET {{baseUrl}}/wallet/transactions/idrs?scope=all&limit=100
+Authorization: Bearer {{accessToken}}
+
+###
+# 5. Test Invalid Scope Parameter for IDRS
+GET {{baseUrl}}/wallet/transactions/idrs?scope=invalid
+Authorization: Bearer {{accessToken}}
+
+###
+# 6. Get Own IDRS Transaction History with Custom Limit
+GET {{baseUrl}}/wallet/transactions/idrs?scope=own&limit=10
+Authorization: Bearer {{accessToken}}
+
+###
+# 7. Get Public IDRS Transaction History with Transaction Type Filter
+GET {{baseUrl}}/wallet/transactions/idrs?scope=public&transactionType=TOKEN_BURN&limit=15
+Authorization: Bearer {{accessToken}}
+
+###
+# ======================
+# TOKEN MINTING HISTORY TESTS
+# ======================
+
+###
+# 8. Get Own Token Minting History (Default)
+GET {{baseUrl}}/wallet/transactions/token-minting
+Authorization: Bearer {{accessToken}}
+
+###
+# 9. Get Own ETK Token Minting History
+GET {{baseUrl}}/wallet/transactions/token-minting?tokenType=ETK&scope=own
+Authorization: Bearer {{accessToken}}
+
+###
+# 10. Get Public Token Minting History (All Prosumers - Anonymized)
+GET {{baseUrl}}/wallet/transactions/token-minting?scope=public&limit=25
+Authorization: Bearer {{accessToken}}
+
+###
+# 11. Get All Token Minting History (Admin/Debug)
+GET {{baseUrl}}/wallet/transactions/token-minting?scope=all&limit=50
+Authorization: Bearer {{accessToken}}
+
+###
+# 12. Get Public IDRS Token Minting History Only
+GET {{baseUrl}}/wallet/transactions/token-minting?scope=public&tokenType=IDRS&limit=20
+Authorization: Bearer {{accessToken}}
+
+###
+# 13. Test Invalid Scope Parameter for Token Minting
+GET {{baseUrl}}/wallet/transactions/token-minting?scope=invalid
+Authorization: Bearer {{accessToken}}
+
+###
+# 14. Get Own Token Minting History with Custom Limit
+GET {{baseUrl}}/wallet/transactions/token-minting?scope=own&limit=5
+Authorization: Bearer {{accessToken}}
+
+###
+# 15. Get All ETK Token Minting History (Admin View)
+GET {{baseUrl}}/wallet/transactions/token-minting?scope=all&tokenType=ETK&limit=30
+Authorization: Bearer {{accessToken}}
+
+###
+# ======================
+# COMBINED SCOPE TESTS
+# ======================
+
+###
+# 16. Compare Own vs Public IDRS Data
+GET {{baseUrl}}/wallet/transactions/idrs?scope=own&limit=5
+Authorization: Bearer {{accessToken}}
+
+###
+GET {{baseUrl}}/wallet/transactions/idrs?scope=public&limit=5
+Authorization: Bearer {{accessToken}}
+
+###
+# 17. Compare Own vs Public Token Minting Data
+GET {{baseUrl}}/wallet/transactions/token-minting?scope=own&limit=5
+Authorization: Bearer {{accessToken}}
+
+###
+GET {{baseUrl}}/wallet/transactions/token-minting?scope=public&limit=5
+Authorization: Bearer {{accessToken}}
+
+###
+# Variables (Update these with your actual values)
+@baseUrl = http://localhost:3000
+@accessToken = YOUR_ACCESS_TOKEN_HERE

@@ -1,0 +1,50 @@
+###
+# Test Enhanced Settlement History API
+# Author: EnerLink Backend Team
+# Date: 2025-01-12
+# Description: Test settlement history with new scope parameters
+
+###
+# 1. Get Own Settlement History (Default)
+GET {{baseUrl}}/energy/settlement/history
+Authorization: Bearer {{accessToken}}
+
+###
+# 2. Get Own Settlement History with Specific Meter
+GET {{baseUrl}}/energy/settlement/history?meterId=meter_001&scope=own
+Authorization: Bearer {{accessToken}}
+
+###
+# 3. Get Public Settlement History (All Prosumers - Anonymized)
+GET {{baseUrl}}/energy/settlement/history?scope=public&limit=20
+Authorization: Bearer {{accessToken}}
+
+###
+# 4. Get All Settlement History (Admin/Debug)
+GET {{baseUrl}}/energy/settlement/history?scope=all&limit=100
+Authorization: Bearer {{accessToken}}
+
+###
+# 5. Test Invalid Scope Parameter
+GET {{baseUrl}}/energy/settlement/history?scope=invalid
+Authorization: Bearer {{accessToken}}
+
+###
+# 6. Get Own Settlement History with Custom Limit
+GET {{baseUrl}}/energy/settlement/history?scope=own&limit=10
+Authorization: Bearer {{accessToken}}
+
+###
+# 7. Get Public Settlement History with Pagination
+GET {{baseUrl}}/energy/settlement/history?scope=public&limit=5
+Authorization: Bearer {{accessToken}}
+
+###
+# 8. Get Own Settlement History for All User's Meters
+GET {{baseUrl}}/energy/settlement/history?scope=own&limit=50
+Authorization: Bearer {{accessToken}}
+
+###
+# Variables (Update these with your actual values)
+@baseUrl = http://localhost:3000
+@accessToken = YOUR_ACCESS_TOKEN_HERE

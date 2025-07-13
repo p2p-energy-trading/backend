@@ -1,0 +1,36 @@
+### Test Settlement Estimator with settlementEnergyWh
+GET http://localhost:3000/energy/settlement-estimator?meterId=METER_001
+Content-Type: application/json
+
+### Test Real-time Energy Data with settlementEnergyWh
+GET http://localhost:3000/dashboard/realtime-energy/PRO_001
+Content-Type: application/json
+
+### Expected response should now include settlementEnergyWh property in:
+# 1. Real-time energy data (timeSeries array)
+# 2. Settlement estimator data (settlementEnergyWh object)
+#
+# Sample expected structure:
+# {
+#   "lastUpdate": "2024-07-01T10:30:00.000Z",
+#   "timeSeries": [
+#     {
+#       "timestamp": "2024-07-01T10:30:00.000Z",
+#       "solar": 1.2758,
+#       "load": 0.9948,
+#       "battery": 0.1522,
+#       "batteryDirection": "charging",
+#       "gridExport": 0.0386,
+#       "gridImport": 0.0008,
+#       "netFlow": 0.0378,
+#       "meterId": "METER_001",
+#       "settlementEnergyWh": {
+#         "solar": 15.23495,
+#         "load": 10.1163,
+#         "battery": 1.793849,
+#         "gridExport": 1.959955,
+#         "gridImport": 0.004
+#       }
+#     }
+#   ]
+# }

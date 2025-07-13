@@ -1,0 +1,67 @@
+### Test Hourly Energy History Endpoint
+GET http://localhost:3000/energy/history/hourly
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: application/json
+
+### Test with specific hours parameter (last 12 hours)
+GET http://localhost:3000/energy/history/hourly?hours=12
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: application/json
+
+### Test with specific meter ID
+GET http://localhost:3000/energy/history/hourly?meterId=METER001
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: application/json
+
+### Test with both parameters
+GET http://localhost:3000/energy/history/hourly?hours=6&meterId=METER001
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: application/json
+
+### Expected Response Structure:
+# {
+#   "success": true,
+#   "data": [
+#     {
+#       "hour": "14:00",
+#       "timestamp": "2025-07-03T14:00:00.000Z",
+#       "solar": 2.45,
+#       "consumption": 1.87,
+#       "battery": 0.58,
+#       "gridExport": 0.12,
+#       "gridImport": 0.03,
+#       "net": 0.09
+#     },
+#     {
+#       "hour": "15:00", 
+#       "timestamp": "2025-07-03T15:00:00.000Z",
+#       "solar": 3.21,
+#       "consumption": 2.14,
+#       "battery": 1.07,
+#       "gridExport": 0.85,
+#       "gridImport": 0.00,
+#       "net": 0.85
+#     }
+#     // ... more hours (24 total by default)
+#   ],
+#   "metadata": {
+#     "hours": 24,
+#     "meterId": "METER001",
+#     "generatedAt": "2025-07-03T16:30:00.000Z"
+#   }
+# }
+
+### Performance Features:
+# 1. Cached hourly energy totals (only current hour recalculated)
+# 2. Fast SQL aggregation using settlement_energy_wh differences or power integration
+# 3. Automatic cache cleanup every hour
+# 4. Maximum 1 week (168 hours) to prevent abuse
+# 5. Per-prosumer data isolation and security
+
+### Data Explanation:
+# - solar: Total solar energy generated in kWh for that hour
+# - consumption: Total load energy consumed in kWh for that hour  
+# - battery: Total battery energy charged/discharged in kWh for that hour
+# - gridExport: Total energy exported to grid in kWh for that hour
+# - gridImport: Total energy imported from grid in kWh for that hour
+# - net: Net grid energy flow (export - import) in kWh for that hour

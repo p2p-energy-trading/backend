@@ -151,11 +151,11 @@ export class DeviceController {
       latestSensorTimestamp &&
       new Date().getTime() - latestSensorTimestamp.getTime() < 10 * 1000; // 10 seconds
 
-    this.logger.debug(
-      `Device ${meterId} - Latest sensor timestamp: ${latestSensorTimestamp?.toISOString()}, ` +
-        `Time since last sensor: ${latestSensorTimestamp ? new Date().getTime() - latestSensorTimestamp.getTime() : 'N/A'}ms, ` +
-        `Online: ${!!isOnline}`,
-    );
+    // this.logger.debug(
+    //   `Device ${meterId} - Latest sensor timestamp: ${latestSensorTimestamp?.toISOString()}, ` +
+    //     `Time since last sensor: ${latestSensorTimestamp ? new Date().getTime() - latestSensorTimestamp.getTime() : 'N/A'}ms, ` +
+    //     `Online: ${!!isOnline}`,
+    // );
 
     return {
       success: true,

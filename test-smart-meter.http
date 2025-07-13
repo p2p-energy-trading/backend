@@ -1,0 +1,120 @@
+### Test Smart Meter Endpoints
+### This file tests the smart meter endpoints for creating and managing smart meters
+
+### 1. Create Smart Meter - Basic
+### POST /smart-meters/create
+POST http://localhost:3000/smart-meters/create
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "meterId": "METER_TEST_001",
+  "location": "Jakarta Selatan, Indonesia"
+}
+  "deviceModel": "EnerLink Smart Meter v2",
+  "deviceVersion": "2.1.0"
+}
+
+### 3. Create Smart Meter - With Capabilities
+POST http://localhost:3000/smart-meters/create
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "meterId": "METER_TEST_002",
+  "location": "Bandung, Indonesia",
+  "deviceModel": "EnerLink Pro Smart Meter",
+  "deviceVersion": "3.0.0",
+  "capabilities": {
+    "has_battery": true,
+    "has_solar": true,
+    "has_motor": false,
+    "max_power": 5000,
+    "features": ["remote_control", "energy_monitoring", "grid_tie"]
+  }
+}
+
+### 4. Create Smart Meter - With Blockchain Address
+POST http://localhost:3000/smart-meters/create
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "meterId": "METER_TEST_003",
+  "location": "Surabaya, Indonesia",
+  "meterBlockchainAddress": "0x1234567890123456789012345678901234567890",
+  "deviceModel": "EnerLink Enterprise",
+  "deviceVersion": "4.0.0"
+}
+
+### 5. Get My Smart Meters List
+GET http://localhost:3000/smart-meters/list
+Authorization: Bearer {{access_token}}
+
+### 6. Get Specific Smart Meter
+GET http://localhost:3000/smart-meters/METER_TEST_001
+Authorization: Bearer {{access_token}}
+
+### 7. Try to Create Duplicate Meter (Should Fail)
+POST http://localhost:3000/smart-meters/create
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "meterId": "METER_TEST_001",
+  "location": "Duplicate meter test"
+}
+
+### 8. Remove Smart Meter
+DELETE http://localhost:3000/smart-meters/METER_TEST_001
+Authorization: Bearer {{access_token}}
+
+### 9. Try to Get Removed Meter (Should Fail)
+GET http://localhost:3000/smart-meters/METER_TEST_001
+Authorization: Bearer {{access_token}}
+
+### 10. Create Simple Meter (Minimal Data)
+POST http://localhost:3000/smart-meters/create
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "meterId": "SIMPLE_METER_001"
+}
+
+### Expected Response for Create Smart Meter:
+# {
+#   "success": true,
+#   "message": "Smart meter created and linked successfully",
+#   "data": {
+#     "meterId": "METER_TEST_001",
+#     "prosumerId": "prosumer_id_from_jwt",
+#     "location": "Jakarta Selatan, Indonesia",
+#     "status": "ACTIVE",
+#     "deviceModel": "EnerLink Smart Meter v2",
+#     "deviceVersion": "2.1.0",
+#     "mqttTopicRealtime": "enerlink/meters/METER_TEST_001/realtime",
+#     "mqttTopicSettlement": "enerlink/meters/METER_TEST_001/settlement",
+#     "createdAt": "2024-01-01T00:00:00.000Z"
+#   }
+# }
+
+### Expected Response for List Smart Meters:
+# {
+#   "success": true,
+#   "message": "Smart meters retrieved successfully",
+#   "data": [
+#     {
+#       "meterId": "METER_TEST_001",
+#       "location": "Jakarta Selatan, Indonesia",
+#       "status": "ACTIVE",
+#       "deviceModel": "EnerLink Smart Meter v2",
+#       "deviceVersion": "2.1.0",
+#       "lastSeen": "2024-01-01T00:00:00.000Z",
+#       "createdAt": "2024-01-01T00:00:00.000Z",
+#       "mqttTopicRealtime": "enerlink/meters/METER_TEST_001/realtime",
+#       "mqttTopicSettlement": "enerlink/meters/METER_TEST_001/settlement"
+#     }
+#   ],
+#   "count": 1
+# }

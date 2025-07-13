@@ -1,0 +1,219 @@
+###
+# Test Enhanced Trading History API with Scope and Limit Parameters
+# Author: EnerLink Backend Team
+# Date: 2025-01-12
+# Description: Test trading orders and trades with new scope and limit parameters for transparency
+
+###
+# ======================
+# TRADING ORDERS TESTS
+# ======================
+
+###
+# 1. Get Own Trading Orders (Default)
+GET {{baseUrl}}/trading/orders
+Authorization: Bearer {{accessToken}}
+
+###
+# 2. Get Own Trading Orders with Specific Status
+GET {{baseUrl}}/trading/orders?status=OPEN&scope=own
+Authorization: Bearer {{accessToken}}
+
+###
+# 3. Get Own Trading Orders with Custom Limit
+GET {{baseUrl}}/trading/orders?scope=own&limit=10
+Authorization: Bearer {{accessToken}}
+
+###
+# 4. Get Public Trading Orders (All Prosumers - Anonymized)
+GET {{baseUrl}}/trading/orders?scope=public
+Authorization: Bearer {{accessToken}}
+
+###
+# 5. Get Public Trading Orders with Limit
+GET {{baseUrl}}/trading/orders?scope=public&limit=15
+Authorization: Bearer {{accessToken}}
+
+###
+# 6. Get All Trading Orders (Admin/Debug)
+GET {{baseUrl}}/trading/orders?scope=all
+Authorization: Bearer {{accessToken}}
+
+###
+# 7. Get All Trading Orders with Limit (Admin/Debug)
+GET {{baseUrl}}/trading/orders?scope=all&limit=25
+Authorization: Bearer {{accessToken}}
+
+###
+# 8. Get Public Open Orders with Limit
+GET {{baseUrl}}/trading/orders?scope=public&status=OPEN&limit=20
+Authorization: Bearer {{accessToken}}
+
+###
+# 9. Test Invalid Scope Parameter for Orders
+GET {{baseUrl}}/trading/orders?scope=invalid
+Authorization: Bearer {{accessToken}}
+
+###
+# 10. Get Own Open Orders with Small Limit
+GET {{baseUrl}}/trading/orders?scope=own&status=OPEN&limit=5
+Authorization: Bearer {{accessToken}}
+
+###
+# 11. Get Public Filled Orders with Limit
+GET {{baseUrl}}/trading/orders?scope=public&status=FILLED&limit=10
+Authorization: Bearer {{accessToken}}
+
+###
+# ======================
+# TRADING TRADES TESTS
+# ======================
+
+###
+# 12. Get Own Trading Trades (Default)
+GET {{baseUrl}}/trading/trades
+Authorization: Bearer {{accessToken}}
+
+###
+# 13. Get Own Trading Trades with Custom Limit
+GET {{baseUrl}}/trading/trades?limit=10&scope=own
+Authorization: Bearer {{accessToken}}
+
+###
+# 14. Get Public Trading Trades (All Prosumers - Anonymized)
+GET {{baseUrl}}/trading/trades?scope=public&limit=20
+Authorization: Bearer {{accessToken}}
+
+###
+# 15. Get All Trading Trades (Admin/Debug)
+GET {{baseUrl}}/trading/trades?scope=all&limit=50
+Authorization: Bearer {{accessToken}}
+
+###
+# 16. Test Invalid Scope Parameter for Trades
+GET {{baseUrl}}/trading/trades?scope=invalid
+Authorization: Bearer {{accessToken}}
+
+###
+# 17. Get Public Recent Trades for Market Analysis
+GET {{baseUrl}}/trading/trades?scope=public&limit=30
+Authorization: Bearer {{accessToken}}
+
+###
+# 18. Get Own Recent Trades with Small Limit
+GET {{baseUrl}}/trading/trades?scope=own&limit=5
+Authorization: Bearer {{accessToken}}
+
+###
+# ======================
+# LIMIT PARAMETER TESTS
+# ======================
+
+###
+# 19. Test Different Limit Values for Orders
+GET {{baseUrl}}/trading/orders?scope=own&limit=1
+Authorization: Bearer {{accessToken}}
+
+###
+GET {{baseUrl}}/trading/orders?scope=own&limit=100
+Authorization: Bearer {{accessToken}}
+
+###
+# 20. Test Different Limit Values for Trades
+GET {{baseUrl}}/trading/trades?scope=own&limit=1
+Authorization: Bearer {{accessToken}}
+
+###
+GET {{baseUrl}}/trading/trades?scope=own&limit=100
+Authorization: Bearer {{accessToken}}
+
+###
+# ======================
+# MARKET TRANSPARENCY TESTS
+# ======================
+
+###
+# 21. Compare Own vs Public Orders Data with Limits
+GET {{baseUrl}}/trading/orders?scope=own&limit=10
+Authorization: Bearer {{accessToken}}
+
+###
+GET {{baseUrl}}/trading/orders?scope=public&limit=10
+Authorization: Bearer {{accessToken}}
+
+###
+# 22. Compare Own vs Public Trades Data with Limits
+GET {{baseUrl}}/trading/trades?scope=own&limit=10
+Authorization: Bearer {{accessToken}}
+
+###
+GET {{baseUrl}}/trading/trades?scope=public&limit=10
+Authorization: Bearer {{accessToken}}
+
+###
+# 23. Market Analysis - Public Orders and Trades with Limits
+GET {{baseUrl}}/trading/orders?scope=public&status=OPEN&limit=15
+Authorization: Bearer {{accessToken}}
+
+###
+GET {{baseUrl}}/trading/trades?scope=public&limit=25
+Authorization: Bearer {{accessToken}}
+
+###
+# ======================
+# COMBINED PARAMETERS TESTS
+# ======================
+
+###
+# 24. Test All Parameters Combined for Orders
+GET {{baseUrl}}/trading/orders?scope=public&status=OPEN&limit=20
+Authorization: Bearer {{accessToken}}
+
+###
+GET {{baseUrl}}/trading/orders?scope=own&status=FILLED&limit=5
+Authorization: Bearer {{accessToken}}
+
+###
+GET {{baseUrl}}/trading/orders?scope=all&status=CANCELLED&limit=10
+Authorization: Bearer {{accessToken}}
+
+###
+# 25. Test All Parameters Combined for Trades
+GET {{baseUrl}}/trading/trades?scope=public&limit=15
+Authorization: Bearer {{accessToken}}
+
+###
+GET {{baseUrl}}/trading/trades?scope=own&limit=8
+Authorization: Bearer {{accessToken}}
+
+###
+GET {{baseUrl}}/trading/trades?scope=all&limit=30
+Authorization: Bearer {{accessToken}}
+
+###
+# ======================
+# PERFORMANCE TESTS
+# ======================
+
+###
+# 26. Test Large Limit Values
+GET {{baseUrl}}/trading/orders?scope=public&limit=200
+Authorization: Bearer {{accessToken}}
+
+###
+GET {{baseUrl}}/trading/trades?scope=public&limit=500
+Authorization: Bearer {{accessToken}}
+
+###
+# 27. Test Zero and Negative Limits (Edge Cases)
+GET {{baseUrl}}/trading/orders?scope=own&limit=0
+Authorization: Bearer {{accessToken}}
+
+###
+GET {{baseUrl}}/trading/trades?scope=own&limit=-1
+Authorization: Bearer {{accessToken}}
+
+###
+# Variables (Update these with your actual values)
+@baseUrl = http://localhost:3000
+@accessToken = YOUR_ACCESS_TOKEN_HERE

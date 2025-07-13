@@ -132,16 +132,31 @@ Waktu tersisa: 01:09
 
 ## Implementation Details
 
-### Data Sources
-1. **Energy Readings**: Menggunakan `EnergyReadingsDetailed` untuk mendapatkan current dan historical power data
+### Data Sources (Optimized)
+1. **Real-time Power Data**: Menggunakan `DashboardService.getRealTimeEnergyData()` yang sudah dioptimalkan untuk performa tinggi
 2. **Settlement Data**: Menggunakan settlement counters dari device MQTT data
 3. **Blockchain**: Menggunakan conversion ratio dari smart contract untuk estimasi ETK
 
-### Calculation Logic
-1. **Net Energy**: `Export Energy - Import Energy` (dalam Wh)
-2. **ETK Estimation**: Menggunakan blockchain conversion ratio
-3. **Power Average**: Rata-rata dari readings terakhir (10 data points)
-4. **Period Timing**: Berdasarkan cron schedule (default: setiap 5 menit)
+### Data Sources (Fully Optimized)
+1. **Real-time Power Data**: Menggunakan `DashboardService.getRealTimeEnergyData()` yang sudah dioptimalkan untuk performa tinggi
+2. **Energy Estimation**: Menghitung net energy dari power consumption dan waktu elapsed (tidak perlu query database settlement)
+3. **Blockchain**: Menggunakan conversion ratio dari smart contract untuk estimasi ETK
+
+### Performance Optimization (Enhanced)
+- **Zero Database Calls**: Tidak menggunakan `getLatestSettlementReadings()` - hanya menggunakan cached real-time data
+- **Fast Data Retrieval**: Menggunakan `getRealTimeEnergyData` yang sudah di-cache dan dioptimalizada
+- **Index 0 Usage**: Mengambil data terbaru dari index 0 pada time series array
+- **Mathematical Estimation**: Menghitung energy accumulation secara matematis dari power × time
+- **Minimal Blockchain Calls**: Hanya memanggil `calculateEtkAmount` sekali
+
+### Calculation Logic (Fully Optimized)
+1. **Current Power**: Menggunakan `netFlow` dari index 0 (terbaru) dari `getRealTimeEnergyData`
+2. **Average Power**: Rata-rata dari 5 data points pertama (terbaru) untuk menghindari fluktuasi
+3. **Net Energy Estimation**: Dihitung dari average power × elapsed time dalam periode settlement
+4. **ETK Estimation**: Menggunakan blockchain conversion ratio dari estimated net energy
+5. **Current Running ETK**: Proporsional dengan progress percentage dari estimasi total
+6. **Period Timing**: Berdasarkan cron schedule (default: setiap 5 menit)
+7. **Status Determination**: Berdasarkan current power flow (bukan accumulated energy)
 
 ### Real-time Updates
 - Data di-refresh setiap kali endpoint dipanggil

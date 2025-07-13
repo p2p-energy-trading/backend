@@ -1,0 +1,120 @@
+### Test Wallet Transaction Endpoints
+### This file tests the new wallet transaction endpoints for IDRS and token minting/burning history
+
+### 1. Test IDRS Transaction History
+### GET /wallet/transactions/idrs
+GET http://localhost:3000/wallet/transactions/idrs
+Authorization: Bearer {{authToken}}
+
+### 2. Test IDRS Transaction History with Limit
+### GET /wallet/transactions/idrs?limit=10
+GET http://localhost:3000/wallet/transactions/idrs?limit=10
+Authorization: Bearer {{authToken}}
+
+### 3. Test IDRS Transaction History with Transaction Type Filter
+### GET /wallet/transactions/idrs?transactionType=TOKEN_MINT
+GET http://localhost:3000/wallet/transactions/idrs?transactionType=TOKEN_MINT
+Authorization: Bearer {{authToken}}
+
+### 4. Test IDRS Transaction History with Transaction Type Filter (TOKEN_BURN)
+### GET /wallet/transactions/idrs?transactionType=TOKEN_BURN
+GET http://localhost:3000/wallet/transactions/idrs?transactionType=TOKEN_BURN
+Authorization: Bearer {{authToken}}
+
+### 5. Test Token Minting History (All Token Types)
+### GET /wallet/transactions/token-minting
+GET http://localhost:3000/wallet/transactions/token-minting
+Authorization: Bearer {{authToken}}
+
+### 6. Test Token Minting History with Limit
+### GET /wallet/transactions/token-minting?limit=5
+GET http://localhost:3000/wallet/transactions/token-minting?limit=5
+Authorization: Bearer {{authToken}}
+
+### 7. Test Token Minting History Filtered by ETK
+### GET /wallet/transactions/token-minting?tokenType=ETK
+GET http://localhost:3000/wallet/transactions/token-minting?tokenType=ETK
+Authorization: Bearer {{authToken}}
+
+### 8. Test Token Minting History Filtered by IDRS
+### GET /wallet/transactions/token-minting?tokenType=IDRS
+GET http://localhost:3000/wallet/transactions/token-minting?tokenType=IDRS
+Authorization: Bearer {{authToken}}
+
+### 9. Test Token Minting History with Combined Filters
+### GET /wallet/transactions/token-minting?tokenType=IDRS&limit=3
+GET http://localhost:3000/wallet/transactions/token-minting?tokenType=IDRS&limit=3
+Authorization: Bearer {{authToken}}
+
+### 10. Test IDRS Transactions with Combined Filters
+### GET /wallet/transactions/idrs?transactionType=TOKEN_MINT&limit=5
+GET http://localhost:3000/wallet/transactions/idrs?transactionType=TOKEN_MINT&limit=5
+Authorization: Bearer {{authToken}}
+
+### 11. Test Token Minting History with Case Insensitive Token Type
+### GET /wallet/transactions/token-minting?tokenType=etk
+GET http://localhost:3000/wallet/transactions/token-minting?tokenType=etk
+Authorization: Bearer {{authToken}}
+
+### Notes:
+### - Replace {{authToken}} with your actual JWT token
+### - The endpoints now use prosumer ID from the authenticated user instead of wallet address
+### - The endpoints will return:
+###   - 200 OK with transaction data if successful
+###   - 401 Unauthorized if the token is invalid
+###
+### Expected Response Format for IDRS Transactions:
+### {
+###   "success": true,
+###   "data": [
+###     {
+###       "logId": 123,
+###       "transactionType": "TOKEN_MINT",
+###       "description": "IDRS tokens minted for ON_RAMP conversion",
+###       "details": { ... },
+###       "amountPrimary": 1000,
+###       "currencyPrimary": "IDRS",
+###       "amountSecondary": null,
+###       "currencySecondary": null,
+###       "blockchainTxHash": "0x...",
+###       "transactionTimestamp": "2024-01-01T00:00:00.000Z"
+###     }
+###   ],
+###   "metadata": {
+###     "prosumerId": "prosumer123",
+###     "currencyPrimary": "IDRS",
+###     "transactionType": "all",
+###     "limit": 50,
+###     "count": 1
+###   },
+###   "message": "IDRS transaction history fetched successfully for prosumer prosumer123"
+### }
+###
+### Expected Response Format for Token Minting Transactions:
+### {
+###   "success": true,
+###   "data": [
+###     {
+###       "logId": 123,
+###       "transactionType": "TOKEN_MINT",
+###       "description": "ETK tokens minted for energy settlement",
+###       "details": { ... },
+###       "amountPrimary": 500,
+###       "currencyPrimary": "ETK",
+###       "amountSecondary": null,
+###       "currencySecondary": null,
+###       "blockchainTxHash": "0x...",
+###       "transactionTimestamp": "2024-01-01T00:00:00.000Z",
+###       "transactionDirection": "IN",
+###       "transactionLabel": "Minting"
+###     }
+###   ],
+###   "metadata": {
+###     "prosumerId": "prosumer123",
+###     "tokenType": "all",
+###     "limit": 50,
+###     "count": 1,
+###     "transactionTypes": ["TOKEN_MINT", "TOKEN_BURN"]
+###   },
+###   "message": "Token minting/burning history fetched successfully for prosumer prosumer123"
+### }

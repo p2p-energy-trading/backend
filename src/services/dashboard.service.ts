@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { EnergyReadingsDetailedService } from '../modules/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
 import { EnergySettlementsService } from '../modules/EnergySettlements/EnergySettlements.service';
 import { MarketTradesService } from '../modules/MarketTrades/MarketTrades.service';
@@ -68,7 +68,9 @@ export class DashboardService {
     private smartMetersService: SmartMetersService,
     private walletsService: WalletsService,
     private deviceStatusSnapshotsService: DeviceStatusSnapshotsService,
+    @Inject(forwardRef(() => BlockchainService))
     private blockchainService: BlockchainService,
+    @Inject(forwardRef(() => EnergySettlementService))
     private energySettlementService: EnergySettlementService,
   ) {}
 
@@ -466,9 +468,9 @@ export class DashboardService {
       const devices = await this.getProsumeDevices(prosumerId);
       const meterIds = devices.map((d) => d.meterId);
 
-      this.logger.debug(
-        `Fetching real-time energy data for prosumer ${prosumerId} with meters: ${meterIds.join(', ')}`,
-      );
+      // this.logger.debug(
+      //   `Fetching real-time energy data for prosumer ${prosumerId} with meters: ${meterIds.join(', ')}`,
+      // );
 
       if (meterIds.length === 0) {
         return {
@@ -498,9 +500,9 @@ export class DashboardService {
       for (const meterId of meterIds) {
         const latestReadings = latestReadingsMap.get(meterId) || [];
 
-        this.logger.debug(
-          `Found ${latestReadings.length} readings in latest complete set for meter ${meterId}`,
-        );
+        // this.logger.debug(
+        //   `Found ${latestReadings.length} readings in latest complete set for meter ${meterId}`,
+        // );
 
         if (latestReadings.length > 0) {
           // Update lastUpdate from the latest timestamp
@@ -527,11 +529,12 @@ export class DashboardService {
             solar: point.solar / 1000, // Convert W to kW
             load: point.load / 1000, // Convert W to kW
             battery: point.battery / 1000, // Convert W to kW
-            batteryDirection: point.battery > 0 ? 'discharging' : 'charging',
+            batteryDirection: point.battery < 0 ? 'discharging' : 'charging',
             gridExport: point.gridExport / 1000, // Convert W to kW
             gridImport: point.gridImport / 1000, // Convert W to kW
             netFlow: (point.gridExport - point.gridImport) / 1000, // Convert W to kW
             meterId: meterIds[0],
+            settlementEnergyWh: point.settlementEnergy,
           }));
         } else {
           // Multiple meters: merge the pre-fetched time series data
@@ -543,6 +546,13 @@ export class DashboardService {
             gridExport: number;
             gridImport: number;
             meterId: string;
+            settlementEnergyWh?: {
+              solar: number;
+              load: number;
+              battery: number;
+              gridExport: number;
+              gridImport: number;
+            };
           }
 
           interface RawTimeSeriesPoint {
@@ -552,6 +562,13 @@ export class DashboardService {
             battery: unknown;
             gridExport: unknown;
             gridImport: unknown;
+            settlementEnergy?: {
+              solar: unknown;
+              load: unknown;
+              battery: unknown;
+              gridExport: unknown;
+              gridImport: unknown;
+            };
           }
 
           const allTimeSeries: TimeSeriesPoint[] = [];
@@ -585,6 +602,25 @@ export class DashboardService {
                 gridExport: Number(point?.gridExport ?? 0) / 1000,
                 gridImport: Number(point?.gridImport ?? 0) / 1000,
                 meterId: String(meterId),
+                settlementEnergyWh: point?.settlementEnergy
+                  ? {
+                      solar: Number(point.settlementEnergy.solar ?? 0),
+                      load: Number(point.settlementEnergy.load ?? 0),
+                      battery: Number(point.settlementEnergy.battery ?? 0),
+                      gridExport: Number(
+                        point.settlementEnergy.gridExport ?? 0,
+                      ),
+                      gridImport: Number(
+                        point.settlementEnergy.gridImport ?? 0,
+                      ),
+                    }
+                  : {
+                      solar: 0,
+                      load: 0,
+                      battery: 0,
+                      gridExport: 0,
+                      gridImport: 0,
+                    },
               };
             });
             allTimeSeries.push(...convertedTimeSeries);
