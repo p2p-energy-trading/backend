@@ -1,6 +1,6 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Contract, ethers } from 'ethers';
+import { ethers } from 'ethers';
 import { WalletsService } from '../modules/Wallets/Wallets.service';
 import { TransactionLogsService } from '../modules/TransactionLogs/TransactionLogs.service';
 import { TradeOrdersCacheService } from '../modules/TradeOrdersCache/TradeOrdersCache.service';
@@ -365,7 +365,7 @@ export class BlockchainService {
     prosumerAddress: string,
     netEnergyWh: number,
     settlementId: string,
-    originalSettlementId?: number,
+    // originalSettlementId?: number,
   ): Promise<string> {
     try {
       const wallet = await this.getWalletSigner(walletAddress);
@@ -840,22 +840,22 @@ export class BlockchainService {
       )) as ethers.ContractTransactionResponse;
 
       // Log transaction
-      await this.transactionLogsService.create({
-        prosumerId:
-          (await this.getProsumerIdByWallet(walletAddress)) || 'UNKNOWN',
-        transactionType: TransactionType.TOKEN_BURN,
-        description: JSON.stringify({
-          amount,
-          tokenAmount,
-          txHash: tx.hash,
-          walletAddress,
-          action: 'ETK token burn',
-        }),
-        amountPrimary: amount,
-        currencyPrimary: 'ETK',
-        blockchainTxHash: tx.hash,
-        transactionTimestamp: new Date().toISOString(),
-      });
+      // await this.transactionLogsService.create({
+      //   prosumerId:
+      //     (await this.getProsumerIdByWallet(walletAddress)) || 'UNKNOWN',
+      //   transactionType: TransactionType.TOKEN_BURN,
+      //   description: JSON.stringify({
+      //     amount,
+      //     tokenAmount,
+      //     txHash: tx.hash,
+      //     walletAddress,
+      //     action: 'ETK token burn',
+      //   }),
+      //   amountPrimary: amount,
+      //   currencyPrimary: 'ETK',
+      //   blockchainTxHash: tx.hash,
+      //   transactionTimestamp: new Date().toISOString(),
+      // });
 
       this.logger.log(`ETK burn transaction sent: ${tx.hash}`);
       return tx.hash;
@@ -964,22 +964,22 @@ export class BlockchainService {
       )) as ethers.ContractTransactionResponse;
 
       // Log transaction
-      await this.transactionLogsService.create({
-        prosumerId:
-          (await this.getProsumerIdByWallet(walletAddress)) || 'UNKNOWN',
-        transactionType: TransactionType.TOKEN_BURN,
-        description: JSON.stringify({
-          amount,
-          tokenAmount,
-          txHash: tx.hash,
-          walletAddress,
-          action: 'IDRS token burn',
-        }),
-        amountPrimary: amount,
-        currencyPrimary: 'IDRS',
-        blockchainTxHash: tx.hash,
-        transactionTimestamp: new Date().toISOString(),
-      });
+      // await this.transactionLogsService.create({
+      //   prosumerId:
+      //     (await this.getProsumerIdByWallet(walletAddress)) || 'UNKNOWN',
+      //   transactionType: TransactionType.TOKEN_BURN,
+      //   description: JSON.stringify({
+      //     amount,
+      //     tokenAmount,
+      //     txHash: tx.hash,
+      //     walletAddress,
+      //     action: 'IDRS token burn',
+      //   }),
+      //   amountPrimary: amount,
+      //   currencyPrimary: 'IDRS',
+      //   blockchainTxHash: tx.hash,
+      //   transactionTimestamp: new Date().toISOString(),
+      // });
 
       this.logger.log(`IDRS burn transaction sent: ${tx.hash}`);
       return tx.hash;

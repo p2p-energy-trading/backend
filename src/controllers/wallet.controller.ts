@@ -58,6 +58,67 @@ export class WalletController {
     private transactionLogsService: TransactionLogsService,
   ) {}
 
+  /**
+   * Safely format transaction data with proper type safety
+   */
+  private formatTransactionData(
+    tx: any,
+    scope: string,
+  ): {
+    logId: string | number | null;
+    transactionType: string | null;
+    description: string | null;
+    details: Record<string, any>;
+    amountPrimary: string | number | null;
+    currencyPrimary: string | null;
+    amountSecondary: string | number | null;
+    currencySecondary: string | null;
+    blockchainTxHash: string | null;
+    transactionTimestamp: string | null;
+    prosumerId?: string;
+  } {
+    const txData = tx as {
+      logId?: string | number;
+      transactionType?: string;
+      description?: string;
+      amountPrimary?: string | number;
+      currencyPrimary?: string;
+      amountSecondary?: string | number;
+      currencySecondary?: string;
+      transactionTimestamp?: string;
+      prosumerId?: string;
+      blockchainTxHash?: string;
+    };
+
+    let parsedDescription: { message?: string; [key: string]: any } = {};
+    try {
+      const desc = txData.description || '{}';
+      if (typeof desc === 'string') {
+        parsedDescription = JSON.parse(desc) as {
+          message?: string;
+          [key: string]: any;
+        };
+      }
+    } catch {
+      parsedDescription = { message: txData.description };
+    }
+
+    return {
+      logId: txData.logId || null,
+      transactionType: txData.transactionType || null,
+      description:
+        (parsedDescription.message as string) || txData.description || null,
+      details: parsedDescription, // Show full details for all scopes
+      amountPrimary: txData.amountPrimary || null,
+      currencyPrimary: txData.currencyPrimary || null,
+      amountSecondary: txData.amountSecondary || null,
+      currencySecondary: txData.currencySecondary || null,
+      blockchainTxHash: txData.blockchainTxHash || null,
+      transactionTimestamp: txData.transactionTimestamp || null,
+      ...(scope !== 'own' && { prosumerId: txData.prosumerId }),
+    };
+  }
+
   @Post('create')
   async createWallet(@Body() body: CreateWalletRequest, @Request() req: User) {
     const prosumerId = req.user.prosumerId;
@@ -545,30 +606,11 @@ export class WalletController {
       let transactions: any[] = [];
 
       if (validScope === 'public') {
-        // Get all public IDRS transactions (anonymized)
-        const allTransactions = await this.transactionLogsService.findAll({
+        // Get all public IDRS transactions (no anonymization needed)
+        transactions = await this.transactionLogsService.findAll({
           currencyPrimary: 'IDRS',
           transactionType: transactionType || undefined,
         });
-
-        // Anonymize sensitive data for public view
-        transactions = allTransactions.map((tx: any) => ({
-          logId: tx.logId,
-          transactionType: tx.transactionType,
-          description: tx.description,
-          amountPrimary: tx.amountPrimary,
-          currencyPrimary: tx.currencyPrimary,
-          amountSecondary: tx.amountSecondary,
-          currencySecondary: tx.currencySecondary,
-          transactionTimestamp: tx.transactionTimestamp,
-          // Hide sensitive information
-          prosumerId: tx.prosumerId
-            ? tx.prosumerId.substring(0, 8) + '...'
-            : null,
-          blockchainTxHash: tx.blockchainTxHash
-            ? tx.blockchainTxHash.substring(0, 10) + '...'
-            : null,
-        }));
       } else if (validScope === 'all') {
         // Get all IDRS transactions (admin view)
         transactions = await this.transactionLogsService.findAll({
@@ -585,40 +627,21 @@ export class WalletController {
       }
 
       // Format the response to match expected structure
-      const formattedTransactions = transactions.map((tx: any) => {
-        let parsedDescription: Record<string, any> = {};
-        try {
-          parsedDescription = JSON.parse(tx.description || '{}') as Record<
-            string,
-            any
-          >;
-        } catch {
-          // If description is not valid JSON, use as string
-          parsedDescription = { message: tx.description };
-        }
-
-        return {
-          logId: tx.logId,
-          transactionType: tx.transactionType,
-          description: (parsedDescription.message as string) || tx.description,
-          details: validScope === 'public' ? {} : parsedDescription, // Hide details for public
-          amountPrimary: tx.amountPrimary,
-          currencyPrimary: tx.currencyPrimary,
-          amountSecondary: tx.amountSecondary,
-          currencySecondary: tx.currencySecondary,
-          blockchainTxHash: tx.blockchainTxHash,
-          transactionTimestamp: tx.transactionTimestamp,
-          ...(validScope !== 'own' && { prosumerId: tx.prosumerId }), // Include prosumerId for non-own scopes
-        };
-      });
+      const formattedTransactions = transactions.map((tx: any) =>
+        this.formatTransactionData(tx, validScope),
+      );
 
       // Sort by timestamp (newest first) and limit results
       const sortedTransactions = formattedTransactions
-        .sort(
-          (a, b) =>
-            new Date(b.transactionTimestamp).getTime() -
-            new Date(a.transactionTimestamp).getTime(),
-        )
+        .sort((a, b) => {
+          const timestampA = a?.transactionTimestamp
+            ? new Date(a.transactionTimestamp).getTime()
+            : 0;
+          const timestampB = b?.transactionTimestamp
+            ? new Date(b.transactionTimestamp).getTime()
+            : 0;
+          return timestampB - timestampA;
+        })
         .slice(0, maxLimit);
 
       return {
@@ -707,61 +730,25 @@ export class WalletController {
       ]);
 
       // Combine transactions
-      let allTransactions = [...mintTransactions, ...burnTransactions];
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const allTransactions = [...mintTransactions, ...burnTransactions];
 
-      // Apply anonymization for public scope
-      if (validScope === 'public') {
-        allTransactions = allTransactions.map((tx: any) => ({
-          ...tx,
-          // Anonymize sensitive data
-          prosumerId: tx.prosumerId
-            ? tx.prosumerId.substring(0, 8) + '...'
-            : null,
-          blockchainTxHash: tx.blockchainTxHash
-            ? tx.blockchainTxHash.substring(0, 10) + '...'
-            : null,
-        }));
-      }
-
-      // Format the response
-      const formattedTransactions = allTransactions.map((tx: any) => {
-        let parsedDescription: { message?: string; [key: string]: any } = {};
-        try {
-          parsedDescription = JSON.parse(tx.description || '{}') as {
-            message?: string;
-            [key: string]: any;
-          };
-        } catch {
-          parsedDescription = { message: tx.description };
-        }
-
-        return {
-          logId: tx.logId,
-          transactionType: tx.transactionType,
-          description: (parsedDescription.message as string) || tx.description,
-          details: validScope === 'public' ? {} : parsedDescription, // Hide details for public
-          amountPrimary: tx.amountPrimary,
-          currencyPrimary: tx.currencyPrimary,
-          amountSecondary: tx.amountSecondary,
-          currencySecondary: tx.currencySecondary,
-          blockchainTxHash: tx.blockchainTxHash,
-          transactionTimestamp: tx.transactionTimestamp,
-          // Add additional fields for better UI display
-          transactionDirection:
-            tx.transactionType === 'TOKEN_MINT' ? 'IN' : 'OUT',
-          transactionLabel:
-            tx.transactionType === 'TOKEN_MINT' ? 'Minting' : 'Burning',
-          ...(validScope !== 'own' && { prosumerId: tx.prosumerId }), // Include prosumerId for non-own scopes
-        };
-      });
+      // Format the response using the helper function
+      const formattedTransactions = allTransactions.map((tx: any) =>
+        this.formatTransactionData(tx, validScope),
+      );
 
       // Sort by timestamp (newest first) and limit results
       const sortedTransactions = formattedTransactions
-        .sort(
-          (a, b) =>
-            new Date(b.transactionTimestamp).getTime() -
-            new Date(a.transactionTimestamp).getTime(),
-        )
+        .sort((a, b) => {
+          const timestampA = a?.transactionTimestamp
+            ? new Date(a.transactionTimestamp).getTime()
+            : 0;
+          const timestampB = b?.transactionTimestamp
+            ? new Date(b.transactionTimestamp).getTime()
+            : 0;
+          return timestampB - timestampA;
+        })
         .slice(0, maxLimit);
 
       return {

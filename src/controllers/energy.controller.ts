@@ -146,9 +146,11 @@ export class EnergyController {
           'own', // Use 'own' scope to get only user's settlements
         );
 
-      const userOwnsSettlement = userSettlements.some(
-        (s: any) => s.settlementId === settlementIdNum,
-      );
+      const userOwnsSettlement = userSettlements.some((s: any) => {
+        const settlementId = (s as { settlementId?: string | number })
+          ?.settlementId;
+        return settlementId != null && Number(settlementId) === settlementIdNum;
+      });
 
       if (!userOwnsSettlement) {
         throw new NotFoundException('Settlement not found');

@@ -312,7 +312,6 @@ export class EnergySettlementService {
           prosumerAddress,
           netEnergyWhInt, // Use Wh directly as the contract expects
           settlementId,
-          settlement.settlementId,
         );
 
         this.logger.log(
@@ -560,21 +559,9 @@ export class EnergySettlementService {
         const allSettlements = await this.energySettlementsService.findAll();
 
         // Remove sensitive information for public view
-        settlements = (allSettlements || []).map((settlement: any) => ({
-          ...settlement,
-          // Keep only public data, remove prosumer-specific details if needed
-          settlementId: settlement.settlementId,
-          meterId: settlement.meterId
-            ? settlement.meterId.substring(0, 8) + '...'
-            : settlement.meterId, // Partially hide meterId
-          periodStartTime: settlement.periodStartTime,
-          periodEndTime: settlement.periodEndTime,
-          netKwhFromGrid: settlement.netKwhFromGrid,
-          etkAmountCredited: settlement.etkAmountCredited,
-          status: settlement.status,
-          createdAtBackend: settlement.createdAtBackend,
-          // Remove blockchainTxHash and other sensitive data for public view
-        }));
+        settlements = (allSettlements || []).map((settlement: any) =>
+          this.formatSettlementForPublic(settlement),
+        );
       } else if (scope === 'all') {
         // Get all settlements for admin/debug purposes
         const allSettlements = await this.energySettlementsService.findAll();
@@ -600,7 +587,9 @@ export class EnergySettlementService {
         // If specific meterId is provided, filter by that meter
         if (meterId) {
           // Verify the meter belongs to the prosumer
-          const userMeter = meters.find((m: any) => m.meterId === meterId);
+          const userMeter = meters.find(
+            (m: any) => (m as { meterId?: string })?.meterId === meterId,
+          );
           if (!userMeter) {
             this.logger.warn(
               `Meter ${meterId} not found for prosumer ${prosumerId}`,
@@ -611,25 +600,37 @@ export class EnergySettlementService {
           // Get settlements for specific meter
           const allSettlements = await this.energySettlementsService.findAll();
           settlements = (allSettlements || []).filter(
-            (s: any) => s.meterId === meterId,
+            (s: any) => (s as { meterId?: string })?.meterId === meterId,
           );
         } else {
           // Get settlements for all user's meters
-          const meterIds = meters.map((m: any) => m.meterId);
+          const meterIds = meters.map(
+            (m: any) => (m as { meterId?: string })?.meterId,
+          );
           const allSettlements = await this.energySettlementsService.findAll();
           settlements = (allSettlements || []).filter((s: any) =>
-            meterIds.includes(s.meterId),
+            meterIds.includes((s as { meterId?: string })?.meterId),
           );
         }
       }
 
       // Sort by creation date, most recent first
       return settlements
-        .sort(
-          (a: any, b: any) =>
-            new Date(b.createdAtBackend).getTime() -
-            new Date(a.createdAtBackend).getTime(),
-        )
+        .sort((a: any, b: any) => {
+          const timestampA = (a as { createdAtBackend?: string | Date })
+            ?.createdAtBackend
+            ? new Date(
+                (a as { createdAtBackend?: string | Date }).createdAtBackend!,
+              ).getTime()
+            : 0;
+          const timestampB = (b as { createdAtBackend?: string | Date })
+            ?.createdAtBackend
+            ? new Date(
+                (b as { createdAtBackend?: string | Date }).createdAtBackend!,
+              ).getTime()
+            : 0;
+          return timestampB - timestampA;
+        })
         .slice(0, limit);
     } catch (error) {
       this.logger.error('Error getting settlement history:', error);
@@ -1109,5 +1110,41 @@ export class EnergySettlementService {
       this.logger.error('Error getting hourly energy history:', error);
       return [];
     }
+  }
+
+  /**
+   * Safely format settlement data for public view with proper type safety
+   */
+  private formatSettlementForPublic(settlement: any): {
+    settlementId: string | number | null;
+    meterId: string | null;
+    periodStartTime: string | Date | null;
+    periodEndTime: string | Date | null;
+    netKwhFromGrid: number | null;
+    etkAmountCredited: number | null;
+    status: string | null;
+    createdAtBackend: string | Date | null;
+  } {
+    const settlementData = settlement as {
+      settlementId?: string | number;
+      meterId?: string;
+      periodStartTime?: string | Date;
+      periodEndTime?: string | Date;
+      netKwhFromGrid?: number;
+      etkAmountCredited?: number;
+      status?: string;
+      createdAtBackend?: string | Date;
+    };
+
+    return {
+      settlementId: settlementData.settlementId || null,
+      meterId: settlementData.meterId || null, // No anonymization
+      periodStartTime: settlementData.periodStartTime || null,
+      periodEndTime: settlementData.periodEndTime || null,
+      netKwhFromGrid: settlementData.netKwhFromGrid || null,
+      etkAmountCredited: settlementData.etkAmountCredited || null,
+      status: settlementData.status || null,
+      createdAtBackend: settlementData.createdAtBackend || null,
+    };
   }
 }

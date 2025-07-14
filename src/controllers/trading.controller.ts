@@ -47,6 +47,70 @@ export class TradingController {
     private priceCacheService: PriceCacheService,
   ) {}
 
+  /**
+   * Safely anonymize a string by taking the first N characters and adding '...'
+   * @param value - The string to anonymize
+   * @param length - Number of characters to keep (default: 10)
+   * @returns Anonymized string or null if input is invalid
+   */
+  private anonymizeString(value: any, length: number = 10): string | null {
+    if (!value || typeof value !== 'string') {
+      return null;
+    }
+    return value.length > length ? value.substring(0, length) + '...' : value;
+  }
+
+  /**
+   * Safely anonymize order data for public scope
+   */
+  private anonymizeOrderData(order: any): any {
+    const orderData = order as {
+      walletAddress?: string;
+      prosumerId?: string;
+      blockchainTxHash?: string;
+    };
+
+    return {
+      ...order,
+      walletAddress: this.anonymizeString(orderData.walletAddress, 10),
+      prosumerId: this.anonymizeString(orderData.prosumerId, 8),
+      blockchainTxHash: this.anonymizeString(orderData.blockchainTxHash, 12),
+    };
+  }
+
+  /**
+   * Safely anonymize trade data for public scope
+   */
+  private anonymizeTradeData(trade: any): any {
+    const tradeData = trade as {
+      buyerWalletAddress?: string;
+      sellerWalletAddress?: string;
+      blockchainTxHash?: string;
+      tradedEtkAmount?: string | number;
+      priceIdrsPerEtk?: string | number;
+      tradeTimestamp?: string;
+      tradeId?: string;
+    };
+
+    return {
+      ...trade,
+      buyerWalletAddress: this.anonymizeString(
+        tradeData.buyerWalletAddress,
+        10,
+      ),
+      sellerWalletAddress: this.anonymizeString(
+        tradeData.sellerWalletAddress,
+        10,
+      ),
+      blockchainTxHash: this.anonymizeString(tradeData.blockchainTxHash, 12),
+      // Preserve trading data for market analysis
+      tradedEtkAmount: tradeData.tradedEtkAmount || null,
+      priceIdrsPerEtk: tradeData.priceIdrsPerEtk || null,
+      tradeTimestamp: tradeData.tradeTimestamp || null,
+      tradeId: tradeData.tradeId || null,
+    };
+  }
+
   @Post('order')
   async placeOrder(@Body() body: PlaceOrderRequest, @Request() req: User) {
     const prosumerId = req.user.prosumerId;
@@ -122,19 +186,8 @@ export class TradingController {
         const orders = await this.tradeOrdersCacheService.findAll({});
 
         // Anonymize sensitive data for public view
-        allOrders = orders.map((order: any) => ({
-          ...order,
-          // Anonymize sensitive information
-          walletAddress: order.walletAddress
-            ? order.walletAddress.substring(0, 10) + '...'
-            : null,
-          prosumerId: order.prosumerId
-            ? order.prosumerId.substring(0, 8) + '...'
-            : null,
-          blockchainTxHash: order.blockchainTxHash
-            ? order.blockchainTxHash.substring(0, 12) + '...'
-            : null,
-        }));
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        allOrders = orders.map((order: any) => this.anonymizeOrderData(order));
       } else {
         // Get all orders with full data (admin/debug)
         allOrders = await this.tradeOrdersCacheService.findAll({});
@@ -143,18 +196,21 @@ export class TradingController {
       // Filter by status if provided
       let filteredOrders = allOrders;
       if (status) {
-        filteredOrders = allOrders.filter(
-          (order: any) => order.statusOnChain === status,
-        );
+        filteredOrders = allOrders.filter((order: any) => {
+          const orderStatus = (order as { statusOnChain?: string })
+            ?.statusOnChain;
+          return orderStatus === status;
+        });
       }
 
       // Sort by creation date and apply limit
       const sortedOrders = filteredOrders
-        .sort(
-          (a: any, b: any) =>
-            new Date(b.createdAtOnChain as string).getTime() -
-            new Date(a.createdAtOnChain as string).getTime(),
-        )
+        .sort((a: any, b: any) => {
+          const aTime = (a as { createdAtOnChain?: string })?.createdAtOnChain;
+          const bTime = (b as { createdAtOnChain?: string })?.createdAtOnChain;
+          if (!aTime || !bTime) return 0;
+          return new Date(bTime).getTime() - new Date(aTime).getTime();
+        })
         .slice(0, maxLimit);
 
       return {
@@ -337,24 +393,8 @@ export class TradingController {
         const trades = await this.marketTradesService.findAll({});
 
         // Anonymize sensitive data for public view
-        allTrades = trades.map((trade: any) => ({
-          ...trade,
-          // Anonymize wallet addresses and sensitive information
-          buyerWalletAddress: trade.buyerWalletAddress
-            ? trade.buyerWalletAddress.substring(0, 10) + '...'
-            : null,
-          sellerWalletAddress: trade.sellerWalletAddress
-            ? trade.sellerWalletAddress.substring(0, 10) + '...'
-            : null,
-          blockchainTxHash: trade.blockchainTxHash
-            ? trade.blockchainTxHash.substring(0, 12) + '...'
-            : null,
-          // Keep trading data for market analysis
-          tradedEtkAmount: trade.tradedEtkAmount,
-          priceIdrsPerEtk: trade.priceIdrsPerEtk,
-          tradeTimestamp: trade.tradeTimestamp,
-          tradeId: trade.tradeId,
-        }));
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        allTrades = trades.map((trade: any) => this.anonymizeTradeData(trade));
       } else {
         // Get all trades with full data (admin/debug)
         allTrades = await this.marketTradesService.findAll({});
@@ -362,15 +402,22 @@ export class TradingController {
 
       // Remove duplicates and sort by trade timestamp
       const uniqueTrades = allTrades
-        .filter(
-          (trade: any, index: number, self: any[]) =>
-            index === self.findIndex((t: any) => t.tradeId === trade.tradeId),
-        )
-        .sort(
-          (a: any, b: any) =>
-            new Date(b.tradeTimestamp as string).getTime() -
-            new Date(a.tradeTimestamp as string).getTime(),
-        )
+        .filter((trade: any, index: number, self: any[]) => {
+          const tradeId = (trade as { tradeId?: string })?.tradeId;
+          return (
+            index ===
+            self.findIndex((t: any) => {
+              const tId = (t as { tradeId?: string })?.tradeId;
+              return tId === tradeId;
+            })
+          );
+        })
+        .sort((a: any, b: any) => {
+          const aTime = (a as { tradeTimestamp?: string })?.tradeTimestamp;
+          const bTime = (b as { tradeTimestamp?: string })?.tradeTimestamp;
+          if (!aTime || !bTime) return 0;
+          return new Date(bTime).getTime() - new Date(aTime).getTime();
+        })
         .slice(0, maxLimit);
 
       return {
@@ -591,13 +638,13 @@ export class TradingController {
 
       return {
         success: true,
-        data: priceHistory,
+        data: priceHistory as any[],
         metadata: {
           interval,
           limit: maxLimit,
           from: startTime.toISOString(),
           to: endTime.toISOString(),
-          count: priceHistory.length,
+          count: Array.isArray(priceHistory) ? priceHistory.length : 0,
         },
       };
     } catch (error) {
@@ -680,11 +727,11 @@ export class TradingController {
 
       return {
         success: true,
-        data: candles,
+        data: candles as any[],
         metadata: {
           interval,
           limit: maxLimit,
-          count: candles.length,
+          count: Array.isArray(candles) ? candles.length : 0,
           generatedAt: new Date().toISOString(),
         },
       };
