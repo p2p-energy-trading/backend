@@ -797,23 +797,23 @@ export class BlockchainService {
         tokenAmount,
       )) as ethers.ContractTransactionResponse;
 
-      // Log transaction
-      await this.transactionLogsService.create({
-        prosumerId:
-          (await this.getProsumerIdByWallet(walletAddress)) || 'UNKNOWN',
-        transactionType: TransactionType.TOKEN_MINT,
-        description: JSON.stringify({
-          amount,
-          tokenAmount,
-          txHash: tx.hash,
-          walletAddress,
-          action: 'ETK token mint',
-        }),
-        amountPrimary: amount,
-        currencyPrimary: 'ETK',
-        blockchainTxHash: tx.hash,
-        transactionTimestamp: new Date().toISOString(),
-      });
+      // // Log transaction
+      // await this.transactionLogsService.create({
+      //   prosumerId:
+      //     (await this.getProsumerIdByWallet(walletAddress)) || 'UNKNOWN',
+      //   transactionType: TransactionType.TOKEN_MINT,
+      //   description: JSON.stringify({
+      //     amount,
+      //     tokenAmount,
+      //     txHash: tx.hash,
+      //     walletAddress,
+      //     action: 'ETK token mint',
+      //   }),
+      //   amountPrimary: amount,
+      //   currencyPrimary: 'ETK',
+      //   blockchainTxHash: tx.hash,
+      //   transactionTimestamp: new Date().toISOString(),
+      // });
 
       this.logger.log(`ETK mint transaction sent: ${tx.hash}`);
       return tx.hash;
@@ -921,23 +921,23 @@ export class BlockchainService {
         tokenAmount,
       )) as ethers.ContractTransactionResponse;
 
-      // Log transaction
-      await this.transactionLogsService.create({
-        prosumerId:
-          (await this.getProsumerIdByWallet(walletAddress)) || 'UNKNOWN',
-        transactionType: TransactionType.TOKEN_MINT,
-        description: JSON.stringify({
-          amount,
-          tokenAmount,
-          txHash: tx.hash,
-          walletAddress,
-          action: 'IDRS token mint',
-        }),
-        amountPrimary: amount,
-        currencyPrimary: 'IDRS',
-        blockchainTxHash: tx.hash,
-        transactionTimestamp: new Date().toISOString(),
-      });
+      // // Log transaction
+      // await this.transactionLogsService.create({
+      //   prosumerId:
+      //     (await this.getProsumerIdByWallet(walletAddress)) || 'UNKNOWN',
+      //   transactionType: TransactionType.TOKEN_MINT,
+      //   description: JSON.stringify({
+      //     amount,
+      //     tokenAmount,
+      //     txHash: tx.hash,
+      //     walletAddress,
+      //     action: 'IDRS token mint',
+      //   }),
+      //   amountPrimary: amount,
+      //   currencyPrimary: 'IDRS',
+      //   blockchainTxHash: tx.hash,
+      //   transactionTimestamp: new Date().toISOString(),
+      // });
 
       this.logger.log(`IDRS mint transaction sent: ${tx.hash}`);
       return tx.hash;
