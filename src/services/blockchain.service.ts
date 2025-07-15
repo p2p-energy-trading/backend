@@ -179,6 +179,39 @@ export class BlockchainService {
     };
   }
 
+  /**
+   * Helper function to safely convert blockchain timestamp to Date object
+   * @param timestamp - Blockchain timestamp (bigint) in seconds
+   * @returns Valid Date object or current time as fallback
+   */
+  private safeTimestampToDate(timestamp: bigint): Date {
+    const timestampMs = Number(timestamp) * 1000;
+
+    if (
+      isNaN(timestampMs) ||
+      timestampMs < 0 ||
+      timestampMs > 8640000000000000
+    ) {
+      // Invalid timestamp - use current time as fallback
+      this.logger.warn(
+        `Invalid timestamp received: ${timestamp}, using current time as fallback`,
+      );
+      return new Date();
+    }
+
+    const date = new Date(timestampMs);
+
+    // Additional validation - check if the Date object is valid
+    if (isNaN(date.getTime())) {
+      this.logger.warn(
+        `Invalid date created from timestamp: ${timestamp}, using current time as fallback`,
+      );
+      return new Date();
+    }
+
+    return date;
+  }
+
   private setupEventListeners() {
     try {
       // Listen to market events
@@ -1240,7 +1273,7 @@ export class BlockchainService {
         priceIdrsPerEtk: priceIdrs,
         totalIdrsValue: amountEtk * priceIdrs,
         statusOnChain: 'OPEN',
-        createdAtOnChain: new Date(Number(timestamp) * 1000).toISOString(),
+        createdAtOnChain: this.safeTimestampToDate(timestamp).toISOString(),
         updatedAtCache: new Date().toISOString(),
         blockchainTxHashPlaced: extractedTxHash,
       });
@@ -1320,7 +1353,7 @@ export class BlockchainService {
         priceIdrsPerEtk: priceIdrs,
         totalIdrsValue: amountEtk * priceIdrs,
         blockchainTxHash: extractedTxHash,
-        tradeTimestamp: new Date(Number(timestamp) * 1000).toISOString(),
+        tradeTimestamp: this.safeTimestampToDate(timestamp).toISOString(),
         createdAt: new Date().toISOString(),
       });
 
@@ -1342,7 +1375,7 @@ export class BlockchainService {
         amountSecondary: amountEtk * priceIdrs,
         currencySecondary: 'IDRS',
         blockchainTxHash: extractedTxHash,
-        transactionTimestamp: new Date(Number(timestamp) * 1000).toISOString(),
+        transactionTimestamp: this.safeTimestampToDate(timestamp).toISOString(),
       });
 
       // Update order status in cache for both buy and sell orders
@@ -1445,7 +1478,9 @@ export class BlockchainService {
       // Convert blockchain values to readable format
       const energyWhValue = Number(netEnergyWh);
       const etkAmountValue = Number(etkAmount) / 100; // Convert from contract units (2 decimals)
-      const timestampDate = new Date(Number(timestamp) * 1000);
+
+      const timestampDate = this.safeTimestampToDate(timestamp);
+
       const txHash = this.extractTransactionHash(event);
 
       // Log event details
@@ -1562,7 +1597,8 @@ export class BlockchainService {
       const amountEtk = Number(amount) / 100; // ETK uses 2 decimals
       const priceIdrs = Number(price) / 100; // IDRS uses 2 decimals
 
-      const cancellationTime = new Date(Number(timestamp) * 1000).toISOString();
+      const cancellationTime =
+        this.safeTimestampToDate(timestamp).toISOString();
 
       const extractedTxHash = this.extractTransactionHash(event);
 

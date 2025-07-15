@@ -675,28 +675,63 @@ DEBUG=enerlink:* npm run start:dev
 
 ---
 
-## 📄 License
+## 🔧 Go Quorum Timestamp Overflow Fix
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+**Issue:** When using Go Quorum with Raft consensus, timestamp values can exceed JavaScript's maximum safe integer, causing `RangeError: Invalid time value` errors.
 
----
+**Solution:** Modify the `formatBlock` function in `node_modules/ethers/lib.commonjs/providers/format.js`:
 
-## 🙏 Acknowledgments
+```javascript
+formatBlock(value) {
+    // Fix for Go Quorum timestamp overflow
+    value.timestamp = Math.floor(value.timestamp / 1000);
+    const result = _formatBlock(value);
+    result.transactions = value.transactions.map((tx) => {
+        if (typeof (tx) === "string") {
+            return tx;
+        }
+        return formatTransactionResponse(tx);
+    });
+    return result;
+}
+```
 
-- **NestJS Framework**: For providing excellent TypeScript framework
-- **Ethereum Community**: For blockchain integration tools
-- **MQTT Community**: For IoT communication standards
-- **PostgreSQL**: For reliable database solution
+**Steps to apply the fix:**
 
----
+1. **Locate the format.js file:**
+   ```bash
+   cd node_modules/ethers/lib.commonjs/providers/
+   ```
 
-<p align="center">
-  <strong>Built with ❤️ for sustainable energy trading</strong>
-</p>
+2. **Backup the original file:**
+   ```bash
+   cp format.js format.js.backup
+   ```
 
-<p align="center">
-  <a href="https://nestjs.com/">NestJS</a> •
-  <a href="https://ethereum.org/">Ethereum</a> •
-  <a href="https://mqtt.org/">MQTT</a> •
-  <a href="https://www.postgresql.org/">PostgreSQL</a>
-</p>
+3. **Edit the formatBlock function:**
+   ```bash
+   nano format.js
+   ```
+
+4. **Find the formatBlock function** (around line 400-500) and replace it with the code above.
+
+5. **Save and restart the application:**
+   ```bash
+   npm run start:dev
+   ```
+
+**Why this fix works:**
+- Go Quorum with Raft consensus returns timestamps in microseconds or nanoseconds
+- JavaScript Date objects can only handle timestamps up to `8640000000000000` milliseconds
+- Dividing by 1000 converts the timestamp to a safe range for JavaScript Date processing
+- This fix is automatically applied in our `safeTimestampToDate()` helper function for blockchain events
+
+**Alternative Solutions:**
+- Use a custom provider that handles timestamp conversion
+- Implement timestamp validation in all blockchain event handlers
+- Use a different Ethereum client that returns standard timestamps
+
+**Note:** This is a temporary fix that needs to be reapplied after `npm install` or when updating the ethers package.
+
+### 🔧 Common Issues
+```
