@@ -1285,9 +1285,9 @@ export class EnergyReadingsDetailedService {
         COUNT(CASE WHEN status = 'PENDING' THEN 1 END) as pending_settlements,
         COUNT(CASE WHEN created_at_backend >= $2 AND created_at_backend < $3 THEN 1 END) as today_settlements,
         MAX(created_at_backend) as last_settlement_time,
-        -- Only count ETK minted/burned for successful settlements
-        SUM(CASE WHEN status = 'SUCCESS' AND net_kwh_from_grid > 0 THEN ABS(net_kwh_from_grid) ELSE 0 END) as total_etk_minted,
-        SUM(CASE WHEN status = 'SUCCESS' AND net_kwh_from_grid < 0 THEN ABS(net_kwh_from_grid) ELSE 0 END) as total_etk_burned
+        -- Only count ETK minted/burned for successful settlements using actual ETK amounts
+        SUM(CASE WHEN status = 'SUCCESS' AND net_kwh_from_grid > 0 THEN ABS(etk_amount_credited) ELSE 0 END) as total_etk_minted,
+        SUM(CASE WHEN status = 'SUCCESS' AND net_kwh_from_grid < 0 THEN ABS(etk_amount_credited) ELSE 0 END) as total_etk_burned
       FROM energy_settlements 
       WHERE meter_id = ANY($1);
     `;
