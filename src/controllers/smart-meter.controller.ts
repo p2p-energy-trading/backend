@@ -10,8 +10,23 @@ import {
   Param,
   Delete,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiBody,
+  ApiParam,
+} from '@nestjs/swagger';
 import { SmartMetersService } from '../modules/SmartMeters/SmartMeters.service';
 import { JwtAuthGuard } from '../auth/guards/auth.guards';
+import {
+  CreateSmartMeterDto,
+  SmartMeterResponseDto,
+  LinkSmartMeterDto,
+  UnlinkSmartMeterDto,
+  UpdateSettlementIntervalDto,
+} from '../common/dto/smart-meter.dto';
 
 interface User extends Request {
   user: {
@@ -28,6 +43,8 @@ interface CreateSmartMeterRequest {
   capabilities?: any;
 }
 
+@ApiTags('Smart Meters')
+@ApiBearerAuth('JWT-auth')
 @Controller('smart-meters')
 @UseGuards(JwtAuthGuard)
 export class SmartMeterController {
@@ -36,6 +53,32 @@ export class SmartMeterController {
   constructor(private smartMetersService: SmartMetersService) {}
 
   @Post('create')
+  @ApiOperation({
+    summary: 'Create and register a smart meter',
+    description: 'Create a new smart meter and link it to the prosumer account',
+  })
+  @ApiBody({ type: CreateSmartMeterDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Smart meter created successfully',
+    type: SmartMeterResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Meter ID missing or meter already exists',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict - Meter already exists',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error - Failed to create meter',
+  })
   async createSmartMeter(
     @Body() body: CreateSmartMeterRequest,
     @Request() req: User,
@@ -126,6 +169,28 @@ export class SmartMeterController {
   }
 
   @Get('list')
+  @ApiOperation({
+    summary: 'Get my smart meters',
+    description:
+      'Retrieve all smart meters owned by the authenticated prosumer',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Smart meters retrieved successfully',
+    type: [SmartMeterResponseDto],
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Not found - No meters found for user',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error - Failed to retrieve meters',
+  })
   async getMySmartMeters(@Request() req: User) {
     try {
       const prosumerId = req.user.prosumerId;
@@ -161,6 +226,36 @@ export class SmartMeterController {
   }
 
   @Get(':meterId')
+  @ApiOperation({
+    summary: 'Get smart meter details',
+    description: 'Retrieve detailed information for a specific smart meter',
+  })
+  @ApiParam({
+    name: 'meterId',
+    description: 'Smart meter ID',
+    example: 'SM001',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Smart meter details retrieved successfully',
+    type: SmartMeterResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unauthorized or meter not found',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Not found - Meter does not exist',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error - Failed to retrieve meter',
+  })
   async getSmartMeter(@Param('meterId') meterId: string, @Request() req: User) {
     try {
       const prosumerId = req.user.prosumerId;
@@ -211,6 +306,35 @@ export class SmartMeterController {
   }
 
   @Delete(':meterId')
+  @ApiOperation({
+    summary: 'Remove smart meter',
+    description: 'Delete a smart meter from the system',
+  })
+  @ApiParam({
+    name: 'meterId',
+    description: 'Smart meter ID to remove',
+    example: 'SM001',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Smart meter removed successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unauthorized or failed to remove meter',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Not found - Meter does not exist',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error - Failed to remove meter',
+  })
   async removeSmartMeter(
     @Param('meterId') meterId: string,
     @Request() req: User,

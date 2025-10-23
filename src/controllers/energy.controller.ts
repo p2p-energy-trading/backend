@@ -11,10 +11,24 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+  ApiParam,
+} from '@nestjs/swagger';
 import { EnergySettlementService } from '../services/energy-settlement.service';
 import { EnergySettlementsService } from '../modules/EnergySettlements/EnergySettlements.service';
 import { JwtAuthGuard } from '../auth/guards/auth.guards';
 import { AuthService } from '../auth/auth.service';
+import {
+  EnergyReadingDto,
+  EnergyStatsDto,
+  SettlementEstimateDto,
+  SettlementRecordDto,
+} from '../common/dto/energy.dto';
 // import { SettlementTrigger } from '../common/enums';
 
 interface AuthenticatedUser {
@@ -23,6 +37,8 @@ interface AuthenticatedUser {
   };
 }
 
+@ApiTags('Energy')
+@ApiBearerAuth('JWT-auth')
 @Controller('energy')
 @UseGuards(JwtAuthGuard)
 export class EnergyController {
@@ -61,6 +77,48 @@ export class EnergyController {
   // }
 
   @Get('settlement/history')
+  @ApiOperation({
+    summary: 'Get settlement history',
+    description:
+      'Retrieve historical energy settlement records with filtering options',
+  })
+  @ApiQuery({
+    name: 'meterId',
+    required: false,
+    description: 'Filter by specific smart meter ID',
+    example: 'SM001',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Maximum number of records to return',
+    example: '50',
+  })
+  @ApiQuery({
+    name: 'scope',
+    required: false,
+    enum: ['own', 'public', 'all'],
+    description:
+      'Data scope: own (your data), public (anonymized), all (admin)',
+    example: 'own',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Settlement history retrieved successfully',
+    type: [SettlementRecordDto],
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid scope parameter',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Not found - No settlements found',
+  })
   async getSettlementHistory(
     @Request() req: AuthenticatedUser,
     @Query('meterId') meterId?: string,
@@ -116,6 +174,32 @@ export class EnergyController {
   }
 
   @Get('settlement/:settlementId')
+  @ApiOperation({
+    summary: 'Get settlement details',
+    description: 'Retrieve detailed information for a specific settlement',
+  })
+  @ApiParam({
+    name: 'settlementId',
+    description: 'Settlement ID',
+    example: '123',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Settlement details retrieved successfully',
+    type: SettlementRecordDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid settlement ID format',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Settlement does not belong to user',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Settlement not found',
+  })
   async getSettlement(
     @Param('settlementId') settlementId: string,
     @Request() req: AuthenticatedUser,
@@ -172,6 +256,33 @@ export class EnergyController {
   }
 
   @Get('settlement-estimator')
+  @ApiOperation({
+    summary: 'Get settlement estimate',
+    description: 'Estimate ETK tokens to be minted/burned in next settlement',
+  })
+  @ApiQuery({
+    name: 'meterId',
+    required: false,
+    description: 'Smart meter ID (uses first meter if not provided)',
+    example: 'SM001',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Settlement estimate retrieved successfully',
+    type: SettlementEstimateDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Invalid meter ID',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Meter does not belong to user',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'No meters found or no energy data available',
+  })
   async getSettlementEstimator(
     @Request() req: AuthenticatedUser,
     @Query('meterId') meterId?: string,
@@ -234,6 +345,66 @@ export class EnergyController {
   }
 
   @Get('history/hourly')
+  @ApiOperation({
+    summary: 'Get hourly energy history',
+    description:
+      'Retrieve aggregated hourly energy data for the past N hours (max 1 week)',
+  })
+  @ApiQuery({
+    name: 'hours',
+    required: false,
+    description: 'Number of hours to retrieve (default: 24, max: 168)',
+    example: '24',
+  })
+  @ApiQuery({
+    name: 'meterId',
+    required: false,
+    description: 'Filter by specific meter ID (optional)',
+    example: 'SM001',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Hourly energy history retrieved successfully',
+    schema: {
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              hour: { type: 'string', example: '2025-10-23T10:00:00.000Z' },
+              export: { type: 'number', example: 12.5 },
+              import: { type: 'number', example: 5.3 },
+              net: { type: 'number', example: 7.2 },
+              generation: { type: 'number', example: 15.0 },
+              consumption: { type: 'number', example: 7.8 },
+            },
+          },
+        },
+        metadata: {
+          type: 'object',
+          properties: {
+            hours: { type: 'number', example: 24 },
+            meterId: { type: 'string', example: 'all' },
+            generatedAt: { type: 'string', example: '2025-10-23T12:00:00Z' },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - hours exceeds maximum of 168',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Not found - No energy data available',
+  })
   async getHourlyEnergyHistory(
     @Request() req: AuthenticatedUser,
     @Query('hours') hours?: string,

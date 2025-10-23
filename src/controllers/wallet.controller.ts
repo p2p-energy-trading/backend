@@ -10,6 +10,15 @@ import {
   Logger,
   Query,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiBody,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { ethers } from 'ethers';
 import { WalletsService } from '../modules/Wallets/Wallets.service';
 import { IdrsConversionsService } from '../modules/IdrsConversions/IdrsConversions.service';
@@ -23,6 +32,14 @@ import {
 import { ProsumersService } from 'src/modules/Prosumers/Prosumers.service';
 import { BlockchainService } from '../services/blockchain.service';
 import { TransactionLogsService } from '../modules/TransactionLogs/TransactionLogs.service';
+import {
+  CreateWalletDto,
+  CreateWalletResponseDto,
+  IdrsConversionDto,
+  IdrsConversionResponseDto,
+  WalletBalanceDto,
+  WalletInfoDto,
+} from '../common/dto/wallet.dto';
 // import { create } from 'domain';
 
 interface CreateWalletRequest {
@@ -44,6 +61,8 @@ interface User extends Request {
   };
 }
 
+@ApiTags('Wallet')
+@ApiBearerAuth('JWT-auth')
 @Controller('wallet')
 @UseGuards(JwtAuthGuard)
 export class WalletController {
@@ -120,6 +139,25 @@ export class WalletController {
   }
 
   @Post('create')
+  @ApiOperation({
+    summary: 'Create or import a wallet',
+    description:
+      'Create a new wallet (generate) or import existing wallet using private key or mnemonic',
+  })
+  @ApiBody({ type: CreateWalletDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Wallet created successfully',
+    type: CreateWalletResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Invalid parameters or missing required fields',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict - Wallet already exists',
+  })
   async createWallet(@Body() body: CreateWalletRequest, @Request() req: User) {
     const prosumerId = req.user.prosumerId;
 
@@ -179,6 +217,15 @@ export class WalletController {
   }
 
   @Get('list')
+  @ApiOperation({
+    summary: 'Get all wallets',
+    description: 'Retrieve all wallets owned by the authenticated user',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Wallets retrieved successfully',
+    type: [WalletInfoDto],
+  })
   async getWallets(@Request() req: User) {
     const prosumerId = req.user.prosumerId;
 
@@ -198,6 +245,24 @@ export class WalletController {
   }
 
   @Get(':walletAddress')
+  @ApiOperation({
+    summary: 'Get wallet details',
+    description: 'Retrieve detailed information for a specific wallet',
+  })
+  @ApiParam({
+    name: 'walletAddress',
+    description: 'Ethereum wallet address',
+    example: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Wallet details retrieved successfully',
+    type: WalletInfoDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unauthorized - wallet does not belong to user',
+  })
   async getWallet(
     @Param('walletAddress') walletAddress: string,
     @Request() req: User,
@@ -228,6 +293,25 @@ export class WalletController {
   }
 
   @Post('idrs-conversion')
+  @ApiOperation({
+    summary: 'Convert between IDR and IDRS tokens',
+    description:
+      'Perform ON_RAMP (IDR to IDRS) or OFF_RAMP (IDRS to IDR) conversion',
+  })
+  @ApiBody({ type: IdrsConversionDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Conversion completed successfully',
+    type: IdrsConversionResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Invalid parameters or insufficient balance',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Wallet does not belong to user',
+  })
   async convertIdrs(@Body() body: IdrsConversionRequest, @Request() req: User) {
     const prosumerId = req.user.prosumerId;
 
@@ -416,6 +500,24 @@ export class WalletController {
   }
 
   @Get(':walletAddress/conversions')
+  @ApiOperation({
+    summary: 'Get IDRS conversion history',
+    description: 'Retrieve all IDRS conversions for a specific wallet',
+  })
+  @ApiParam({
+    name: 'walletAddress',
+    description: 'Ethereum wallet address',
+    example: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Conversions retrieved successfully',
+    type: [IdrsConversionResponseDto],
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unauthorized',
+  })
   async getConversions(
     @Param('walletAddress') walletAddress: string,
     @Request() req: User,
@@ -443,6 +545,23 @@ export class WalletController {
   }
 
   @Post(':walletAddress/activate')
+  @ApiOperation({
+    summary: 'Activate wallet',
+    description: 'Activate a previously deactivated wallet',
+  })
+  @ApiParam({
+    name: 'walletAddress',
+    description: 'Ethereum wallet address to activate',
+    example: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Wallet activated successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unauthorized or wallet not found',
+  })
   async activateWallet(
     @Param('walletAddress') walletAddress: string,
     @Request() req: User,
@@ -480,7 +599,24 @@ export class WalletController {
   // This endpoint allows a prosumer to change their primary wallet for settlement purposes.
   // It verifies ownership of the wallet and updates the primary wallet in the prosumer's profile
   @Post(':walletAddress/primary')
-  async changePrimaryWallet(
+  @ApiOperation({
+    summary: 'Set as primary wallet',
+    description: 'Set a wallet as the primary wallet for the user',
+  })
+  @ApiParam({
+    name: 'walletAddress',
+    description: 'Ethereum wallet address to set as primary',
+    example: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Primary wallet updated successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unauthorized or wallet not found',
+  })
+  async setPrimaryWallet(
     @Param('walletAddress') walletAddress: string,
     @Request() req: User,
   ) {
@@ -506,6 +642,23 @@ export class WalletController {
   }
 
   @Post(':walletAddress/deactivate')
+  @ApiOperation({
+    summary: 'Deactivate wallet',
+    description: 'Deactivate a wallet (cannot be used for transactions)',
+  })
+  @ApiParam({
+    name: 'walletAddress',
+    description: 'Ethereum wallet address to deactivate',
+    example: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Wallet deactivated successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unauthorized or wallet not found',
+  })
   async deactivateWallet(
     @Param('walletAddress') walletAddress: string,
     @Request() req: User,
@@ -540,6 +693,24 @@ export class WalletController {
   }
 
   @Get(':walletAddress/balances')
+  @ApiOperation({
+    summary: 'Get wallet token balances',
+    description: 'Retrieve ETK and IDRS token balances for a specific wallet',
+  })
+  @ApiParam({
+    name: 'walletAddress',
+    description: 'Ethereum wallet address',
+    example: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Balances retrieved successfully',
+    type: WalletBalanceDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Wallet not found',
+  })
   async getWalletBalances(@Param('walletAddress') walletAddress: string) {
     try {
       this.logger.log(`Fetched balances for wallet ${walletAddress}`);
@@ -577,6 +748,56 @@ export class WalletController {
   }
 
   @Get('transactions/idrs')
+  @ApiOperation({
+    summary: 'Get IDRS transaction history',
+    description: 'Retrieve transaction history for IDRS conversions',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Maximum number of transactions to return',
+    example: '50',
+  })
+  @ApiQuery({
+    name: 'transactionType',
+    required: false,
+    description: 'Filter by transaction type',
+    example: 'IDRS_CONVERSION',
+  })
+  @ApiQuery({
+    name: 'scope',
+    required: false,
+    enum: ['own', 'public', 'all'],
+    description: 'Data scope: own (your transactions), public, all (admin)',
+    example: 'own',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Transaction history retrieved successfully',
+    schema: {
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              logId: { type: 'string', example: '123' },
+              transactionType: { type: 'string', example: 'IDRS_CONVERSION' },
+              description: { type: 'string', example: 'ON_RAMP conversion' },
+              amountPrimary: { type: 'string', example: '100000' },
+              currencyPrimary: { type: 'string', example: 'IDRS' },
+              blockchainTxHash: { type: 'string', example: '0xabcd...' },
+              transactionTimestamp: {
+                type: 'string',
+                example: '2025-10-23T10:30:00.000Z',
+              },
+            },
+          },
+        },
+      },
+    },
+  })
   async getIdrsTransactionHistory(
     @Request() req: User,
     @Query('limit') limit?: string,
@@ -671,6 +892,67 @@ export class WalletController {
   }
 
   @Get('transactions/token-minting')
+  @ApiOperation({
+    summary: 'Get token minting/burning history',
+    description:
+      'Retrieve history of ETK token minting and burning from energy settlements',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Maximum number of transactions to return',
+    example: '50',
+  })
+  @ApiQuery({
+    name: 'tokenType',
+    required: false,
+    description: 'Filter by token type (ETK or IDRS)',
+    example: 'ETK',
+  })
+  @ApiQuery({
+    name: 'scope',
+    required: false,
+    enum: ['own', 'public', 'all'],
+    description: 'Data scope: own (your transactions), public, all (admin)',
+    example: 'own',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Token minting history retrieved successfully',
+    schema: {
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            mints: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  logId: { type: 'string', example: '456' },
+                  transactionType: { type: 'string', example: 'ETK_MINT' },
+                  amountPrimary: { type: 'string', example: '10.5' },
+                  currencyPrimary: { type: 'string', example: 'ETK' },
+                  blockchainTxHash: { type: 'string', example: '0x1234...' },
+                  transactionTimestamp: {
+                    type: 'string',
+                    example: '2025-10-23T10:00:00.000Z',
+                  },
+                },
+              },
+            },
+            burns: {
+              type: 'array',
+              items: {
+                type: 'object',
+              },
+            },
+          },
+        },
+      },
+    },
+  })
   async getTokenMintingHistory(
     @Request() req: User,
     @Query('limit') limit?: string,

@@ -9,6 +9,14 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiBody,
+  ApiParam,
+} from '@nestjs/swagger';
 import { MqttService } from '../services/mqtt.service';
 import { DeviceCommandsService } from '../modules/DeviceCommands/DeviceCommands.service';
 import { SmartMetersService } from '../modules/SmartMeters/SmartMeters.service';
@@ -17,6 +25,13 @@ import { DeviceCommandPayload } from '../common/interfaces';
 import { ProsumersService } from 'src/modules/Prosumers/Prosumers.service';
 import { DeviceStatusSnapshotsService } from 'src/modules/DeviceStatusSnapshots/DeviceStatusSnapshots.service';
 import { EnergyReadingsDetailedService } from 'src/modules/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
+import {
+  DeviceControlDto,
+  GridControlDto,
+  EnergyResetDto,
+  DeviceStatusDto,
+  CommandResponseDto,
+} from '../common/dto/device.dto';
 
 interface DeviceControlRequest {
   meterId: string;
@@ -29,6 +44,8 @@ interface AuthenticatedUser {
   };
 }
 
+@ApiTags('Device')
+@ApiBearerAuth('JWT-auth')
 @Controller('device')
 @UseGuards(JwtAuthGuard)
 export class DeviceController {
@@ -44,6 +61,24 @@ export class DeviceController {
   ) {}
 
   @Post('control')
+  @ApiOperation({
+    summary: 'Send command to IoT device',
+    description: 'Send MQTT command to smart meter for device control',
+  })
+  @ApiBody({ type: DeviceControlDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Command sent successfully',
+    type: CommandResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Device not found or unauthorized',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - You do not own this device',
+  })
   async sendDeviceCommand(
     @Body() body: DeviceControlRequest,
     @Request() req: AuthenticatedUser,
@@ -82,6 +117,20 @@ export class DeviceController {
   }
 
   @Post('grid-control')
+  @ApiOperation({
+    summary: 'Control grid mode',
+    description: 'Switch grid mode between import, export, or off',
+  })
+  @ApiBody({ type: GridControlDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Grid mode changed successfully',
+    type: CommandResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request or unauthorized',
+  })
   async controlGrid(
     @Body() body: { meterId: string; mode: 'import' | 'export' | 'off' },
     @Request() req: AuthenticatedUser,
@@ -94,6 +143,20 @@ export class DeviceController {
   }
 
   @Post('energy-reset')
+  @ApiOperation({
+    summary: 'Reset energy counters',
+    description: 'Reset energy measurement counters for specific subsystems',
+  })
+  @ApiBody({ type: EnergyResetDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Energy reset command sent successfully',
+    type: CommandResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request or unauthorized',
+  })
   async resetEnergy(
     @Body()
     body: { meterId: string; type: 'all' | 'battery' | 'solar' | 'load' },
@@ -109,6 +172,28 @@ export class DeviceController {
   }
 
   @Get('status/:meterId')
+  @ApiOperation({
+    summary: 'Get device status',
+    description: 'Retrieve current operational status of smart meter',
+  })
+  @ApiParam({
+    name: 'meterId',
+    description: 'Smart meter ID',
+    example: 'SM001',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Device status retrieved successfully',
+    type: DeviceStatusDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Device not found or unauthorized',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'No status data available',
+  })
   async getDeviceStatus(
     @Param('meterId') meterId: string,
     @Request() req: AuthenticatedUser,
