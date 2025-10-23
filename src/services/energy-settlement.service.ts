@@ -2,16 +2,16 @@ import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 // import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
-import { EnergySettlementsService } from '../modules/EnergySettlements/EnergySettlements.service';
-import { SmartMetersService } from '../modules/SmartMeters/SmartMeters.service';
-import { EnergyReadingsDetailedService } from '../modules/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
+import { EnergySettlementsService } from '../models/EnergySettlements/EnergySettlements.service';
+import { SmartMetersService } from '../models/SmartMeters/SmartMeters.service';
+import { EnergyReadingsDetailedService } from '../models/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
 import { BlockchainService } from './blockchain.service';
 import { MqttService } from './mqtt.service';
-import { TransactionLogsService } from '../modules/TransactionLogs/TransactionLogs.service';
+import { TransactionLogsService } from '../models/TransactionLogs/TransactionLogs.service';
 import { SettlementTrigger, TransactionStatus } from '../common/enums';
 import { DeviceCommandPayload } from '../common/interfaces';
-import { WalletsService } from 'src/modules/Wallets/Wallets.service';
-import { ProsumersService } from 'src/modules/Prosumers/Prosumers.service';
+import { WalletsService } from 'src/models/Wallets/Wallets.service';
+import { ProsumersService } from 'src/models/Prosumers/Prosumers.service';
 import { DashboardService } from './dashboard.service';
 
 interface SettlementReadingsData {

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { MarketTradesService } from '../modules/MarketTrades/MarketTrades.service';
+import { MarketTradesService } from '../models/MarketTrades/MarketTrades.service';
 import { BlockchainService } from './blockchain.service';
 
 interface PricePoint {

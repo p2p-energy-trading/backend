@@ -21,11 +21,11 @@ import {
 } from '@nestjs/swagger';
 import { BlockchainService } from '../services/blockchain.service';
 import { EnergySettlementService } from '../services/energy-settlement.service';
-import { WalletsService } from '../modules/Wallets/Wallets.service';
-import { TradeOrdersCacheService } from '../modules/TradeOrdersCache/TradeOrdersCache.service';
-import { MarketTradesService } from '../modules/MarketTrades/MarketTrades.service';
+import { WalletsService } from '../models/Wallets/Wallets.service';
+import { TradeOrdersCacheService } from '../models/TradeOrdersCache/TradeOrdersCache.service';
+import { MarketTradesService } from '../models/MarketTrades/MarketTrades.service';
 import { JwtAuthGuard } from '../auth/guards/auth.guards';
-import { ProsumersService } from 'src/modules/Prosumers/Prosumers.service';
+import { ProsumersService } from 'src/models/Prosumers/Prosumers.service';
 import { PriceCacheService } from '../services/price-cache.service';
 import {
   PlaceOrderDto,

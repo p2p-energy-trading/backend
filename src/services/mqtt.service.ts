@@ -6,9 +6,9 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as mqtt from 'mqtt';
-import { MqttMessageLogsService } from '../modules/MqttMessageLogs/MqttMessageLogs.service';
-import { DeviceStatusSnapshotsService } from '../modules/DeviceStatusSnapshots/DeviceStatusSnapshots.service';
-import { DeviceCommandsService } from '../modules/DeviceCommands/DeviceCommands.service';
+import { MqttMessageLogsService } from '../models/MqttMessageLogs/MqttMessageLogs.service';
+import { DeviceStatusSnapshotsService } from '../models/DeviceStatusSnapshots/DeviceStatusSnapshots.service';
+import { DeviceCommandsService } from '../models/DeviceCommands/DeviceCommands.service';
 import { CryptoService } from '../common/crypto.service';
 import {
   MqttTopicType,
@@ -16,13 +16,13 @@ import {
   DeviceCommandType,
   DeviceSubsystem,
 } from '../common/enums';
-import { EnergyReadingsDetailedService } from '../modules/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
+import { EnergyReadingsDetailedService } from '../models/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
 import {
   SensorData,
   DeviceStatus,
   DeviceCommandPayload,
 } from '../common/interfaces';
-import { SmartMetersService } from 'src/modules/SmartMeters/SmartMeters.service';
+import { SmartMetersService } from 'src/models/SmartMeters/SmartMeters.service';
 
 @Injectable()
 export class MqttService implements OnModuleInit, OnModuleDestroy {

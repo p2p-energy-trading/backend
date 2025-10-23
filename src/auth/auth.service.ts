@@ -7,16 +7,16 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ethers } from 'ethers';
-import { ProsumersService } from '../modules/Prosumers/Prosumers.service';
-import { WalletsService } from '../modules/Wallets/Wallets.service';
+import { ProsumersService } from '../models/Prosumers/Prosumers.service';
+import { WalletsService } from '../models/Wallets/Wallets.service';
 import { CryptoService } from '../common/crypto.service';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
-import { TransactionLogsService } from '../modules/TransactionLogs/TransactionLogs.service';
+import { TransactionLogsService } from '../models/TransactionLogs/TransactionLogs.service';
 import { TransactionType, WalletImportMethod } from '../common/enums';
-import { BlacklistService } from 'src/modules/TokenBlacklist/TokenBlacklist.service';
-import { BlacklistReason } from 'src/modules/TokenBlacklist/entities/TokenBlacklist.entity';
+import { BlacklistService } from 'src/models/TokenBlacklist/TokenBlacklist.service';
+import { BlacklistReason } from 'src/models/TokenBlacklist/TokenBlacklist.entity';
 import { Request } from 'express';
-import { SmartMetersService } from '../modules/SmartMeters/SmartMeters.service';
+import { SmartMetersService } from '../models/SmartMeters/SmartMeters.service';
 
 interface ValidatedProsumer {
   prosumerId: string;

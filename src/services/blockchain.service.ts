@@ -1,16 +1,16 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ethers } from 'ethers';
-import { WalletsService } from '../modules/Wallets/Wallets.service';
-import { TransactionLogsService } from '../modules/TransactionLogs/TransactionLogs.service';
-import { TradeOrdersCacheService } from '../modules/TradeOrdersCache/TradeOrdersCache.service';
-import { MarketTradesService } from '../modules/MarketTrades/MarketTrades.service';
-import { BlockchainApprovalsService } from '../modules/BlockchainApprovals/BlockchainApprovals.service';
+import { WalletsService } from '../models/Wallets/Wallets.service';
+import { TransactionLogsService } from '../models/TransactionLogs/TransactionLogs.service';
+import { TradeOrdersCacheService } from '../models/TradeOrdersCache/TradeOrdersCache.service';
+import { MarketTradesService } from '../models/MarketTrades/MarketTrades.service';
+import { BlockchainApprovalsService } from '../models/BlockchainApprovals/BlockchainApprovals.service';
 import { CryptoService } from '../common/crypto.service';
 import { TransactionType, OrderType } from '../common/enums';
 import { BlockchainConfig } from '../common/interfaces';
 import { EnergySettlementService } from './energy-settlement.service';
-import { ProsumersService } from 'src/modules/Prosumers/Prosumers.service';
+import { ProsumersService } from 'src/models/Prosumers/Prosumers.service';
 
 @Injectable()
 export class BlockchainService {

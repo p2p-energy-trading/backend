@@ -8,19 +8,19 @@ import { HealthController } from './health.controller';
 import { SmartMeterController } from './smart-meter.controller';
 import { ServicesModule } from '../services/services.module';
 import { AuthModule } from '../auth/auth.module';
-import { WalletsModule } from '../modules/Wallets/Wallets.module';
-import { IdrsConversionsModule } from '../modules/IdrsConversions/IdrsConversions.module';
-import { SmartMetersModule } from '../modules/SmartMeters/SmartMeters.module';
-import { DeviceCommandsModule } from '../modules/DeviceCommands/DeviceCommands.module';
-import { TradeOrdersCacheModule } from '../modules/TradeOrdersCache/TradeOrdersCache.module';
-import { MarketTradesModule } from '../modules/MarketTrades/MarketTrades.module';
+import { WalletsModule } from '../models/Wallets/Wallets.module';
+import { IdrsConversionsModule } from '../models/IdrsConversions/IdrsConversions.module';
+import { SmartMetersModule } from '../models/SmartMeters/SmartMeters.module';
+import { DeviceCommandsModule } from '../models/DeviceCommands/DeviceCommands.module';
+import { TradeOrdersCacheModule } from '../models/TradeOrdersCache/TradeOrdersCache.module';
+import { MarketTradesModule } from '../models/MarketTrades/MarketTrades.module';
 import { CommonModule } from '../common/common.module';
-import { ProsumersModule } from 'src/modules/Prosumers/Prosumers.module';
-import { DeviceStatusSnapshotsModule } from 'src/modules/DeviceStatusSnapshots/DeviceStatusSnapshots.module';
-import { TokenBlacklistModule } from 'src/modules/TokenBlacklist/TokenBlacklist.module';
-import { TransactionLogsModule } from 'src/modules/TransactionLogs/TransactionLogs.module';
-import { EnergySettlementsModule } from 'src/modules/EnergySettlements/EnergySettlements.module';
-import { EnergyReadingsDetailedModule } from 'src/modules/EnergyReadingsDetailed/EnergyReadingsDetailed.module';
+import { ProsumersModule } from 'src/models/Prosumers/Prosumers.module';
+import { DeviceStatusSnapshotsModule } from 'src/models/DeviceStatusSnapshots/DeviceStatusSnapshots.module';
+import { TokenBlacklistModule } from 'src/models/TokenBlacklist/TokenBlacklist.module';
+import { TransactionLogsModule } from 'src/models/TransactionLogs/TransactionLogs.module';
+import { EnergySettlementsModule } from 'src/models/EnergySettlements/EnergySettlements.module';
+import { EnergyReadingsDetailedModule } from 'src/models/EnergyReadingsDetailed/EnergyReadingsDetailed.module';
 
 @Module({
   imports: [

@@ -1,43 +1,39 @@
 import { Module } from '@nestjs/common';
-// import { GraphQLModule } from '@nestjs/graphql';
-// import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-// import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
-// import { join } from 'path';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 
-import { BlockchainApprovalsModule } from './modules/BlockchainApprovals/BlockchainApprovals.module';
-import { BlockchainApprovals } from './modules/BlockchainApprovals/entities/BlockchainApprovals.entity';
-import { DeviceCommandsModule } from './modules/DeviceCommands/DeviceCommands.module';
-import { DeviceCommands } from './modules/DeviceCommands/entities/DeviceCommands.entity';
-import { DeviceStatusSnapshotsModule } from './modules/DeviceStatusSnapshots/DeviceStatusSnapshots.module';
-import { DeviceStatusSnapshots } from './modules/DeviceStatusSnapshots/entities/DeviceStatusSnapshots.entity';
-import { EnergyReadingsDetailedModule } from './modules/EnergyReadingsDetailed/EnergyReadingsDetailed.module';
-import { EnergyReadingsDetailed } from './modules/EnergyReadingsDetailed/entities/EnergyReadingsDetailed.entity';
-import { EnergySettlementsModule } from './modules/EnergySettlements/EnergySettlements.module';
-import { EnergySettlements } from './modules/EnergySettlements/entities/EnergySettlements.entity';
-import { IdrsConversionsModule } from './modules/IdrsConversions/IdrsConversions.module';
-import { IdrsConversions } from './modules/IdrsConversions/entities/IdrsConversions.entity';
-import { MarketTradesModule } from './modules/MarketTrades/MarketTrades.module';
-import { MarketTrades } from './modules/MarketTrades/entities/MarketTrades.entity';
-import { MqttMessageLogsModule } from './modules/MqttMessageLogs/MqttMessageLogs.module';
-import { MqttMessageLogs } from './modules/MqttMessageLogs/entities/MqttMessageLogs.entity';
-import { ProsumersModule } from './modules/Prosumers/Prosumers.module';
-import { Prosumers } from './modules/Prosumers/entities/Prosumers.entity';
-import { SmartMetersModule } from './modules/SmartMeters/SmartMeters.module';
-import { SmartMeters } from './modules/SmartMeters/entities/SmartMeters.entity';
-import { SystemConfigModule } from './modules/SystemConfig/SystemConfig.module';
-import { SystemConfig } from './modules/SystemConfig/entities/SystemConfig.entity';
-import { TradeOrdersCacheModule } from './modules/TradeOrdersCache/TradeOrdersCache.module';
-import { TradeOrdersCache } from './modules/TradeOrdersCache/entities/TradeOrdersCache.entity';
-import { TransactionLogsModule } from './modules/TransactionLogs/TransactionLogs.module';
-import { TransactionLogs } from './modules/TransactionLogs/entities/TransactionLogs.entity';
-import { WalletsModule } from './modules/Wallets/Wallets.module';
-import { Wallets } from './modules/Wallets/entities/Wallets.entity';
-import { TokenBlacklistModule } from './modules/TokenBlacklist/TokenBlacklist.module';
-import { TokenBlacklist } from './modules/TokenBlacklist/entities/TokenBlacklist.entity';
+import { BlockchainApprovalsModule } from './models/BlockchainApprovals/BlockchainApprovals.module';
+import { BlockchainApprovals } from './models/BlockchainApprovals/BlockchainApprovals.entity';
+import { DeviceCommandsModule } from './models/DeviceCommands/DeviceCommands.module';
+import { DeviceCommands } from './models/DeviceCommands/DeviceCommands.entity';
+import { DeviceStatusSnapshotsModule } from './models/DeviceStatusSnapshots/DeviceStatusSnapshots.module';
+import { DeviceStatusSnapshots } from './models/DeviceStatusSnapshots/DeviceStatusSnapshots.entity';
+import { EnergyReadingsDetailedModule } from './models/EnergyReadingsDetailed/EnergyReadingsDetailed.module';
+import { EnergyReadingsDetailed } from './models/EnergyReadingsDetailed/EnergyReadingsDetailed.entity';
+import { EnergySettlementsModule } from './models/EnergySettlements/EnergySettlements.module';
+import { EnergySettlements } from './models/EnergySettlements/EnergySettlements.entity';
+import { IdrsConversionsModule } from './models/IdrsConversions/IdrsConversions.module';
+import { IdrsConversions } from './models/IdrsConversions/IdrsConversions.entity';
+import { MarketTradesModule } from './models/MarketTrades/MarketTrades.module';
+import { MarketTrades } from './models/MarketTrades/MarketTrades.entity';
+import { MqttMessageLogsModule } from './models/MqttMessageLogs/MqttMessageLogs.module';
+import { MqttMessageLogs } from './models/MqttMessageLogs/MqttMessageLogs.entity';
+import { ProsumersModule } from './models/Prosumers/Prosumers.module';
+import { Prosumers } from './models/Prosumers/Prosumers.entity';
+import { SmartMetersModule } from './models/SmartMeters/SmartMeters.module';
+import { SmartMeters } from './models/SmartMeters/SmartMeters.entity';
+import { SystemConfigModule } from './models/SystemConfig/SystemConfig.module';
+import { SystemConfig } from './models/SystemConfig/SystemConfig.entity';
+import { TradeOrdersCacheModule } from './models/TradeOrdersCache/TradeOrdersCache.module';
+import { TradeOrdersCache } from './models/TradeOrdersCache/TradeOrdersCache.entity';
+import { TransactionLogsModule } from './models/TransactionLogs/TransactionLogs.module';
+import { TransactionLogs } from './models/TransactionLogs/TransactionLogs.entity';
+import { WalletsModule } from './models/Wallets/Wallets.module';
+import { Wallets } from './models/Wallets/Wallets.entity';
+import { TokenBlacklistModule } from './models/TokenBlacklist/TokenBlacklist.module';
+import { TokenBlacklist } from './models/TokenBlacklist/TokenBlacklist.entity';
 
 // Import new modules
 import { AuthModule } from './auth/auth.module';
@@ -56,12 +52,6 @@ import { WebSocketModule } from './websocket/websocket.module';
       },
     ]),
     ScheduleModule.forRoot(),
-    // GraphQLModule.forRoot<ApolloDriverConfig>({
-    //   driver: ApolloDriver,
-    //   playground: false,
-    //   plugins: [ApolloServerPluginLandingPageLocalDefault()],
-    //   autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
-    // }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST || 'localhost',

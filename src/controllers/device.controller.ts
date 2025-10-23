@@ -18,13 +18,13 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { MqttService } from '../services/mqtt.service';
-import { DeviceCommandsService } from '../modules/DeviceCommands/DeviceCommands.service';
-import { SmartMetersService } from '../modules/SmartMeters/SmartMeters.service';
+import { DeviceCommandsService } from '../models/DeviceCommands/DeviceCommands.service';
+import { SmartMetersService } from '../models/SmartMeters/SmartMeters.service';
 import { JwtAuthGuard } from '../auth/guards/auth.guards';
 import { DeviceCommandPayload } from '../common/interfaces';
-import { ProsumersService } from 'src/modules/Prosumers/Prosumers.service';
-import { DeviceStatusSnapshotsService } from 'src/modules/DeviceStatusSnapshots/DeviceStatusSnapshots.service';
-import { EnergyReadingsDetailedService } from 'src/modules/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
+import { ProsumersService } from 'src/models/Prosumers/Prosumers.service';
+import { DeviceStatusSnapshotsService } from 'src/models/DeviceStatusSnapshots/DeviceStatusSnapshots.service';
+import { EnergyReadingsDetailedService } from 'src/models/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
 import {
   DeviceControlDto,
   GridControlDto,

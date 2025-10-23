@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { TransactionLogsService } from '../modules/TransactionLogs/TransactionLogs.service';
-import { DeviceCommandsService } from '../modules/DeviceCommands/DeviceCommands.service';
+import { TransactionLogsService } from '../models/TransactionLogs/TransactionLogs.service';
+import { DeviceCommandsService } from '../models/DeviceCommands/DeviceCommands.service';
 import { TransactionStatus, DeviceCommandStatus } from '../common/enums';
 
 @Injectable()

@@ -7,12 +7,12 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtAuthGuard } from './guards/auth.guards';
-import { ProsumersModule } from '../modules/Prosumers/Prosumers.module';
-import { WalletsModule } from '../modules/Wallets/Wallets.module';
-import { TransactionLogsModule } from '../modules/TransactionLogs/TransactionLogs.module';
-import { TokenBlacklistModule } from '../modules/TokenBlacklist/TokenBlacklist.module';
+import { ProsumersModule } from '../models/Prosumers/Prosumers.module';
+import { WalletsModule } from '../models/Wallets/Wallets.module';
+import { TransactionLogsModule } from '../models/TransactionLogs/TransactionLogs.module';
+import { TokenBlacklistModule } from '../models/TokenBlacklist/TokenBlacklist.module';
 import { CommonModule } from '../common/common.module';
-import { SmartMetersModule } from 'src/modules/SmartMeters/SmartMeters.module';
+import { SmartMetersModule } from 'src/models/SmartMeters/SmartMeters.module';
 
 @Module({
   imports: [

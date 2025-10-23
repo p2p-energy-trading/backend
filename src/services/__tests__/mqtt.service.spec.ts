@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { MqttService } from '../mqtt.service';
-import { MqttMessageLogsService } from '../../modules/MqttMessageLogs/MqttMessageLogs.service';
-import { EnergyReadingsService } from '../../modules/EnergyReadings/EnergyReadings.service';
-import { DeviceHeartbeatsService } from '../../modules/DeviceHeartbeats/DeviceHeartbeats.service';
-import { DeviceStatusSnapshotsService } from '../../modules/DeviceStatusSnapshots/DeviceStatusSnapshots.service';
-import { DeviceCommandsService } from '../../modules/DeviceCommands/DeviceCommands.service';
+import { MqttMessageLogsService } from '../../models/MqttMessageLogs/MqttMessageLogs.service';
+import { EnergyReadingsService } from '../../models/EnergyReadings/EnergyReadings.service';
+import { DeviceHeartbeatsService } from '../../models/DeviceHeartbeats/DeviceHeartbeats.service';
+import { DeviceStatusSnapshotsService } from '../../models/DeviceStatusSnapshots/DeviceStatusSnapshots.service';
+import { DeviceCommandsService } from '../../models/DeviceCommands/DeviceCommands.service';
 import { CryptoService } from '../../common/crypto.service';
 import * as mqtt from 'mqtt';
 

@@ -18,7 +18,7 @@ import {
   ApiBody,
   ApiParam,
 } from '@nestjs/swagger';
-import { SmartMetersService } from '../modules/SmartMeters/SmartMeters.service';
+import { SmartMetersService } from '../models/SmartMeters/SmartMeters.service';
 import { JwtAuthGuard } from '../auth/guards/auth.guards';
 import {
   CreateSmartMeterDto,

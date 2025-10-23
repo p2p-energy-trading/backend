@@ -1,10 +1,10 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
-import { EnergyReadingsDetailedService } from '../modules/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
-import { EnergySettlementsService } from '../modules/EnergySettlements/EnergySettlements.service';
-import { MarketTradesService } from '../modules/MarketTrades/MarketTrades.service';
-import { SmartMetersService } from '../modules/SmartMeters/SmartMeters.service';
-import { WalletsService } from '../modules/Wallets/Wallets.service';
-import { DeviceStatusSnapshotsService } from '../modules/DeviceStatusSnapshots/DeviceStatusSnapshots.service';
+import { EnergyReadingsDetailedService } from '../models/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
+import { EnergySettlementsService } from '../models/EnergySettlements/EnergySettlements.service';
+import { MarketTradesService } from '../models/MarketTrades/MarketTrades.service';
+import { SmartMetersService } from '../models/SmartMeters/SmartMeters.service';
+import { WalletsService } from '../models/Wallets/Wallets.service';
+import { DeviceStatusSnapshotsService } from '../models/DeviceStatusSnapshots/DeviceStatusSnapshots.service';
 import { BlockchainService } from './blockchain.service';
 import { EnergySettlementService } from './energy-settlement.service';
 
