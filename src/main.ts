@@ -77,16 +77,22 @@ async function bootstrap() {
         'JWT-auth',
       )
       .addTag('Authentication', 'User authentication and authorization')
-      .addTag('Energy', 'Energy readings and settlement management')
+      .addTag('Dashboard', 'Analytics and monitoring')
       .addTag('Device', 'IoT device management and control')
+      .addTag('Energy', 'Energy readings and settlement management')
+      .addTag('Smart Meters', 'Smart meter device management')
+      .addTag('System', 'Health checks and system status')
       .addTag('Trading', 'P2P energy trading operations')
       .addTag('Wallet', 'Cryptocurrency wallet management')
-      .addTag('Dashboard', 'Analytics and monitoring')
-      .addTag('System', 'Health checks and system status')
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api/docs', app, document);
+    SwaggerModule.setup('api/docs', app, document, {
+      swaggerOptions: {
+        tagsSorter: 'alpha',
+        operationsSorter: 'alpha',
+      },
+    });
 
     console.log(
       `📖 API Documentation: http://localhost:${(process.env.PORT as string) || '3000'}/api/docs`,
