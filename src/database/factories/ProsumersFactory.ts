@@ -2,8 +2,9 @@ import { setSeederFactory } from 'typeorm-extension';
 import { Prosumers } from '../../models/Prosumers/Prosumers.entity';
 import * as bcrypt from 'bcryptjs';
 
-export const UserFactory = setSeederFactory(Prosumers, (faker) => {
+export const ProsumersFactory = setSeederFactory(Prosumers, (faker) => {
   const prosumer = new Prosumers();
+
   // Required primary key
   prosumer.prosumerId = `prosumer_${Date.now()}_${Math.random()
     .toString(36)

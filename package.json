@@ -19,9 +19,12 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "typeorm": "ts-node -r tsconfig-paths/register ./src/data-source.ts",
-    "migration:generate": "npm run typeorm -- migration:generate",
-    "migration:run": "npm run typeorm -- migration:run",
-    "migration:revert": "npm run typeorm -- migration:revert"
+    "migration:generate": "npx typeorm-ts-node-commonjs migration:generate -d src/data-source.ts",
+    "migration:run": "npx typeorm-ts-node-commonjs migration:run -d src/data-source.ts",
+    "migration:revert": "npx typeorm-ts-node-commonjs migration:revert -d src/data-source.ts",
+    "db:reset-clean": "bash scripts/reset-database.sh",
+    "db:reset": "bash scripts/reset-database-with-seed.sh",
+    "seed": "ts-node -r tsconfig-paths/register src/database/seed.ts"
   },
   "dependencies": {
     "@apollo/server": "^4.12.1",

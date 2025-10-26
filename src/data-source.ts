@@ -4,8 +4,10 @@ dotenv.config();
 
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { SeederOptions } from 'typeorm-extension';
-import { UserSeeder } from './database/seeders/UserSeeder';
-import { UserFactory } from './database/factories/UserFactory';
+import { FirstSeeder } from './database/seeders/FirstSeeder';
+import { ProsumersFactory } from './database/factories/ProsumersFactory';
+import { WalletsFactory } from './database/factories/WalletsFactory';
+import { SmartMetersFactory } from './database/factories/SmartMetersFactory';
 import { Prosumers } from './models/Prosumers/Prosumers.entity';
 import { BlockchainApprovals } from './models/BlockchainApprovals/BlockchainApprovals.entity';
 import { DeviceCommands } from './models/DeviceCommands/DeviceCommands.entity';
@@ -56,8 +58,8 @@ const dataSourceOptions: DataSourceOptions = {
 // Extend with seeder options for typeorm-extension
 export const seederOptions: DataSourceOptions & SeederOptions = {
   ...dataSourceOptions,
-  seeds: [UserSeeder],
-  factories: [UserFactory],
+  seeds: [FirstSeeder],
+  factories: [ProsumersFactory, WalletsFactory, SmartMetersFactory],
 };
 
 // Export DataSource for TypeORM
