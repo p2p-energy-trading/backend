@@ -248,7 +248,7 @@ export class DashboardController {
             healthPercentage: { type: 'number', example: 67 },
             lastHeartbeat: {
               type: 'string',
-              example: '2025-10-23T10:30:00.000Z',
+              example: '2025-07-19T12:00:00.000Z',
             },
             averageUptime: { type: 'number', example: 95.5 },
             authorizedDevices: { type: 'number', example: 3 },
@@ -351,13 +351,17 @@ export class DashboardController {
                 gridEnergy: { type: 'number', example: 6.5 },
               },
             },
+            chartData: {
+              type: 'array',
+              items: { type: 'object' },
+            },
             settlements: {
               type: 'object',
               properties: {
                 total: { type: 'number', example: 150 },
                 today: { type: 'number', example: 12 },
-                etkMinted: { type: 'string', example: '1250.8' },
-                etkBurned: { type: 'string', example: '980.5' },
+                etkMinted: { type: 'number', example: 1250.8 },
+                etkBurned: { type: 'number', example: 980.5 },
               },
             },
           },

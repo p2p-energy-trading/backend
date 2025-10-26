@@ -41,6 +41,24 @@ export class AuthService {
     private smartMetersService: SmartMetersService,
   ) {}
 
+  /**
+   * Validate Prosumer Credentials
+   *
+   * Called by LocalStrategy during authentication.
+   * Verifies prosumer email and password using bcrypt.
+   *
+   * @param email - Prosumer email address
+   * @param password - Plain text password from login request
+   * @returns ValidatedProsumer object if credentials are valid, null otherwise
+   *
+   * @workflow
+   * 1. Find prosumer by email in database
+   * 2. Verify password hash using bcrypt
+   * 3. Return sanitized prosumer object (without password hash)
+   *
+   * @see LocalStrategy.validate() - Calls this method during login
+   * @see CryptoService.verifyPassword() - Password verification
+   */
   async validateProsumer(
     email: string,
     password: string,
@@ -50,38 +68,25 @@ export class AuthService {
       const prosumers = await this.prosumersService.findAll({ email });
       const prosumer = prosumers[0];
 
-      // this.logger.debug(
-      //   `Validating prosumer with email ${email}, found: ${prosumer ? 'yes' : 'no'}`,
-      // );
-
-      // generate hash
-      // const hashedPassword = await this.cryptoService.hashPassword('password');
-      // this.logger.debug(
-      //   `Hashed password for prosumer with email ${email}: ${hashedPassword}`,
-      // );
-
-      // const encryptedWalletPrivateKey = this.cryptoService.encrypt(
-      //   '3a4e16c3706eec96f018394580ee4b5f267c3a55717dc5c6e45c821d899a3407',
-      //   this.configService.get('WALLET_ENCRYPTION_KEY') || 'default-wallet-key',
-      // );
-      // this.logger.debug(
-      //   `Encrypted wallet private key for prosumer with email ${email}: ${encryptedWalletPrivateKey}`,
-      // );
-
       if (!prosumer) {
+        this.logger.warn(`Login attempt with non-existent email: ${email}`);
         return null;
       }
 
-      // Verify password
+      // Verify password using bcrypt
       const isPasswordValid = await this.cryptoService.verifyPassword(
         password,
         prosumer.passwordHash,
       );
+
       if (!isPasswordValid) {
+        this.logger.warn(
+          `Failed login attempt for email: ${email} - Invalid password`,
+        );
         return null;
       }
 
-      // Return prosumer without password hash
+      // Return prosumer without sensitive data
       const result = {
         prosumerId: prosumer.prosumerId,
         email: prosumer.email,
@@ -90,6 +95,7 @@ export class AuthService {
         updatedAt: prosumer.updatedAt.toISOString(),
       };
 
+      this.logger.log(`Successful authentication for email: ${email}`);
       return result;
     } catch (error) {
       this.logger.error(
@@ -99,18 +105,38 @@ export class AuthService {
     }
   }
 
-  // Generate hanya access token saja
+  /**
+   * Generate JWT Access Token
+   *
+   * Creates JWT token containing prosumer identification.
+   * Token is used for authenticating subsequent API requests.
+   *
+   * @param prosumer - Validated prosumer object from authentication
+   * @returns Object containing access_token and prosumer info
+   *
+   * @security
+   * - Token signed with JWT_SECRET from environment
+   * - Default expiration: 24 hours (configurable via JWT_EXPIRATION)
+   * - Payload contains: prosumerId, email, sub (subject)
+   *
+   * @see JwtStrategy.validate() - Verifies this token on protected endpoints
+   * @see AuthController.login() - Returns this to client after successful authentication
+   */
   generateTokens(prosumer: ValidatedProsumer) {
     const payload = {
       prosumerId: prosumer.prosumerId,
       email: prosumer.email,
-      sub: prosumer.prosumerId,
+      sub: prosumer.prosumerId, // JWT standard: subject identifier
     };
 
     const accessToken = this.jwtService.sign(payload);
 
+    this.logger.log(`JWT token generated for prosumer: ${prosumer.prosumerId}`);
+
     return {
       access_token: accessToken,
+      tokenType: 'Bearer',
+      expiresIn: this.getJwtExpirationSeconds(),
       prosumer: {
         prosumerId: prosumer.prosumerId,
         email: prosumer.email,
@@ -119,20 +145,55 @@ export class AuthService {
     };
   }
 
-  // Remove refresh token functionality
-  async login(loginDto: LoginDto) {
-    const prosumer = await this.validateProsumer(
-      loginDto.email,
-      loginDto.password,
-    );
-    if (!prosumer) {
-      throw new UnauthorizedException('Invalid credentials');
+
+  private getJwtExpirationSeconds(): number {
+    const expiresIn = this.configService.get<string>('JWT_EXPIRES_IN') || '1h';
+
+    // Convert to seconds
+    if (expiresIn.includes('d')) {
+      return parseInt(expiresIn) * 24 * 60 * 60;
+    }
+    if (expiresIn.includes('h')) {
+      return parseInt(expiresIn) * 60 * 60;
+    }
+    if (expiresIn.includes('m')) {
+      return parseInt(expiresIn) * 60;
+    }
+    if (expiresIn.includes('s')) {
+      return parseInt(expiresIn);
     }
 
-    return this.generateTokens(prosumer);
+    return 60 * 60; // default 1 hour
   }
 
-  async register(registerDto: RegisterDto) {
+  /**
+   * Register New Prosumer
+   *
+   * Creates a new prosumer account with wallet generation.
+   * Returns validated prosumer object (without generating JWT).
+   *
+   * @param registerDto - Registration data (email, password, name)
+   * @returns ValidatedProsumer object for token generation in controller
+   *
+   * @workflow
+   * 1. Check if email already exists
+   * 2. Hash password with bcrypt
+   * 3. Create prosumer record in database
+   * 4. Generate Ethereum wallet for prosumer
+   * 5. Log registration activity
+   * 6. Return validated prosumer object
+   *
+   * @remarks
+   * Token generation is handled by controller via generateTokens().
+   * This follows the same pattern as login (separation of concerns).
+   *
+   * @throws {BadRequestException} Email already registered
+   * @throws {BadRequestException} Registration failed
+   *
+   * @see AuthController.register() - Calls generateTokens() after registration
+   * @see generateTokens() - JWT token generation
+   */
+  async register(registerDto: RegisterDto): Promise<ValidatedProsumer> {
     try {
       // Check if prosumer already exists
       const existingProsumers = await this.prosumersService.findAll({
@@ -179,15 +240,29 @@ export class AuthService {
         transactionTimestamp: new Date().toISOString(),
       });
 
-      // Return login response
-      return this.login({
-        email: registerDto.email,
-        password: registerDto.password,
-      });
+      this.logger.log(
+        `New prosumer registered: ${prosumer.prosumerId} (${prosumer.email})`,
+      );
+
+      // Return validated prosumer (no token generation here)
+      const validatedProsumer: ValidatedProsumer = {
+        prosumerId: prosumer.prosumerId,
+        email: prosumer.email,
+        name: prosumer.name,
+        createdAt: prosumer.createdAt.toISOString(),
+        updatedAt: prosumer.updatedAt.toISOString(),
+      };
+
+      return validatedProsumer;
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
       }
+      this.logger.error(
+        `Registration failed for email ${registerDto.email}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
       throw new BadRequestException('Registration failed');
     }
   }

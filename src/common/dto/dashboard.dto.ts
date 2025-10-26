@@ -240,29 +240,60 @@ export class SettlementRecommendationDto {
   reason: string;
 }
 
-export class BlockchainSyncStatusDto {
+class BlockchainSyncDataDto {
   @ApiProperty({
-    description: 'Sync status',
-    example: 'synced',
-    enum: ['synced', 'syncing', 'error'],
+    description: 'Whether wallet is connected',
+    example: true,
   })
-  status: string;
+  walletConnected: boolean;
 
   @ApiProperty({
-    description: 'Last sync timestamp',
-    example: '2025-10-23T10:30:00.000Z',
+    description: 'Connected wallet address',
+    example: '0xabcd...',
   })
-  lastSyncTime: string;
+  walletAddress: string;
 
   @ApiProperty({
-    description: 'Pending transactions count',
-    example: 2,
+    description: 'Number of authorized devices',
+    example: 0,
+  })
+  devicesAuthorized: number;
+
+  @ApiProperty({
+    description: 'Total number of devices',
+    example: 0,
+  })
+  totalDevices: number;
+
+  @ApiProperty({
+    description: 'Number of pending blockchain transactions',
+    example: 0,
   })
   pendingTransactions: number;
 
   @ApiProperty({
-    description: 'Current block number',
-    example: 123456,
+    description: 'Timestamp of last blockchain activity',
+    example: '2025-07-19T12:00:00.000Z',
   })
-  currentBlock: number;
+  lastBlockchainActivity: string;
+
+  @ApiProperty({
+    description: 'Authorization rate (percentage)',
+    example: 0,
+  })
+  authorizationRate: number;
+}
+
+export class BlockchainSyncStatusDto {
+  @ApiProperty({
+    description: 'Request success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Blockchain sync status data',
+    type: BlockchainSyncDataDto,
+  })
+  data: BlockchainSyncDataDto;
 }

@@ -132,13 +132,16 @@ export class BlockchainService {
       );
 
       // Convert to integer by rounding to avoid floating point precision issues
-      const energyWhInteger = Math.round(energyWh);
+      // Use absolute value because calculateEtkAmount expects uint256 (unsigned integer)
+      const energyWhInteger = Math.round(Math.abs(energyWh));
 
       contract
         .calculateEtkAmount(energyWhInteger)
         .then((result: bigint) => {
           // Convert from contract units (2 decimals) to ETK
-          resolve(Number(result) / 100);
+          // Preserve the original sign
+          const etkAmount = Number(result) / 100;
+          resolve(energyWh < 0 ? -etkAmount : etkAmount);
         })
         .catch((error) => {
           this.logger.error('Error calculating ETK amount:', error);
@@ -416,7 +419,7 @@ export class BlockchainService {
       const tx = (await contract.processSettlement(
         meterId,
         prosumerAddress,
-        netEnergyWh,
+        ethers.toBigInt(netEnergyWh),
         settlementIdBytes32,
       )) as ethers.ContractTransactionResponse;
 
@@ -630,9 +633,17 @@ export class BlockchainService {
         this.energyConverterABI,
         this.provider,
       );
-      const etkAmount = (await contract.calculateEtkAmount(energyWh)) as bigint;
+
+      // Use absolute value because calculateEtkAmount expects uint256 (unsigned integer)
+      const energyWhInteger = Math.round(Math.abs(energyWh));
+      const etkAmount = (await contract.calculateEtkAmount(
+        energyWhInteger,
+      )) as bigint;
+
       // Convert from contract units (2 decimals) to ETK
-      return Number(etkAmount) / 100;
+      // Preserve the original sign
+      const etkValue = Number(etkAmount) / 100;
+      return energyWh < 0 ? -etkValue : etkValue;
     } catch (error) {
       this.logger.error('Error calculating ETK amount:', error);
       return 0;
@@ -940,17 +951,24 @@ export class BlockchainService {
 
   async mintIDRSTokens(walletAddress: string, amount: number): Promise<string> {
     try {
-      const wallet = await this.getWalletSigner(walletAddress);
+      // const wallet = await this.getWalletSigner(walletAddress);
+      const ownerWallet = await this.getOwnerWalletSigner();
+
       const contract = new ethers.Contract(
         this.config.contracts.idrsToken,
         this.tokenABI,
-        wallet,
+        ownerWallet,
       );
 
       // Convert to IDRS units (2 decimals: 1 IDRS = 100 units)
       const tokenAmount = Math.floor(amount * 100);
 
-      const tx = (await contract.mint(
+      const tx1 = (await contract.mint(
+        tokenAmount,
+      )) as ethers.ContractTransactionResponse;
+
+      const tx2 = (await contract.transfer(
+        walletAddress,
         tokenAmount,
       )) as ethers.ContractTransactionResponse;
 
@@ -972,8 +990,8 @@ export class BlockchainService {
       //   transactionTimestamp: new Date().toISOString(),
       // });
 
-      this.logger.log(`IDRS mint transaction sent: ${tx.hash}`);
-      return tx.hash;
+      this.logger.log(`IDRS mint transaction sent: ${tx2.hash}`);
+      return tx2.hash;
     } catch (error) {
       this.logger.error('Error minting IDRS tokens:', error);
       throw error;
@@ -983,6 +1001,7 @@ export class BlockchainService {
   async burnIDRSTokens(walletAddress: string, amount: number): Promise<string> {
     try {
       const wallet = await this.getWalletSigner(walletAddress);
+      const ownerWallet = await this.getOwnerWalletSigner();
       const contract = new ethers.Contract(
         this.config.contracts.idrsToken,
         this.tokenABI,
@@ -992,7 +1011,18 @@ export class BlockchainService {
       // Convert to IDRS units (2 decimals: 1 IDRS = 100 units)
       const tokenAmount = Math.floor(amount * 100);
 
-      const tx = (await contract.burn(
+      const tx1 = (await contract.transfer(
+        ownerWallet.address,
+        tokenAmount,
+      )) as ethers.ContractTransactionResponse;
+
+      const contract2 = new ethers.Contract(
+        this.config.contracts.idrsToken,
+        this.tokenABI,
+        ownerWallet,
+      );
+
+      const tx2 = (await contract2.burn(
         tokenAmount,
       )) as ethers.ContractTransactionResponse;
 
@@ -1014,8 +1044,8 @@ export class BlockchainService {
       //   transactionTimestamp: new Date().toISOString(),
       // });
 
-      this.logger.log(`IDRS burn transaction sent: ${tx.hash}`);
-      return tx.hash;
+      this.logger.log(`IDRS burn transaction sent: ${tx1.hash}`);
+      return tx1.hash;
     } catch (error) {
       this.logger.error('Error burning IDRS tokens:', error);
       throw error;

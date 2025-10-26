@@ -60,16 +60,16 @@ export class AuthController {
   /**
    * Login Endpoint
    *
-   * Authenticates a user with username/email and password.
+   * Authenticates a prosumer with email and password.
    * Returns JWT access token for subsequent API requests.
    *
    * @param req - Request object containing validated user from LocalAuthGuard
-   * @returns JWT token and user information
+   * @returns JWT token and prosumer information
    *
    * @example
    * POST /auth/login
    * Body: {
-   *   "username": "john_doe",
+   *   "email": "john.doe@example.com",
    *   "password": "SecurePassword123"
    * }
    *
@@ -82,31 +82,30 @@ export class AuthController {
    *   }
    * }
    *
-   * @throws {UnauthorizedException} Invalid credentials
+   * @remarks
+   * Authentication uses email (not username) as the identifier.
+   * Password is verified using bcrypt hash comparison.
+   * LocalAuthGuard (Passport) handles credential validation via LocalStrategy.
+   *
+   * @throws {UnauthorizedException} Invalid credentials (wrong email or password)
+   * @throws {UnauthorizedException} Prosumer account not found
    */
   @UseGuards(LocalAuthGuard)
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'User Login',
+    summary: 'Prosumer Login',
     description:
-      'Authenticate user with username/email and password. Returns JWT access token for API authentication.',
+      'Authenticate prosumer with email and password. Returns JWT access token for API authentication.',
   })
   @ApiBody({
     type: LoginDto,
-    description: 'User credentials for authentication',
+    description: 'Prosumer credentials for authentication',
     examples: {
-      usernameLogin: {
-        summary: 'Login with username',
+      standardLogin: {
+        summary: 'Login with email and password',
         value: {
-          username: 'john_doe',
-          password: 'SecurePassword123',
-        },
-      },
-      emailLogin: {
-        summary: 'Login with email',
-        value: {
-          username: 'john.doe@example.com',
+          email: 'john.doe@example.com',
           password: 'SecurePassword123',
         },
       },
@@ -118,12 +117,12 @@ export class AuthController {
     type: LoginResponseDto,
   })
   @ApiUnauthorizedResponse({
-    description: 'Invalid credentials or user not found',
+    description: 'Invalid credentials - Wrong email or password',
     schema: {
       example: {
-        statusCode: 401,
-        message: 'Invalid credentials',
+        message: '...',
         error: 'Unauthorized',
+        statusCode: 401,
       },
     },
   })
@@ -136,102 +135,133 @@ export class AuthController {
    * Register New Account
    *
    * Creates a new prosumer account in the system.
-   * Validates that username and email are unique.
+   * Validates that email is unique (email is used as primary identifier).
    * Automatically hashes password using bcrypt.
+   * Generates JWT token for auto-login after registration.
    *
-   * @param registerDto - Registration data including username, email, password, and full name
-   * @returns Created prosumer information (password excluded)
+   * @param registerDto - Registration data including email, password, and name
+   * @returns JWT token and created prosumer information (password excluded)
    *
    * @example
    * POST /auth/register
    * Body: {
-   *   "username": "john_doe",
    *   "email": "john.doe@example.com",
    *   "password": "SecurePassword123",
-   *   "fullName": "John Doe"
+   *   "name": "John Doe"
    * }
    *
    * Response: {
-   *   "prosumerId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-   *   "username": "john_doe",
-   *   "email": "john.doe@example.com",
-   *   "fullName": "John Doe",
-   *   "createdAt": "2025-10-23T06:48:00.000Z"
+   *   "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+   *   "prosumer": {
+   *     "prosumerId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+   *     "email": "john.doe@example.com",
+   *     "name": "John Doe"
+   *   }
    * }
    *
-   * @throws {BadRequestException} Username or email already exists
+   * @remarks
+   * After successful registration, prosumer is automatically logged in.
+   * A wallet is automatically generated for the new prosumer.
+   * Email is used as the unique identifier (not username).
+   *
+   * @throws {BadRequestException} Email already registered
    * @throws {BadRequestException} Invalid email format
    * @throws {BadRequestException} Password too weak
    */
   @Post('register')
   @ApiOperation({
-    summary: 'Register New Account',
+    summary: 'Register New Prosumer Account',
     description:
-      'Create a new prosumer account with unique username and email. Password will be securely hashed before storage.',
+      'Create a new prosumer account with unique email. Password will be securely hashed before storage. Returns JWT token for auto-login. Wallet is automatically generated.',
   })
   @ApiBody({
     type: RegisterDto,
-    description: 'Registration information for new account',
+    description: 'Registration information for new prosumer account',
     examples: {
       basicRegistration: {
-        summary: 'Basic registration',
+        summary: 'Basic prosumer registration',
         value: {
-          username: 'john_doe',
           email: 'john.doe@example.com',
           password: 'SecurePassword123',
-          fullName: 'John Doe',
-        },
-      },
-      prosumerRegistration: {
-        summary: 'Prosumer with details',
-        value: {
-          username: 'solar_user',
-          email: 'solar@example.com',
-          password: 'MySecurePass456!',
-          fullName: 'Solar Energy User',
+          name: 'John Doe',
         },
       },
     },
   })
   @ApiResponse({
     status: 201,
-    description: 'Account created successfully',
+    description: 'Account created successfully - Auto-login with JWT token',
     type: RegisterResponseDto,
   })
   @ApiBadRequestResponse({
-    description: 'Username or email already exists, or validation failed',
+    description: 'Email already registered or validation failed',
     schema: {
       example: {
-        statusCode: 400,
-        message: 'Username already exists',
+        message: 'Email already registered',
         error: 'Bad Request',
+        statusCode: 400,
       },
     },
   })
   async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
+    // Register prosumer (returns ValidatedProsumer)
+    const validatedProsumer = await this.authService.register(registerDto);
+
+    // Generate JWT token for auto-login (same pattern as login endpoint)
+    const loginInfo = await this.authService.generateTokens(validatedProsumer);
+
+    return {
+      success: true,
+      message: 'User registered successfully',
+      loginInfo: { ...loginInfo },
+    };
   }
 
   /**
    * Get User Profile
    *
-   * Retrieves the complete profile of the authenticated user.
+   * Retrieves the complete profile of the authenticated user including:
+   * - Basic account information (prosumerId, email, name)
+   * - Associated wallets with their addresses and metadata
+   * - Connected smart meters with operational status
+   *
    * Requires valid JWT token in Authorization header.
    *
    * @param req - Request object containing authenticated user from JWT
-   * @returns User profile information including wallet count, smart meter count, etc.
+   * @returns Complete user profile with wallets and smart meters
    *
    * @example
    * GET /auth/profile
    * Headers: { "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
    *
    * Response: {
-   *   "prosumerId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-   *   "username": "john_doe",
-   *   "email": "john.doe@example.com",
-   *   "fullName": "John Doe",
-   *   "createdAt": "2025-10-23T06:48:00.000Z",
-   *   "updatedAt": "2025-10-23T07:15:00.000Z"
+   *   "profile": {
+   *     "prosumerId": "prosumer_1752482825660_0t9odlzv4",
+   *     "email": "mnyasin26@energy.com",
+   *     "name": "Yasin",
+   *     "primaryWalletAddress": "0xec7CeB00FC447E2003DE6874b0E1eCD895250230",
+   *     "createdAt": "2025-07-14T08:47:05.660Z",
+   *     "updatedAt": "2025-07-15T11:40:38.234Z"
+   *   },
+   *   "wallets": [
+   *     {
+   *       "walletAddress": "0xec7CeB00FC447E2003DE6874b0E1eCD895250230",
+   *       "walletName": "Muhamad Nur Yasin Amadudin's Wallet",
+   *       "isActive": true,
+   *       "createdAt": "2025-07-14T08:47:05.769Z"
+   *     }
+   *   ],
+   *   "meters": [
+   *     {
+   *       "meterId": "METER001",
+   *       "location": "Sukasari, Bandung",
+   *       "status": "ACTIVE",
+   *       "createdAt": "2025-07-14T08:47:29.386Z",
+   *       "lastSeen": "2025-07-29T07:58:55.473Z",
+   *       "deviceModel": "Generic Smart Meter",
+   *       "deviceVersion": "1.0.0"
+   *     }
+   *   ]
    * }
    *
    * @throws {UnauthorizedException} Invalid or expired JWT token
@@ -243,7 +273,7 @@ export class AuthController {
   @ApiOperation({
     summary: 'Get User Profile',
     description:
-      'Retrieve authenticated user profile information including account details, timestamps, and related entities.',
+      'Retrieve authenticated user profile with complete information including associated wallets and smart meters. Returns account details, list of Ethereum wallets, and connected IoT devices.',
   })
   @ApiResponse({
     status: 200,
@@ -254,9 +284,9 @@ export class AuthController {
     description: 'Invalid or missing JWT token',
     schema: {
       example: {
-        statusCode: 401,
-        message: 'Unauthorized',
+        message: '...',
         error: 'Unauthorized',
+        statusCode: 401,
       },
     },
   })
@@ -302,7 +332,7 @@ export class AuthController {
     description: 'Logout successful - Token invalidated',
     schema: {
       example: {
-        message: 'Logout successful',
+        message: 'Logged out successfully',
         timestamp: '2025-10-23T07:15:00.000Z',
       },
     },
@@ -311,9 +341,9 @@ export class AuthController {
     description: 'Invalid or expired JWT token',
     schema: {
       example: {
-        statusCode: 401,
-        message: 'Unauthorized',
+        message: '...',
         error: 'Unauthorized',
+        statusCode: 401,
       },
     },
   })
@@ -365,9 +395,8 @@ export class AuthController {
       'All sessions logged out successfully - All tokens invalidated',
     schema: {
       example: {
-        message: 'All sessions logged out successfully',
-        devicesLoggedOut: 5,
-        timestamp: '2025-10-23T07:15:00.000Z',
+        message: 'Logged out from all devices successfully',
+        timestamp: '2025-07-19T12:00:00.000Z',
       },
     },
   })
@@ -375,9 +404,9 @@ export class AuthController {
     description: 'Invalid or expired JWT token',
     schema: {
       example: {
-        statusCode: 401,
-        message: 'Unauthorized',
+        message: '...',
         error: 'Unauthorized',
+        statusCode: 401,
       },
     },
   })

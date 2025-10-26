@@ -79,17 +79,15 @@ export class LoginResponseDto {
   @ApiProperty({
     description: 'User information',
     example: {
-      prosumerId: '123e4567-e89b-12d3-a456-426614174000',
-      username: 'john_doe',
+      prosumerId: 'prosumer_...',
       email: 'john.doe@example.com',
-      fullName: 'John Doe',
+      name: 'John Doe',
     },
   })
   user: {
     prosumerId: string;
-    username: string;
     email: string;
-    fullName: string;
+    name: string;
   };
 }
 
@@ -107,24 +105,36 @@ export class RegisterResponseDto {
   message: string;
 
   @ApiProperty({
-    description: 'Prosumer ID',
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'Login information',
+    example: {
+      accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+      tokenType: 'Bearer',
+      expiresIn: 3600,
+      prosumer: {
+        prosumerId: 'prosumer_...',
+        email: 'john.doe@example.com',
+        name: 'John Doe',
+      },
+    },
   })
-  prosumerId: string;
+  loginInfo: {
+    accessToken: string;
+    tokenType: string;
+    expiresIn: number;
+    prosumer: {
+      prosumerId: string;
+      email: string;
+      name: string;
+    };
+  };
 }
 
-export class ProfileResponseDto {
+class ProfileInfoDto {
   @ApiProperty({
     description: 'Prosumer ID',
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    example: 'prosumer_...',
   })
   prosumerId: string;
-
-  @ApiProperty({
-    description: 'Username',
-    example: 'john_doe',
-  })
-  username: string;
 
   @ApiProperty({
     description: 'Email address',
@@ -133,20 +143,138 @@ export class ProfileResponseDto {
   email: string;
 
   @ApiProperty({
-    description: 'Full name',
+    description: 'Prosumer name',
     example: 'John Doe',
   })
-  fullName: string;
+  name: string;
 
   @ApiProperty({
-    description: 'Account creation date',
-    example: '2025-10-22T08:30:00.000Z',
+    description: 'Primary wallet address',
+    example: '0xabcd...',
+    nullable: true,
+  })
+  primaryWalletAddress: string | null;
+
+  @ApiProperty({
+    description: 'Account creation timestamp',
+    example: '2025-07-19T12:00:00.000Z',
   })
   createdAt: string;
 
   @ApiProperty({
-    description: 'Last login timestamp',
-    example: '2025-10-23T10:30:00.000Z',
+    description: 'Last account update timestamp',
+    example: '2025-07-19T12:00:00.000Z',
   })
-  lastLogin: string;
+  updatedAt: string;
+}
+
+class WalletInfoDto {
+  @ApiProperty({
+    description: 'Ethereum wallet address',
+    example: '0xabcd...',
+  })
+  walletAddress: string;
+
+  @ApiProperty({
+    description: 'Wallet display name',
+    example: "John Doe's Wallet",
+  })
+  walletName: string;
+
+  @ApiProperty({
+    description: 'Whether wallet is currently active',
+    example: true,
+  })
+  isActive: boolean;
+
+  @ApiProperty({
+    description: 'Wallet creation timestamp',
+    example: '2025-07-14T08:47:05.769Z',
+  })
+  createdAt: string;
+}
+
+class MeterInfoDto {
+  @ApiProperty({
+    description: 'Smart meter device ID',
+    example: 'METER001',
+  })
+  meterId: string;
+
+  @ApiProperty({
+    description: 'Physical location of the smart meter',
+    example: 'Bandung, Indonesia',
+  })
+  location: string;
+
+  @ApiProperty({
+    description: 'Current operational status',
+    example: 'ACTIVE',
+    enum: ['ACTIVE', 'INACTIVE', 'MAINTENANCE', 'ERROR'],
+  })
+  status: string;
+
+  @ApiProperty({
+    description: 'Meter registration timestamp',
+    example: '2025-07-19T12:00:00.000Z',
+  })
+  createdAt: string;
+
+  @ApiProperty({
+    description: 'Last heartbeat/communication timestamp',
+    example: '2025-07-19T12:00:00.000Z',
+    nullable: true,
+  })
+  lastSeen: string | null;
+
+  @ApiProperty({
+    description: 'Smart meter device model',
+    example: 'Generic Smart Meter',
+  })
+  deviceModel: string;
+
+  @ApiProperty({
+    description: 'Device firmware/software version',
+    example: '1.0.0',
+  })
+  deviceVersion: string;
+}
+
+export class ProfileResponseDto {
+  @ApiProperty({
+    description: 'Prosumer account details',
+    type: ProfileInfoDto,
+  })
+  profile: ProfileInfoDto;
+
+  @ApiProperty({
+    description: 'List of associated wallets',
+    type: [WalletInfoDto],
+    example: [
+      {
+        walletAddress: '0xabcd...',
+        walletName: "Jhon Doe's Wallet",
+        isActive: true,
+        createdAt: '2025-07-19T12:00:00.000Z',
+      },
+    ],
+  })
+  wallets: WalletInfoDto[];
+
+  @ApiProperty({
+    description: 'List of associated smart meters',
+    type: [MeterInfoDto],
+    example: [
+      {
+        meterId: 'METER001',
+        location: 'Bandung, Indonesia',
+        status: 'ACTIVE',
+        createdAt: '2025-07-19T12:00:00.000Z',
+        lastSeen: '2025-07-19T12:00:00.000Z',
+        deviceModel: 'Generic Smart Meter',
+        deviceVersion: '1.0.0',
+      },
+    ],
+  })
+  meters: MeterInfoDto[];
 }
