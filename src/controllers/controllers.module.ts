@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { EnergyController } from './energy.controller';
 import { DeviceController } from './device.controller';
 import { TradingController } from './trading.controller';
@@ -6,6 +7,7 @@ import { WalletController } from './wallet.controller';
 import { DashboardController } from './dashboard.controller';
 import { HealthController } from './health.controller';
 import { SmartMeterController } from './smart-meter.controller';
+import { TelemetryController } from './telemetry.controller';
 import { ServicesModule } from '../services/services.module';
 import { AuthModule } from '../auth/auth.module';
 import { WalletsModule } from '../models/Wallets/Wallets.module';
@@ -21,11 +23,13 @@ import { TokenBlacklistModule } from 'src/models/TokenBlacklist/TokenBlacklist.m
 import { TransactionLogsModule } from 'src/models/TransactionLogs/TransactionLogs.module';
 import { EnergySettlementsModule } from 'src/models/EnergySettlements/EnergySettlements.module';
 import { EnergyReadingsDetailedModule } from 'src/models/EnergyReadingsDetailed/EnergyReadingsDetailed.module';
+import { TelemetryAggregate } from '../models/TelemetryAggregate/TelemetryAggregate.entity';
 
 @Module({
   imports: [
     ServicesModule,
     AuthModule,
+    TypeOrmModule.forFeature([TelemetryAggregate]),
     WalletsModule,
     IdrsConversionsModule,
     SmartMetersModule,
@@ -48,6 +52,7 @@ import { EnergyReadingsDetailedModule } from 'src/models/EnergyReadingsDetailed/
     DashboardController,
     HealthController,
     SmartMeterController,
+    TelemetryController,
   ],
 })
 export class ControllersModule {}

@@ -7,41 +7,38 @@ import {
 import { ConfigService } from '@nestjs/config';
 import * as mqtt from 'mqtt';
 import { MqttMessageLogsService } from '../models/MqttMessageLogs/MqttMessageLogs.service';
-import { DeviceStatusSnapshotsService } from '../models/DeviceStatusSnapshots/DeviceStatusSnapshots.service';
 import { DeviceCommandsService } from '../models/DeviceCommands/DeviceCommands.service';
 import { CryptoService } from '../common/crypto.service';
 import {
   MqttTopicType,
   MqttDirection,
   DeviceCommandType,
-  DeviceSubsystem,
 } from '../common/enums';
-import { EnergyReadingsDetailedService } from '../models/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
-import {
-  SensorData,
-  DeviceStatus,
-  DeviceCommandPayload,
-} from '../common/interfaces';
+import { DeviceCommandPayload } from '../common/interfaces';
 import { SmartMetersService } from 'src/models/SmartMeters/SmartMeters.service';
+import {
+  RedisTelemetryService,
+  MeterDataPayload,
+  MeterStatusPayload,
+} from './redis-telemetry.service';
 
 @Injectable()
 export class MqttService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(MqttService.name);
   private client: mqtt.MqttClient;
   private readonly topics = {
-    sensors: 'home/energy-monitor/sensors',
-    status: 'home/energy-monitor/status',
-    command: 'home/energy-monitor/command',
+    command: 'enerlink/meters/command',
+    metersData: 'enerlink/meters/data',
+    metersStatus: 'enerlink/meters/status',
   };
 
   constructor(
     private configService: ConfigService,
     private mqttMessageLogsService: MqttMessageLogsService,
-    private EnergyReadingsDetailedService: EnergyReadingsDetailedService,
-    private deviceStatusSnapshotsService: DeviceStatusSnapshotsService,
     private deviceCommandsService: DeviceCommandsService,
     private cryptoService: CryptoService,
     private smartMetersService: SmartMetersService,
+    private redisTelemetryService: RedisTelemetryService,
   ) {}
 
   onModuleInit() {
@@ -89,7 +86,10 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   }
 
   private subscribeToTopics() {
-    const topicsToSubscribe = [this.topics.sensors, this.topics.status];
+    const topicsToSubscribe = [
+      this.topics.metersData,
+      this.topics.metersStatus,
+    ];
 
     topicsToSubscribe.forEach((topic) => {
       this.client.subscribe(topic, (err) => {
@@ -134,11 +134,21 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       await this.updateLastSeen(meterId);
 
       // Process based on topic type
-      if (topic.includes('sensors')) {
-        // this.logger.log(parsedPayload);
-        await this.processSensorData(meterId, parsedPayload as SensorData);
-      } else if (topic.includes('status')) {
-        await this.processStatus(meterId, parsedPayload as DeviceStatus);
+      if (
+        topic === this.topics.metersData ||
+        topic.includes('enerlink/meters/data')
+      ) {
+        // Energy measurements in real-time (battery, solar, load, grid)
+        await this.processMeterStatus(
+          meterId,
+          parsedPayload as MeterStatusPayload,
+        );
+      } else if (
+        topic === this.topics.metersStatus ||
+        topic.includes('enerlink/meters/status')
+      ) {
+        // Device metadata (wifi, mqtt, system, sensors)
+        await this.processMeterData(meterId, parsedPayload as MeterDataPayload);
       }
     } catch (error) {
       this.logger.error('Error processing MQTT message:', error);
@@ -177,108 +187,6 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
 
     // Default meter ID if not found
     return 'default-meter';
-  }
-
-  private async processSensorData(meterId: string, data: SensorData) {
-    try {
-      // Store detailed energy readings for all subsystems
-      const subsystemMappings = [
-        {
-          subsystem: DeviceSubsystem.SOLAR,
-          data: data.solar,
-          extraData: { generating: data.solar.generating },
-        },
-        {
-          subsystem: DeviceSubsystem.LOAD,
-          data: data.load,
-          extraData: {},
-        },
-        {
-          subsystem: DeviceSubsystem.BATTERY,
-          data: data.battery,
-          extraData: { state: data.battery.state },
-        },
-        {
-          subsystem: DeviceSubsystem.GRID_IMPORT,
-          data: data.import,
-          extraData: { active: data.import.active },
-        },
-        {
-          subsystem: DeviceSubsystem.GRID_EXPORT,
-          data: data.export,
-          extraData: { active: data.export.active },
-        },
-      ];
-
-      // Use backend system timestamp instead of payload timestamp for consistency
-      const timestamp = new Date().toISOString();
-      // this.logger.debug(
-      //   `Processing sensor data for meter ${meterId} at ${timestamp} (backend system time)`,
-      // );
-
-      await Promise.all(
-        subsystemMappings.map(({ subsystem, data: subsystemData, extraData }) =>
-          this.EnergyReadingsDetailedService.create({
-            meterId,
-            timestamp,
-            subsystem,
-            dailyEnergyWh: subsystemData.daily_energy_wh * 1000 * 10,
-            totalEnergyWh: subsystemData.total_energy_wh * 1000 * 10,
-            settlementEnergyWh: subsystemData.settlement_energy_wh * 1000 * 10,
-            currentPowerW:
-              subsystemData.power < 10 ? 0 : subsystemData.power * 10,
-            voltage: subsystemData.voltage,
-            currentAmp: subsystemData.current,
-            subsystemData: JSON.stringify({
-              ...extraData,
-              originalTimestamp: data.timestamp, // Keep original timestamp as reference
-              backendReceivedAt: timestamp,
-            }),
-            rawPayload: JSON.stringify(subsystemData),
-          }),
-        ),
-      );
-      this.logger.log(
-        `Processed sensor data for meter ${meterId} using backend system time`,
-      );
-    } catch (error) {
-      this.logger.error(
-        `Error processing sensor data for meter ${meterId}:`,
-        error,
-      );
-    }
-  }
-
-  private async processStatus(meterId: string, data: DeviceStatus) {
-    try {
-      // Use backend system timestamp instead of payload timestamp
-      const timestamp = new Date().toISOString();
-
-      await this.deviceStatusSnapshotsService.create({
-        meterId,
-        timestamp,
-        wifiStatus: JSON.stringify(data.wifi),
-        mqttStatus: JSON.stringify(data.mqtt),
-        gridMode: data.grid.exporting
-          ? 'exporting'
-          : data.grid.importing
-            ? 'importing'
-            : 'idle',
-        systemStatus: JSON.stringify(data.system),
-        rawPayload: JSON.stringify({
-          ...data,
-          originalTimestamp: data.timestamp, // Keep original timestamp as reference
-          backendReceivedAt: timestamp,
-        }),
-        smartmetersIds: [parseInt(meterId, 10)],
-      });
-
-      this.logger.log(
-        `Processed status for meter ${meterId} using backend system time`,
-      );
-    } catch (error) {
-      this.logger.error(`Error processing status for meter ${meterId}:`, error);
-    }
   }
 
   async sendCommand(
@@ -332,6 +240,69 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     } catch (error) {
       this.logger.error('Error sending command:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Process meter data from enerlink/meters/data topic (via handleMessage swapping)
+   * Actually receives device metadata (wifi, mqtt, sensors) from enerlink/meters/status
+   * Stores to telemetry:latest:status
+   */
+  private async processMeterData(meterId: string, data: MeterDataPayload) {
+    try {
+      const timestamp = Date.now();
+
+      // Store latest status (device metadata) to Redis
+      // Type cast because interface naming is swapped
+      await this.redisTelemetryService.storeLatestStatus(
+        meterId,
+        data as any as MeterStatusPayload,
+      );
+
+      // Store to time-series for aggregation
+      await this.redisTelemetryService.storeTimeSeriesSnapshot({
+        meterId,
+        datetime: data.datetime,
+        meterData: data, // Device metadata (wifi, mqtt, system, sensors)
+        timestamp,
+      });
+
+      this.logger.debug(`Stored meter data for ${meterId} to Redis`);
+    } catch (error) {
+      this.logger.error(`Error processing meter data for ${meterId}:`, error);
+    }
+  }
+
+  /**
+   * Process meter status from enerlink/meters/status topic (via handleMessage swapping)
+   * Actually receives energy measurements (battery, solar, load, grid) from enerlink/meters/data
+   * Stores to telemetry:latest:data
+   */
+  private async processMeterStatus(
+    meterId: string,
+    status: MeterStatusPayload,
+  ) {
+    try {
+      const timestamp = Date.now();
+
+      // Store latest data (energy measurements) to Redis
+      // Type cast because interface naming is swapped
+      await this.redisTelemetryService.storeLatestData(
+        meterId,
+        status as any as MeterDataPayload,
+      );
+
+      // Store to time-series for aggregation
+      await this.redisTelemetryService.storeTimeSeriesSnapshot({
+        meterId,
+        datetime: status.datetime,
+        statusData: status, // Energy measurements (battery, solar, load, grid)
+        timestamp,
+      });
+
+      this.logger.debug(`Stored meter status for ${meterId} to Redis`);
+    } catch (error) {
+      this.logger.error(`Error processing meter status for ${meterId}:`, error);
     }
   }
 

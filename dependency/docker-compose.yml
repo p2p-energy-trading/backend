@@ -1,0 +1,88 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: timescale/timescaledb:latest-pg17
+    container_name: enerlink-postgres
+    environment:
+      POSTGRES_USER: enerlink_user
+      POSTGRES_PASSWORD: enerlink_secure_password
+      POSTGRES_DB: enerlink_db
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - enerlink-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U enerlink_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: enerlink-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@enerlink.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    networks:
+      - enerlink-network
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: enerlink-redis
+    command: redis-server --appendonly yes --requirepass enerlink_redis_password
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - enerlink-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    container_name: enerlink-minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"  # API port
+      - "9001:9001"  # Console port
+    volumes:
+      - minio_data:/data
+    networks:
+      - enerlink-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  minio_data:
+    driver: local
+
+networks:
+  enerlink-network:
+    driver: bridge

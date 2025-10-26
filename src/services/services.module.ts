@@ -1,9 +1,13 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { MqttService } from './mqtt.service';
 import { BlockchainService } from './blockchain.service';
 import { EnergySettlementService } from './energy-settlement.service';
 import { DashboardService } from './dashboard.service';
 import { PriceCacheService } from './price-cache.service';
+import { RedisTelemetryService } from './redis-telemetry.service';
+import { TelemetryAggregationService } from './telemetry-aggregation.service';
+import { TelemetryArchivalService } from './telemetry-archival.service';
 // import { DeviceMonitoringService } from './device-monitoring.service';
 import { HealthCheckService } from './health-check.service';
 import { MqttMessageLogsModule } from '../models/MqttMessageLogs/MqttMessageLogs.module';
@@ -20,11 +24,13 @@ import { CommonModule } from '../common/common.module';
 import { WebSocketModule } from '../websocket/websocket.module';
 import { EnergyReadingsDetailedModule } from 'src/models/EnergyReadingsDetailed/EnergyReadingsDetailed.module';
 import { ProsumersModule } from 'src/models/Prosumers/Prosumers.module';
+import { TelemetryAggregate } from '../models/TelemetryAggregate/TelemetryAggregate.entity';
 
 @Module({
   imports: [
     CommonModule,
     WebSocketModule,
+    TypeOrmModule.forFeature([TelemetryAggregate]),
     MqttMessageLogsModule,
     EnergyReadingsDetailedModule,
     DeviceStatusSnapshotsModule,
@@ -37,9 +43,6 @@ import { ProsumersModule } from 'src/models/Prosumers/Prosumers.module';
     EnergySettlementsModule,
     SmartMetersModule,
     ProsumersModule,
-    // DeviceMonitoringModule, // Uncomment if you have a DeviceMonitoringModule
-
-    // DashboardService,
   ],
   providers: [
     MqttService,
@@ -47,6 +50,9 @@ import { ProsumersModule } from 'src/models/Prosumers/Prosumers.module';
     EnergySettlementService,
     DashboardService,
     PriceCacheService,
+    RedisTelemetryService,
+    TelemetryAggregationService,
+    TelemetryArchivalService,
     // DeviceMonitoringService,
     HealthCheckService,
   ],
@@ -56,6 +62,9 @@ import { ProsumersModule } from 'src/models/Prosumers/Prosumers.module';
     EnergySettlementService,
     DashboardService,
     PriceCacheService,
+    RedisTelemetryService,
+    TelemetryAggregationService,
+    TelemetryArchivalService,
     // DeviceMonitoringService,
     HealthCheckService,
   ],

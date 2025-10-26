@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, MinLength, IsEmail } from 'class-validator';
+import { WalletInfoDto } from './wallet.dto';
 
 export class RegisterDto {
   @ApiProperty({
@@ -166,32 +167,6 @@ class ProfileInfoDto {
     example: '2025-07-19T12:00:00.000Z',
   })
   updatedAt: string;
-}
-
-class WalletInfoDto {
-  @ApiProperty({
-    description: 'Ethereum wallet address',
-    example: '0xabcd...',
-  })
-  walletAddress: string;
-
-  @ApiProperty({
-    description: 'Wallet display name',
-    example: "John Doe's Wallet",
-  })
-  walletName: string;
-
-  @ApiProperty({
-    description: 'Whether wallet is currently active',
-    example: true,
-  })
-  isActive: boolean;
-
-  @ApiProperty({
-    description: 'Wallet creation timestamp',
-    example: '2025-07-14T08:47:05.769Z',
-  })
-  createdAt: string;
 }
 
 class MeterInfoDto {

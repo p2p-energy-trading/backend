@@ -24,6 +24,7 @@ import { TokenBlacklist } from './models/TokenBlacklist/TokenBlacklist.entity';
 import { TradeOrdersCache } from './models/TradeOrdersCache/TradeOrdersCache.entity';
 import { TransactionLogs } from './models/TransactionLogs/TransactionLogs.entity';
 import { Wallets } from './models/Wallets/Wallets.entity';
+import { TelemetryAggregate } from './models/TelemetryAggregate/TelemetryAggregate.entity';
 
 // Base TypeORM DataSource configuration
 const dataSourceOptions: DataSourceOptions = {
@@ -51,6 +52,7 @@ const dataSourceOptions: DataSourceOptions = {
     TradeOrdersCache,
     TransactionLogs,
     Wallets,
+    TelemetryAggregate,
   ],
   migrations: ['src/database/migrations/*.ts'],
 };

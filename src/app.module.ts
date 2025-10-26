@@ -43,6 +43,7 @@ import { ControllersModule } from './controllers/controllers.module';
 import { WebSocketModule } from './websocket/websocket.module';
 import { TelemetryDataModule } from './models/TelemetryData/TelemetryData.module';
 import { TelemetryData } from './models/TelemetryData/TelemetryData.entity';
+import { TelemetryAggregate } from './models/TelemetryAggregate/TelemetryAggregate.entity';
 
 @Module({
   imports: [
@@ -78,7 +79,8 @@ import { TelemetryData } from './models/TelemetryData/TelemetryData.entity';
         TransactionLogs,
         Wallets,
         TokenBlacklist,
-        TelemetryData
+        TelemetryData,
+        TelemetryAggregate,
       ],
       // synchronize: true,
     }),
