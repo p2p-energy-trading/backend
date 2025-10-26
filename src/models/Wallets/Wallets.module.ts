@@ -2,8 +2,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { WalletsService } from './Wallets.service';
 import { Wallets } from './Wallets.entity';
-import { BlockchainApprovals } from '../BlockchainApprovals/BlockchainApprovals.entity';
-import { BlockchainApprovalsModule } from '../BlockchainApprovals/BlockchainApprovals.module';
+// Removed: BlockchainApprovals (not used)
 import { IdrsConversions } from '../IdrsConversions/IdrsConversions.entity';
 import { IdrsConversionsModule } from '../IdrsConversions/IdrsConversions.module';
 import { MarketTrades } from '../MarketTrades/MarketTrades.entity';
@@ -17,13 +16,11 @@ import { ProsumersModule } from '../Prosumers/Prosumers.module';
   imports: [
     TypeOrmModule.forFeature([
       Wallets,
-      BlockchainApprovals,
       IdrsConversions,
       MarketTrades,
       TradeOrdersCache,
       Prosumers,
     ]),
-    forwardRef(() => BlockchainApprovalsModule),
     forwardRef(() => IdrsConversionsModule),
     forwardRef(() => MarketTradesModule),
     forwardRef(() => TradeOrdersCacheModule),

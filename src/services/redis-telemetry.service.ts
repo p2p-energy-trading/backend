@@ -7,7 +7,7 @@ import {
 import Redis from 'ioredis';
 import { ConfigService } from '@nestjs/config';
 
-export interface MeterDataPayload {
+export interface MeterStatusPayload {
   meterId: string;
   datetime: string;
   units: {
@@ -41,7 +41,7 @@ export interface MeterDataPayload {
   };
 }
 
-export interface MeterStatusPayload {
+export interface MeterDataPayload {
   meterId: string;
   datetime: string;
   units: Record<string, string>;
@@ -197,34 +197,7 @@ export class RedisTelemetryService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Store latest meter data (device info, connectivity, sensors)
-   */
-  async storeLatestData(
-    meterId: string,
-    data: MeterDataPayload,
-  ): Promise<void> {
-    try {
-      await this.redisClient.hset(
-        this.LATEST_DATA_KEY,
-        meterId,
-        JSON.stringify(data),
-      );
-
-      // Set expiration on the hash key
-      await this.redisClient.expire(this.LATEST_DATA_KEY, this.LATEST_TTL);
-
-      this.logger.debug(`Stored latest data for meter ${meterId}`);
-    } catch (error) {
-      this.logger.error(
-        `Failed to store latest data for meter ${meterId}:`,
-        error,
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Store latest meter status (energy measurements)
+   * Store latest meter status (device info, connectivity, sensors)
    */
   async storeLatestStatus(
     meterId: string,
@@ -237,12 +210,39 @@ export class RedisTelemetryService implements OnModuleInit, OnModuleDestroy {
         JSON.stringify(status),
       );
 
+      // Set expiration on the hash key
       await this.redisClient.expire(this.LATEST_STATUS_KEY, this.LATEST_TTL);
 
       this.logger.debug(`Stored latest status for meter ${meterId}`);
     } catch (error) {
       this.logger.error(
         `Failed to store latest status for meter ${meterId}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Store latest meter data (energy measurements with settlement_energy)
+   */
+  async storeLatestData(
+    meterId: string,
+    data: MeterDataPayload,
+  ): Promise<void> {
+    try {
+      await this.redisClient.hset(
+        this.LATEST_DATA_KEY,
+        meterId,
+        JSON.stringify(data),
+      );
+
+      await this.redisClient.expire(this.LATEST_DATA_KEY, this.LATEST_TTL);
+
+      this.logger.debug(`Stored latest data for meter ${meterId}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to store latest data for meter ${meterId}:`,
         error,
       );
       throw error;
@@ -273,22 +273,6 @@ export class RedisTelemetryService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Get latest meter data for a specific meter
-   */
-  async getLatestData(meterId: string): Promise<MeterDataPayload | null> {
-    try {
-      const data = await this.redisClient.hget(this.LATEST_DATA_KEY, meterId);
-      return data ? JSON.parse(data) : null;
-    } catch (error) {
-      this.logger.error(
-        `Failed to get latest data for meter ${meterId}:`,
-        error,
-      );
-      return null;
-    }
-  }
-
-  /**
    * Get latest meter status for a specific meter
    */
   async getLatestStatus(meterId: string): Promise<MeterStatusPayload | null> {
@@ -308,21 +292,18 @@ export class RedisTelemetryService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Get latest data for all meters
+   * Get latest meter data for a specific meter (with settlement_energy)
    */
-  async getAllLatestData(): Promise<Record<string, MeterDataPayload>> {
+  async getLatestData(meterId: string): Promise<MeterDataPayload | null> {
     try {
-      const allData = await this.redisClient.hgetall(this.LATEST_DATA_KEY);
-      const result: Record<string, MeterDataPayload> = {};
-
-      for (const [meterId, jsonData] of Object.entries(allData)) {
-        result[meterId] = JSON.parse(jsonData);
-      }
-
-      return result;
+      const data = await this.redisClient.hget(this.LATEST_DATA_KEY, meterId);
+      return data ? JSON.parse(data) : null;
     } catch (error) {
-      this.logger.error('Failed to get all latest data:', error);
-      return {};
+      this.logger.error(
+        `Failed to get latest data for meter ${meterId}:`,
+        error,
+      );
+      return null;
     }
   }
 
@@ -341,6 +322,25 @@ export class RedisTelemetryService implements OnModuleInit, OnModuleDestroy {
       return result;
     } catch (error) {
       this.logger.error('Failed to get all latest status:', error);
+      return {};
+    }
+  }
+
+  /**
+   * Get latest data for all meters (with settlement_energy)
+   */
+  async getAllLatestData(): Promise<Record<string, MeterDataPayload>> {
+    try {
+      const allData = await this.redisClient.hgetall(this.LATEST_DATA_KEY);
+      const result: Record<string, MeterDataPayload> = {};
+
+      for (const [meterId, jsonData] of Object.entries(allData)) {
+        result[meterId] = JSON.parse(jsonData);
+      }
+
+      return result;
+    } catch (error) {
+      this.logger.error('Failed to get all latest data:', error);
       return {};
     }
   }

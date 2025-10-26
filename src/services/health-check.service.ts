@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { TransactionLogsService } from '../models/TransactionLogs/TransactionLogs.service';
-import { DeviceCommandsService } from '../models/DeviceCommands/DeviceCommands.service';
+// Removed: DeviceCommandsService (DeviceCommands table dropped)
 import { TransactionStatus, DeviceCommandStatus } from '../common/enums';
 
 @Injectable()
@@ -12,7 +12,7 @@ export class HealthCheckService {
   constructor(
     private configService: ConfigService,
     private transactionLogsService: TransactionLogsService,
-    private deviceCommandsService: DeviceCommandsService,
+    // Removed: deviceCommandsService
   ) {}
 
   // Health check every minute
@@ -21,7 +21,7 @@ export class HealthCheckService {
     try {
       await this.checkDatabaseHealth();
       await this.checkPendingTransactions();
-      await this.checkCommandTimeouts();
+      // Removed: await this.checkCommandTimeouts() - DeviceCommands table dropped
 
       this.logger.log('Health check completed successfully');
     } catch (error) {
@@ -80,39 +80,8 @@ export class HealthCheckService {
     }
   }
 
-  private async checkCommandTimeouts(): Promise<void> {
-    try {
-      const allCommands = await this.deviceCommandsService.findAll();
-      const pendingCommands = allCommands.filter(
-        (cmd: any) => cmd.status === DeviceCommandStatus.SENT,
-      );
-
-      const timeoutThreshold = new Date(Date.now() - 5 * 60 * 1000); // 5 minutes
-      const timedOutCommands = pendingCommands.filter(
-        (cmd: any) => new Date(cmd.sentAt) < timeoutThreshold,
-      );
-
-      if (timedOutCommands.length > 0) {
-        this.logger.warn(`Found ${timedOutCommands.length} timed out commands`);
-
-        for (const cmd of timedOutCommands) {
-          const cmdTyped = cmd as any;
-          await this.deviceCommandsService.update(cmdTyped.commandId, {
-            meterId: cmdTyped.meterId,
-            commandType: cmdTyped.commandType,
-            commandPayload: cmdTyped.commandPayload,
-            correlationId: cmdTyped.correlationId,
-            status: DeviceCommandStatus.TIMEOUT,
-            sentAt: cmdTyped.sentAt,
-            acknowledgedAt: new Date().toISOString(),
-            responsePayload: JSON.stringify({ error: 'Command timeout' }),
-          });
-        }
-      }
-    } catch (error) {
-      this.logger.error('Error checking command timeouts:', error);
-    }
-  }
+  // Removed checkCommandTimeouts() method - DeviceCommands table dropped
+  // Command tracking simplified in MQTT service
 
   async getSystemHealth(): Promise<{
     status: 'healthy' | 'degraded' | 'unhealthy';
@@ -148,10 +117,8 @@ export class HealthCheckService {
       (tx: any) => tx.description?.includes('PENDING') || false,
     );
 
-    const allCommands = await this.deviceCommandsService.findAll();
-    const pendingCommands = allCommands.filter(
-      (cmd: any) => cmd.status === DeviceCommandStatus.SENT,
-    );
+    // DeviceCommands table dropped - no longer tracking pending commands
+    const pendingCommands = []; // Empty array
 
     // const recentHeartbeats = await this.deviceHeartbeatsService.findAll();
     // const recentHeartbeatCount = recentHeartbeats.filter(
@@ -161,7 +128,7 @@ export class HealthCheckService {
 
     const metrics = {
       pendingTransactions: pendingTransactions.length,
-      pendingCommands: pendingCommands.length,
+      pendingCommands: 0, // No longer tracked
       recentHeartbeats: 10,
     };
 

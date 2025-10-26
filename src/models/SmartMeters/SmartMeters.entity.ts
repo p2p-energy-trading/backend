@@ -6,12 +6,14 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { DeviceCommands } from '../DeviceCommands/DeviceCommands.entity';
-import { DeviceStatusSnapshots } from '../DeviceStatusSnapshots/DeviceStatusSnapshots.entity';
-import { EnergyReadingsDetailed } from '../EnergyReadingsDetailed/EnergyReadingsDetailed.entity';
 import { EnergySettlements } from '../EnergySettlements/EnergySettlements.entity';
-import { MqttMessageLogs } from '../MqttMessageLogs/MqttMessageLogs.entity';
 import { Prosumers } from '../Prosumers/Prosumers.entity';
+
+// Removed imports for unused entities (replaced by Redis):
+// - DeviceCommands
+// - DeviceStatusSnapshots
+// - EnergyReadingsDetailed
+// - MqttMessageLogs
 
 @Entity()
 export class SmartMeters {
@@ -69,35 +71,17 @@ export class SmartMeters {
   @Column({ type: 'varchar', name: 'capabilities', nullable: true })
   capabilities: string;
 
-  @OneToMany(
-    () => DeviceCommands,
-    (DeviceCommands) => DeviceCommands.smartmeters,
-  )
-  devicecommandsList: DeviceCommands[];
-
-  @OneToMany(
-    () => DeviceStatusSnapshots,
-    (DeviceStatusSnapshots) => DeviceStatusSnapshots.smartmeters,
-  )
-  devicestatussnapshotsList: DeviceStatusSnapshots[];
-
-  @OneToMany(
-    () => EnergyReadingsDetailed,
-    (EnergyReadingsDetailed) => EnergyReadingsDetailed.smartmeters,
-  )
-  energyreadingsdetailedList: EnergyReadingsDetailed[];
+  // Removed OneToMany relations for unused entities (replaced by Redis):
+  // - devicecommandsList
+  // - devicestatussnapshotsList
+  // - energyreadingsdetailedList
+  // - mqttmessagelogsList
 
   @OneToMany(
     () => EnergySettlements,
     (EnergySettlements) => EnergySettlements.smartmeters,
   )
   energysettlementsList: EnergySettlements[];
-
-  @OneToMany(
-    () => MqttMessageLogs,
-    (MqttMessageLogs) => MqttMessageLogs.smartmeters,
-  )
-  mqttmessagelogsList: MqttMessageLogs[];
 
   @ManyToOne(() => Prosumers)
   @JoinColumn({ name: 'prosumer_id' })

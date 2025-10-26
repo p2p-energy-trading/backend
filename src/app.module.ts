@@ -4,22 +4,18 @@ import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 
-import { BlockchainApprovalsModule } from './models/BlockchainApprovals/BlockchainApprovals.module';
-import { BlockchainApprovals } from './models/BlockchainApprovals/BlockchainApprovals.entity';
-import { DeviceCommandsModule } from './models/DeviceCommands/DeviceCommands.module';
-import { DeviceCommands } from './models/DeviceCommands/DeviceCommands.entity';
-import { DeviceStatusSnapshotsModule } from './models/DeviceStatusSnapshots/DeviceStatusSnapshots.module';
-import { DeviceStatusSnapshots } from './models/DeviceStatusSnapshots/DeviceStatusSnapshots.entity';
-import { EnergyReadingsDetailedModule } from './models/EnergyReadingsDetailed/EnergyReadingsDetailed.module';
-import { EnergyReadingsDetailed } from './models/EnergyReadingsDetailed/EnergyReadingsDetailed.entity';
+// Removed unused modules (replaced by Redis and TimescaleDB):
+// - BlockchainApprovals (not used)
+// - DeviceCommands
+// - DeviceStatusSnapshots
+// - EnergyReadingsDetailed
+// - MqttMessageLogs
 import { EnergySettlementsModule } from './models/EnergySettlements/EnergySettlements.module';
 import { EnergySettlements } from './models/EnergySettlements/EnergySettlements.entity';
 import { IdrsConversionsModule } from './models/IdrsConversions/IdrsConversions.module';
 import { IdrsConversions } from './models/IdrsConversions/IdrsConversions.entity';
 import { MarketTradesModule } from './models/MarketTrades/MarketTrades.module';
 import { MarketTrades } from './models/MarketTrades/MarketTrades.entity';
-import { MqttMessageLogsModule } from './models/MqttMessageLogs/MqttMessageLogs.module';
-import { MqttMessageLogs } from './models/MqttMessageLogs/MqttMessageLogs.entity';
 import { ProsumersModule } from './models/Prosumers/Prosumers.module';
 import { Prosumers } from './models/Prosumers/Prosumers.entity';
 import { SmartMetersModule } from './models/SmartMeters/SmartMeters.module';
@@ -64,14 +60,10 @@ import { TelemetryAggregate } from './models/TelemetryAggregate/TelemetryAggrega
       database: process.env.DB_NAME || 'dev2',
       schema: process.env.DB_SCHEMA || 'public',
       entities: [
-        BlockchainApprovals,
-        DeviceCommands,
-        DeviceStatusSnapshots,
-        EnergyReadingsDetailed,
+        // Removed: BlockchainApprovals (not used), DeviceCommands, DeviceStatusSnapshots, EnergyReadingsDetailed, MqttMessageLogs
         EnergySettlements,
         IdrsConversions,
         MarketTrades,
-        MqttMessageLogs,
         Prosumers,
         SmartMeters,
         SystemConfig,
@@ -84,14 +76,10 @@ import { TelemetryAggregate } from './models/TelemetryAggregate/TelemetryAggrega
       ],
       // synchronize: true,
     }),
-    BlockchainApprovalsModule,
-    DeviceCommandsModule,
-    DeviceStatusSnapshotsModule,
-    EnergyReadingsDetailedModule,
+    // Removed: BlockchainApprovalsModule, DeviceCommandsModule, DeviceStatusSnapshotsModule, EnergyReadingsDetailedModule, MqttMessageLogsModule
     EnergySettlementsModule,
     IdrsConversionsModule,
     MarketTradesModule,
-    MqttMessageLogsModule,
     ProsumersModule,
     SmartMetersModule,
     SystemConfigModule,

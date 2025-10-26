@@ -7,8 +7,10 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { SmartMeters } from '../SmartMeters/SmartMeters.entity';
-import { MqttMessageLogs } from '../MqttMessageLogs/MqttMessageLogs.entity';
 import { TransactionLogs } from '../TransactionLogs/TransactionLogs.entity';
+
+// Removed import for unused entity (replaced by Redis):
+// - MqttMessageLogs
 
 @Entity()
 export class EnergySettlements {
@@ -71,9 +73,10 @@ export class EnergySettlements {
   @JoinColumn({ name: 'meter_id' })
   smartmeters: SmartMeters;
 
-  @ManyToOne(() => MqttMessageLogs)
-  @JoinColumn({ name: 'mqtt_message_id' })
-  mqttmessagelogs: MqttMessageLogs;
+  // Removed ManyToOne relation for unused entity (replaced by Redis):
+  // @ManyToOne(() => MqttMessageLogs)
+  // @JoinColumn({ name: 'mqtt_message_id' })
+  // mqttmessagelogs: MqttMessageLogs;
 
   @OneToMany(
     () => TransactionLogs,

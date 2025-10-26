@@ -5,7 +5,7 @@ import { EnergySettlements } from '../EnergySettlements/EnergySettlements.entity
 import { CreateEnergySettlementsInput } from './dto/EnergySettlements.input';
 import { EnergySettlementsArgs } from './dto/EnergySettlements.args';
 import { SmartMeters } from '../SmartMeters/SmartMeters.entity';
-import { MqttMessageLogs } from '../MqttMessageLogs/MqttMessageLogs.entity';
+// Removed: MqttMessageLogs (table dropped)
 import { TransactionLogs } from '../TransactionLogs/TransactionLogs.entity';
 
 @Injectable()
@@ -15,8 +15,7 @@ export class EnergySettlementsService {
     private readonly repo: Repository<EnergySettlements>,
     @InjectRepository(SmartMeters)
     private readonly SmartMetersRepo: Repository<SmartMeters>,
-    @InjectRepository(MqttMessageLogs)
-    private readonly MqttMessageLogsRepo: Repository<MqttMessageLogs>,
+    // Removed: MqttMessageLogsRepo
     @InjectRepository(TransactionLogs)
     private readonly TransactionLogsRepo: Repository<TransactionLogs>,
   ) {}

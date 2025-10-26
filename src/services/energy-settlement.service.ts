@@ -4,7 +4,6 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { EnergySettlementsService } from '../models/EnergySettlements/EnergySettlements.service';
 import { SmartMetersService } from '../models/SmartMeters/SmartMeters.service';
-import { EnergyReadingsDetailedService } from '../models/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
 import { BlockchainService } from './blockchain.service';
 import { MqttService } from './mqtt.service';
 import { TransactionLogsService } from '../models/TransactionLogs/TransactionLogs.service';
@@ -13,6 +12,7 @@ import { DeviceCommandPayload } from '../common/interfaces';
 import { WalletsService } from 'src/models/Wallets/Wallets.service';
 import { ProsumersService } from 'src/models/Prosumers/Prosumers.service';
 import { DashboardService } from './dashboard.service';
+import { RedisTelemetryService } from './redis-telemetry.service';
 
 interface SettlementReadingsData {
   exportEnergyWh: number;
@@ -76,7 +76,7 @@ export class EnergySettlementService {
     private configService: ConfigService,
     private energySettlementsService: EnergySettlementsService,
     private smartMetersService: SmartMetersService,
-    private energyReadingsDetailedService: EnergyReadingsDetailedService,
+    private redisTelemetryService: RedisTelemetryService,
     @Inject(forwardRef(() => BlockchainService))
     private blockchainService: BlockchainService,
     private mqttService: MqttService,
@@ -392,37 +392,35 @@ export class EnergySettlementService {
     meterId: string,
   ): Promise<SettlementReadingsData | null> {
     try {
-      // Get the most recent detailed energy readings for this meter
-      const readings =
-        await this.energyReadingsDetailedService.findLatestGridImportAndExportByMeterId(
-          meterId,
-        );
-      if (!readings) {
+      // Get the most recent telemetry data from Redis (contains settlement_energy)
+      const latestData =
+        await this.redisTelemetryService.getLatestData(meterId);
+
+      if (!latestData || !latestData.data) {
         this.logger.warn(
-          `No detailed energy readings found for meter ${meterId}`,
+          `No telemetry data found in Redis for meter ${meterId}`,
         );
         return null;
       }
-      // show readings in debug log
-      // this.logger.debug(`Readings: ${JSON.stringify(readings, null, 2)}`);
 
-      // Extract settlement energy ONLY from GRID_EXPORT and GRID_IMPORT subsystems
-      const exportEnergyWh = readings.exportEnergyWh || 0;
-      const importEnergyWh = readings.importEnergyWh || 0;
+      // Extract settlement energy from the latest data
+      // settlement_energy represents energy accumulated since last settlement reset
+      const exportEnergyWh = latestData.data.export?.settlement_energy || 0;
+      const importEnergyWh = latestData.data.import?.settlement_energy || 0;
 
       // Calculate net energy: Export is positive (+), Import is negative (-)
       // Positive net = export to grid = mint tokens
       // Negative net = import from grid = burn tokens
       const netEnergyWh = exportEnergyWh - importEnergyWh;
 
-      // this.logger.debug(
-      //   `Settlement calculation for meter ${meterId}: GRID_EXPORT=${exportEnergyWh}Wh, GRID_IMPORT=${importEnergyWh}Wh, Net=${netEnergyWh}Wh (${netEnergyWh > 0 ? 'MINT tokens' : netEnergyWh < 0 ? 'BURN tokens' : 'NO ACTION'})`,
-      // );
+      this.logger.debug(
+        `Settlement calculation for meter ${meterId}: GRID_EXPORT=${exportEnergyWh}Wh, GRID_IMPORT=${importEnergyWh}Wh, Net=${netEnergyWh}Wh (${netEnergyWh > 0 ? 'MINT tokens' : netEnergyWh < 0 ? 'BURN tokens' : 'NO ACTION'})`,
+      );
 
       const periodStartTime = new Date(
         Date.now() - 5 * 60 * 1000,
       ).toISOString(); // Assuming last 5 minutes for settlement period
-      const lastReadingTime = new Date().toISOString(); // Current time as last reading time
+      const lastReadingTime = latestData.datetime || new Date().toISOString();
 
       return {
         exportEnergyWh,
@@ -903,6 +901,12 @@ export class EnergySettlementService {
     this.powerLogArrays.set(meterId, []);
   }
 
+  /**
+   * DEPRECATED: This method is no longer used.
+   * Hourly energy calculations now use TelemetryAggregate table with TimescaleDB.
+   *
+   * @deprecated Use TelemetryAggregationService instead
+   */
   private async calculateHourlyEnergyTotals(
     meterIds: string[],
     hourDate: Date,
@@ -914,86 +918,18 @@ export class EnergySettlementService {
     gridImport: number;
     net: number;
   }> {
-    const startHour = new Date(hourDate);
-    startHour.setMinutes(0, 0, 0); // Ensure hour starts at XX:00:00
+    this.logger.warn(
+      'calculateHourlyEnergyTotals is deprecated. Use TelemetryAggregate table instead.',
+    );
 
-    const endHour = new Date(startHour);
-    endHour.setHours(startHour.getHours() + 1);
-
-    // Calculate total energy consumed/produced per hour using: Energy = Avg Power × 1 Hour
-    // This approach is more reliable since settlement_energy_wh resets every 5 minutes
-    const rawQuery = `
-      WITH hourly_data AS (
-        SELECT 
-          "meter_id",
-          subsystem,
-          AVG("current_power_w") as avg_power_w,
-          COUNT(*) as reading_count
-        FROM energy_readings_detailed 
-        WHERE "meter_id" = ANY($1)
-          AND timestamp >= $2 
-          AND timestamp < $3
-          AND subsystem IN ('SOLAR', 'LOAD', 'BATTERY', 'GRID_EXPORT', 'GRID_IMPORT')
-        GROUP BY "meter_id", subsystem
-      )
-      SELECT 
-        subsystem,
-        SUM(avg_power_w) as total_avg_power_w,
-        SUM(reading_count) as total_readings
-      FROM hourly_data
-      GROUP BY subsystem;
-    `;
-
-    interface HourlyResult {
-      subsystem: string;
-      total_avg_power_w: number;
-      total_readings: number;
-    }
-
-    const results: HourlyResult[] = await this.energyReadingsDetailedService[
-      'repo'
-    ].query(rawQuery, [meterIds, startHour, endHour]);
-
-    // Initialize values (in kWh)
-    let solar = 0;
-    let consumption = 0; // LOAD
-    let battery = 0;
-    let gridExport = 0;
-    let gridImport = 0;
-
-    // Process results: Energy (kWh) = Average Power (W) × 1 hour / 1000
-    for (const result of results) {
-      const avgPowerW = result.total_avg_power_w || 0;
-      const energyKwh = avgPowerW / 1000; // Convert W to kW, then × 1 hour = kWh
-
-      switch (result.subsystem) {
-        case 'SOLAR':
-          solar = energyKwh;
-          break;
-        case 'LOAD':
-          consumption = energyKwh;
-          break;
-        case 'BATTERY':
-          battery = energyKwh;
-          break;
-        case 'GRID_EXPORT':
-          gridExport = energyKwh;
-          break;
-        case 'GRID_IMPORT':
-          gridImport = energyKwh;
-          break;
-      }
-    }
-
-    const net = gridExport - gridImport;
-
+    // Return zeros as this method is no longer used
     return {
-      solar: Math.round(solar * 1000) / 1000, // Round to 3 decimal places for kWh
-      consumption: Math.round(consumption * 1000) / 1000,
-      battery: Math.round(battery * 1000) / 1000,
-      gridExport: Math.round(gridExport * 1000) / 1000,
-      gridImport: Math.round(gridImport * 1000) / 1000,
-      net: Math.round(net * 1000) / 1000,
+      solar: 0,
+      consumption: 0,
+      battery: 0,
+      gridExport: 0,
+      gridImport: 0,
+      net: 0,
     };
   }
 

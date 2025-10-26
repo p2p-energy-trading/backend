@@ -18,13 +18,14 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { MqttService } from '../services/mqtt.service';
-import { DeviceCommandsService } from '../models/DeviceCommands/DeviceCommands.service';
+// Removed: DeviceCommandsService (table dropped)
 import { SmartMetersService } from '../models/SmartMeters/SmartMeters.service';
 import { JwtAuthGuard } from '../auth/guards/auth.guards';
 import { DeviceCommandPayload } from '../common/interfaces';
 import { ProsumersService } from 'src/models/Prosumers/Prosumers.service';
-import { DeviceStatusSnapshotsService } from 'src/models/DeviceStatusSnapshots/DeviceStatusSnapshots.service';
-import { EnergyReadingsDetailedService } from 'src/models/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
+// TODO: Replace with Redis telemetry
+// import { DeviceStatusSnapshotsService } from 'src/models/DeviceStatusSnapshots/DeviceStatusSnapshots.service';
+// import { EnergyReadingsDetailedService } from 'src/models/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
 import {
   DeviceControlDto,
   GridControlDto,
@@ -53,11 +54,12 @@ export class DeviceController {
 
   constructor(
     private mqttService: MqttService,
-    private deviceCommandsService: DeviceCommandsService,
+    // Removed: deviceCommandsService (DeviceCommands table dropped)
     private smartMetersService: SmartMetersService,
     private prosumersService: ProsumersService,
-    private deviceStatusSnapshotsService: DeviceStatusSnapshotsService,
-    private energyReadingsDetailedService: EnergyReadingsDetailedService,
+    // TODO: Replace with Redis telemetry
+    // private deviceStatusSnapshotsService: DeviceStatusSnapshotsService,
+    // private energyReadingsDetailedService: EnergyReadingsDetailedService,
   ) {}
 
   @Post('control')
@@ -215,26 +217,18 @@ export class DeviceController {
       throw new BadRequestException('Device not found or unauthorized');
     }
 
-    // Get latest status data
-    const statusSnapshots = await this.deviceStatusSnapshotsService.findAll({
-      meterId,
-    });
+    // TODO: Get latest status data from Redis instead
+    // const statusSnapshots = await this.deviceStatusSnapshotsService.findAll({ meterId });
+    // For now, return mock data
+    const latestStatus = null;
 
-    const latestStatus = statusSnapshots.sort(
-      (a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-    )[0];
-
-    // Get the latest sensor data timestamp from MQTT messages for heartbeat detection
-    const latestSensorTimestamp =
-      await this.energyReadingsDetailedService.findLatestSensorTimestamp(
-        meterId,
-      );
+    // TODO: Get the latest sensor data timestamp from Redis for heartbeat detection
+    // const latestSensorTimestamp = await this.energyReadingsDetailedService.findLatestSensorTimestamp(meterId);
+    const latestSensorTimestamp: Date | null = null;
 
     // Determine if device is online based on latest sensor data (10-second threshold)
-    const isOnline =
-      latestSensorTimestamp &&
-      new Date().getTime() - latestSensorTimestamp.getTime() < 10 * 1000; // 10 seconds
+    const isOnline = false; // TODO: Implement with Redis
+    // latestSensorTimestamp && new Date().getTime() - latestSensorTimestamp.getTime() < 10 * 1000;
 
     // this.logger.debug(
     //   `Device ${meterId} - Latest sensor timestamp: ${latestSensorTimestamp?.toISOString()}, ` +
@@ -246,13 +240,14 @@ export class DeviceController {
       success: true,
       data: {
         meterId,
-        lastHeartbeat: latestSensorTimestamp
-          ? {
-              timestamp: latestSensorTimestamp.toISOString(),
-              status: isOnline ? 'alive' : 'offline',
-              source: 'mqtt_sensor', // Indicate this heartbeat comes from MQTT sensor data
-            }
-          : null,
+        lastHeartbeat: null, // TODO: Implement with Redis telemetry
+        // latestSensorTimestamp
+        //   ? {
+        //       timestamp: latestSensorTimestamp.toISOString(),
+        //       status: isOnline ? 'alive' : 'offline',
+        //       source: 'mqtt_sensor',
+        //     }
+        //   : null,
         lastStatus: latestStatus,
         isOnline: !!isOnline,
         heartbeatThreshold: '10 seconds', // Document the threshold used

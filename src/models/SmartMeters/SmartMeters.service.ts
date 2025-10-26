@@ -4,11 +4,12 @@ import { Repository } from 'typeorm';
 import { SmartMeters } from '../SmartMeters/SmartMeters.entity';
 import { CreateSmartMetersInput } from './dto/SmartMeters.input';
 import { SmartMetersArgs } from './dto/SmartMeters.args';
-import { DeviceCommands } from '../DeviceCommands/DeviceCommands.entity';
-import { DeviceStatusSnapshots } from '../DeviceStatusSnapshots/DeviceStatusSnapshots.entity';
-import { EnergyReadingsDetailed } from '../EnergyReadingsDetailed/EnergyReadingsDetailed.entity';
+// Removed unused entities:
+// - DeviceCommands
+// - DeviceStatusSnapshots
+// - EnergyReadingsDetailed
+// - MqttMessageLogs
 import { EnergySettlements } from '../EnergySettlements/EnergySettlements.entity';
-import { MqttMessageLogs } from '../MqttMessageLogs/MqttMessageLogs.entity';
 import { Prosumers } from '../Prosumers/Prosumers.entity';
 
 @Injectable()
@@ -16,16 +17,8 @@ export class SmartMetersService {
   constructor(
     @InjectRepository(SmartMeters)
     private readonly repo: Repository<SmartMeters>,
-    @InjectRepository(DeviceCommands)
-    private readonly DeviceCommandsRepo: Repository<DeviceCommands>,
-    @InjectRepository(DeviceStatusSnapshots)
-    private readonly DeviceStatusSnapshotsRepo: Repository<DeviceStatusSnapshots>,
-    @InjectRepository(EnergyReadingsDetailed)
-    private readonly EnergyReadingsDetailedRepo: Repository<EnergyReadingsDetailed>,
     @InjectRepository(EnergySettlements)
     private readonly EnergySettlementsRepo: Repository<EnergySettlements>,
-    @InjectRepository(MqttMessageLogs)
-    private readonly MqttMessageLogsRepo: Repository<MqttMessageLogs>,
     @InjectRepository(Prosumers)
     private readonly ProsumersRepo: Repository<Prosumers>,
   ) {}

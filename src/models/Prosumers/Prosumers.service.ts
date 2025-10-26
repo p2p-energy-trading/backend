@@ -4,8 +4,7 @@ import { Repository } from 'typeorm';
 import { Prosumers } from '../Prosumers/Prosumers.entity';
 import { CreateProsumersInput } from './dto/Prosumers.input';
 import { ProsumersArgs } from './dto/Prosumers.args';
-import { BlockchainApprovals } from '../BlockchainApprovals/BlockchainApprovals.entity';
-import { DeviceCommands } from '../DeviceCommands/DeviceCommands.entity';
+// Removed: BlockchainApprovals (not used), DeviceCommands (table dropped)
 import { IdrsConversions } from '../IdrsConversions/IdrsConversions.entity';
 import { MarketTrades } from '../MarketTrades/MarketTrades.entity';
 import { SmartMeters } from '../SmartMeters/SmartMeters.entity';
@@ -18,10 +17,6 @@ export class ProsumersService {
   constructor(
     @InjectRepository(Prosumers)
     private readonly repo: Repository<Prosumers>,
-    @InjectRepository(BlockchainApprovals)
-    private readonly BlockchainApprovalsRepo: Repository<BlockchainApprovals>,
-    @InjectRepository(DeviceCommands)
-    private readonly DeviceCommandsRepo: Repository<DeviceCommands>,
     @InjectRepository(IdrsConversions)
     private readonly IdrsConversionsRepo: Repository<IdrsConversions>,
     @InjectRepository(MarketTrades)

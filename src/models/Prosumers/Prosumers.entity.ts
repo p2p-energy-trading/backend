@@ -1,12 +1,14 @@
 import { Entity, Column, PrimaryColumn, OneToMany, OneToOne } from 'typeorm';
-import { BlockchainApprovals } from '../BlockchainApprovals/BlockchainApprovals.entity';
-import { DeviceCommands } from '../DeviceCommands/DeviceCommands.entity';
 import { IdrsConversions } from '../IdrsConversions/IdrsConversions.entity';
 import { MarketTrades } from '../MarketTrades/MarketTrades.entity';
 import { SmartMeters } from '../SmartMeters/SmartMeters.entity';
 import { TradeOrdersCache } from '../TradeOrdersCache/TradeOrdersCache.entity';
 import { TransactionLogs } from '../TransactionLogs/TransactionLogs.entity';
 import { Wallets } from '../Wallets/Wallets.entity';
+
+// Removed imports for unused entities:
+// - BlockchainApprovals (not used)
+// - DeviceCommands (replaced by Redis)
 
 @Entity()
 export class Prosumers {
@@ -31,14 +33,9 @@ export class Prosumers {
   @Column({ type: 'varchar', name: 'primary_wallet_address', nullable: true })
   primaryWalletAddress: string;
 
-  @OneToMany(
-    () => BlockchainApprovals,
-    (BlockchainApprovals) => BlockchainApprovals.prosumers,
-  )
-  blockchainapprovalsList: BlockchainApprovals[];
-
-  @OneToMany(() => DeviceCommands, (DeviceCommands) => DeviceCommands.prosumers)
-  devicecommandsList: DeviceCommands[];
+  // Removed OneToMany relations for unused entities:
+  // - BlockchainApprovals (not used)
+  // - DeviceCommands (replaced by Redis)
 
   @OneToMany(
     () => IdrsConversions,

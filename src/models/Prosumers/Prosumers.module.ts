@@ -2,10 +2,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProsumersService } from './Prosumers.service';
 import { Prosumers } from './Prosumers.entity';
-import { BlockchainApprovals } from '../BlockchainApprovals/BlockchainApprovals.entity';
-import { BlockchainApprovalsModule } from '../BlockchainApprovals/BlockchainApprovals.module';
-import { DeviceCommands } from '../DeviceCommands/DeviceCommands.entity';
-import { DeviceCommandsModule } from '../DeviceCommands/DeviceCommands.module';
+// Removed: BlockchainApprovals (not used), DeviceCommands (table dropped)
 import { IdrsConversions } from '../IdrsConversions/IdrsConversions.entity';
 import { IdrsConversionsModule } from '../IdrsConversions/IdrsConversions.module';
 import { MarketTrades } from '../MarketTrades/MarketTrades.entity';
@@ -23,8 +20,6 @@ import { WalletsModule } from '../Wallets/Wallets.module';
   imports: [
     TypeOrmModule.forFeature([
       Prosumers,
-      BlockchainApprovals,
-      DeviceCommands,
       IdrsConversions,
       MarketTrades,
       SmartMeters,
@@ -32,8 +27,6 @@ import { WalletsModule } from '../Wallets/Wallets.module';
       TransactionLogs,
       Wallets,
     ]),
-    forwardRef(() => BlockchainApprovalsModule),
-    forwardRef(() => DeviceCommandsModule),
     forwardRef(() => IdrsConversionsModule),
     forwardRef(() => MarketTradesModule),
     forwardRef(() => SmartMetersModule),

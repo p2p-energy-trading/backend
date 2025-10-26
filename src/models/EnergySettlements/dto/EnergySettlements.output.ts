@@ -1,7 +1,7 @@
 import { ObjectType, Field, Float } from '@nestjs/graphql';
 import { GraphQLJSON } from 'graphql-type-json';
 import { SmartMeters } from '../../SmartMeters/dto/SmartMeters.output';
-import { MqttMessageLogs } from '../../MqttMessageLogs/dto/MqttMessageLogs.output';
+// Removed: MqttMessageLogs (table dropped)
 import { TransactionLogs } from '../../TransactionLogs/dto/TransactionLogs.output';
 
 @ObjectType()
@@ -59,8 +59,7 @@ export class EnergySettlements {
   @Field(() => SmartMeters, { nullable: true })
   smartmeters?: SmartMeters;
 
-  @Field(() => MqttMessageLogs, { nullable: true })
-  mqttmessagelogs?: MqttMessageLogs;
+  // Removed: mqttmessagelogs field (MqttMessageLogs table dropped)
 
   @Field(() => [TransactionLogs], { nullable: true })
   transactionlogsList?: TransactionLogs[];

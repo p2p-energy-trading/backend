@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Wallets } from '../Wallets/Wallets.entity';
 import { CreateWalletsInput } from './dto/Wallets.input';
 import { WalletsArgs } from './dto/Wallets.args';
-import { BlockchainApprovals } from '../BlockchainApprovals/BlockchainApprovals.entity';
+// Removed: BlockchainApprovals (not used)
 import { IdrsConversions } from '../IdrsConversions/IdrsConversions.entity';
 import { MarketTrades } from '../MarketTrades/MarketTrades.entity';
 import { TradeOrdersCache } from '../TradeOrdersCache/TradeOrdersCache.entity';
@@ -15,8 +15,6 @@ export class WalletsService {
   constructor(
     @InjectRepository(Wallets)
     private readonly repo: Repository<Wallets>,
-    @InjectRepository(BlockchainApprovals)
-    private readonly BlockchainApprovalsRepo: Repository<BlockchainApprovals>,
     @InjectRepository(IdrsConversions)
     private readonly IdrsConversionsRepo: Repository<IdrsConversions>,
     @InjectRepository(MarketTrades)

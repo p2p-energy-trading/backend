@@ -9,14 +9,10 @@ import { ProsumersFactory } from './database/factories/ProsumersFactory';
 import { WalletsFactory } from './database/factories/WalletsFactory';
 import { SmartMetersFactory } from './database/factories/SmartMetersFactory';
 import { Prosumers } from './models/Prosumers/Prosumers.entity';
-import { BlockchainApprovals } from './models/BlockchainApprovals/BlockchainApprovals.entity';
-import { DeviceCommands } from './models/DeviceCommands/DeviceCommands.entity';
-import { DeviceStatusSnapshots } from './models/DeviceStatusSnapshots/DeviceStatusSnapshots.entity';
-import { EnergyReadingsDetailed } from './models/EnergyReadingsDetailed/EnergyReadingsDetailed.entity';
+// Removed: BlockchainApprovals (not used)
 import { EnergySettlements } from './models/EnergySettlements/EnergySettlements.entity';
 import { IdrsConversions } from './models/IdrsConversions/IdrsConversions.entity';
 import { MarketTrades } from './models/MarketTrades/MarketTrades.entity';
-import { MqttMessageLogs } from './models/MqttMessageLogs/MqttMessageLogs.entity';
 import { SmartMeters } from './models/SmartMeters/SmartMeters.entity';
 import { SystemConfig } from './models/SystemConfig/SystemConfig.entity';
 import { TelemetryData } from './models/TelemetryData/TelemetryData.entity';
@@ -37,14 +33,15 @@ const dataSourceOptions: DataSourceOptions = {
   synchronize: false,
   entities: [
     Prosumers,
-    BlockchainApprovals,
-    DeviceCommands,
-    DeviceStatusSnapshots,
-    EnergyReadingsDetailed,
+    // Removed entities (not used or replaced by Redis):
+    // - BlockchainApprovals (not used)
+    // - DeviceCommands (replaced by Redis)
+    // - DeviceStatusSnapshots (replaced by Redis)
+    // - EnergyReadingsDetailed (replaced by Redis)
+    // - MqttMessageLogs (replaced by Redis)
     EnergySettlements,
     IdrsConversions,
     MarketTrades,
-    MqttMessageLogs,
     SmartMeters,
     SystemConfig,
     TelemetryData,

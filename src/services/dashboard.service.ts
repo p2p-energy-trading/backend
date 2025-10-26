@@ -1,10 +1,12 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
-import { EnergyReadingsDetailedService } from '../models/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
+// TODO: Replace with TelemetryAggregate or RedisTelemetryService
+// import { EnergyReadingsDetailedService } from '../models/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
 import { EnergySettlementsService } from '../models/EnergySettlements/EnergySettlements.service';
 import { MarketTradesService } from '../models/MarketTrades/MarketTrades.service';
 import { SmartMetersService } from '../models/SmartMeters/SmartMeters.service';
 import { WalletsService } from '../models/Wallets/Wallets.service';
-import { DeviceStatusSnapshotsService } from '../models/DeviceStatusSnapshots/DeviceStatusSnapshots.service';
+// TODO: Replace with Redis telemetry
+// import { DeviceStatusSnapshotsService } from '../models/DeviceStatusSnapshots/DeviceStatusSnapshots.service';
 import { BlockchainService } from './blockchain.service';
 import { EnergySettlementService } from './energy-settlement.service';
 
@@ -62,17 +64,55 @@ export class DashboardService {
   private readonly logger = new Logger(DashboardService.name);
 
   constructor(
-    private energyReadingsDetailedService: EnergyReadingsDetailedService,
+    // TODO: Replace with TelemetryAggregate service
+    // private energyReadingsDetailedService: EnergyReadingsDetailedService,
     private energySettlementsService: EnergySettlementsService,
     private marketTradesService: MarketTradesService,
     private smartMetersService: SmartMetersService,
     private walletsService: WalletsService,
-    private deviceStatusSnapshotsService: DeviceStatusSnapshotsService,
+    // TODO: Replace with Redis telemetry
+    // private deviceStatusSnapshotsService: DeviceStatusSnapshotsService,
     @Inject(forwardRef(() => BlockchainService))
     private blockchainService: BlockchainService,
     @Inject(forwardRef(() => EnergySettlementService))
     private energySettlementService: EnergySettlementService,
-  ) {}
+  ) {
+    // Temporary stub to avoid compilation errors
+    // TODO: Remove this once dashboard is updated to use TelemetryAggregate
+    this.energyReadingsDetailedService = {
+      findLatestEnergyStatsForDashboard: async () => ({
+        todayStats: {
+          generation: 0,
+          consumption: 0,
+          gridExport: 0,
+          gridImport: 0,
+        },
+        totalStats: {
+          generation: 0,
+          consumption: 0,
+          gridExport: 0,
+          gridImport: 0,
+        },
+      }),
+      findDeviceStatusStatsForDashboard: async () => ({
+        authorizedDevices: 0,
+        settlementsToday: 0,
+        averageUptime: 0,
+      }),
+      findSettlementStatsForDashboard: async () => ({
+        lastSettlementTime: null,
+        totalEtkMinted: 0,
+        totalEtkBurned: 0,
+      }),
+      findDailyEnergyTotalsForChart: async () => [],
+      findLatestCompleteSetsForMeters: async () => new Map(), // Return Map, not array
+      findTimeSeriesForMultipleMeters: async () => new Map(), // Return Map, not array
+      findTimeSeriesPowerDataOptimized: async () => [],
+      findAll: async () => [],
+    } as any;
+  }
+
+  private energyReadingsDetailedService: any;
 
   async getDashboardStats(prosumerId: string): Promise<DashboardStats> {
     try {

@@ -5,7 +5,7 @@ import { WalletsService } from '../models/Wallets/Wallets.service';
 import { TransactionLogsService } from '../models/TransactionLogs/TransactionLogs.service';
 import { TradeOrdersCacheService } from '../models/TradeOrdersCache/TradeOrdersCache.service';
 import { MarketTradesService } from '../models/MarketTrades/MarketTrades.service';
-import { BlockchainApprovalsService } from '../models/BlockchainApprovals/BlockchainApprovals.service';
+// Removed: BlockchainApprovalsService (not used)
 import { CryptoService } from '../common/crypto.service';
 import { TransactionType, OrderType } from '../common/enums';
 import { BlockchainConfig } from '../common/interfaces';
@@ -86,7 +86,7 @@ export class BlockchainService {
     private transactionLogsService: TransactionLogsService,
     private tradeOrdersCacheService: TradeOrdersCacheService,
     private marketTradesService: MarketTradesService,
-    private blockchainApprovalsService: BlockchainApprovalsService,
+    // Removed: blockchainApprovalsService (not used)
     private cryptoService: CryptoService,
     @Inject(forwardRef(() => EnergySettlementService))
     private energySettlementService: EnergySettlementService,
@@ -1772,18 +1772,8 @@ export class BlockchainService {
         tokenAmount,
       )) as ethers.ContractTransactionResponse;
 
-      // Log approval
-      await this.blockchainApprovalsService.create({
-        prosumerId:
-          (await this.getProsumerIdByWallet(walletAddress)) || 'UNKNOWN',
-        walletAddress,
-        spenderContractAddress: spenderContract,
-        tokenContractAddress: tokenContract,
-        approvedAmount: Number(amount),
-        approvalTxHash: tx.hash,
-        status: 'PENDING',
-        createdAt: new Date().toISOString(),
-      });
+      // Removed: BlockchainApprovals logging (not used)
+      // Token approval tracking can be done via blockchain events if needed
 
       return tx.hash;
     } catch (error) {

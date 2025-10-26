@@ -6,11 +6,12 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { BlockchainApprovals } from '../BlockchainApprovals/BlockchainApprovals.entity';
 import { IdrsConversions } from '../IdrsConversions/IdrsConversions.entity';
 import { MarketTrades } from '../MarketTrades/MarketTrades.entity';
 import { TradeOrdersCache } from '../TradeOrdersCache/TradeOrdersCache.entity';
 import { Prosumers } from '../Prosumers/Prosumers.entity';
+
+// Removed: BlockchainApprovals (not used)
 
 @Entity()
 export class Wallets {
@@ -38,11 +39,8 @@ export class Wallets {
   @Column({ type: 'timestamp', name: 'last_used_at', nullable: true })
   lastUsedAt: Date;
 
-  @OneToMany(
-    () => BlockchainApprovals,
-    (BlockchainApprovals) => BlockchainApprovals.wallets,
-  )
-  blockchainapprovalsList: BlockchainApprovals[];
+  // Removed OneToMany relation for unused entity:
+  // - BlockchainApprovals (not used)
 
   @OneToMany(
     () => IdrsConversions,

@@ -6,8 +6,6 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as mqtt from 'mqtt';
-import { MqttMessageLogsService } from '../models/MqttMessageLogs/MqttMessageLogs.service';
-import { DeviceCommandsService } from '../models/DeviceCommands/DeviceCommands.service';
 import { CryptoService } from '../common/crypto.service';
 import {
   MqttTopicType,
@@ -34,8 +32,9 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     private configService: ConfigService,
-    private mqttMessageLogsService: MqttMessageLogsService,
-    private deviceCommandsService: DeviceCommandsService,
+    // Removed services (MQTT logging now disabled):
+    // private mqttMessageLogsService: MqttMessageLogsService,
+    // private deviceCommandsService: DeviceCommandsService,
     private cryptoService: CryptoService,
     private smartMetersService: SmartMetersService,
     private redisTelemetryService: RedisTelemetryService,
@@ -139,16 +138,16 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
         topic.includes('enerlink/meters/data')
       ) {
         // Energy measurements in real-time (battery, solar, load, grid)
-        await this.processMeterStatus(
-          meterId,
-          parsedPayload as MeterStatusPayload,
-        );
+        await this.processMeterData(meterId, parsedPayload as MeterDataPayload);
       } else if (
         topic === this.topics.metersStatus ||
         topic.includes('enerlink/meters/status')
       ) {
         // Device metadata (wifi, mqtt, system, sensors)
-        await this.processMeterData(meterId, parsedPayload as MeterDataPayload);
+        await this.processMeterStatus(
+          meterId,
+          parsedPayload as MeterStatusPayload,
+        );
       }
     } catch (error) {
       this.logger.error('Error processing MQTT message:', error);
@@ -205,7 +204,9 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       const topic = `${this.topics.command}/${meterId}`;
       const message = JSON.stringify(commandWithCorrelation);
 
-      // Log command
+      // Device command logging disabled - Redis is now the single source of truth
+      // Uncomment below if you need database audit trail:
+      /*
       await this.deviceCommandsService.create({
         meterId,
         commandType: this.getCommandType(command),
@@ -214,8 +215,9 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
         status: 'SENT',
         sentAt: new Date().toISOString(),
       });
+      */
 
-      // Log MQTT message
+      // Log MQTT message (disabled)
       await this.logMessage(
         topic,
         message,
@@ -244,26 +246,22 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Process meter data from enerlink/meters/data topic (via handleMessage swapping)
-   * Actually receives device metadata (wifi, mqtt, sensors) from enerlink/meters/status
-   * Stores to telemetry:latest:status
+   * Process meter data from enerlink/meters/data topic
+   * Receives energy measurements (battery, solar, load, grid) with settlement_energy
+   * Stores to telemetry:latest:data
    */
   private async processMeterData(meterId: string, data: MeterDataPayload) {
     try {
       const timestamp = Date.now();
 
-      // Store latest status (device metadata) to Redis
-      // Type cast because interface naming is swapped
-      await this.redisTelemetryService.storeLatestStatus(
-        meterId,
-        data as any as MeterStatusPayload,
-      );
+      // Store latest data (energy measurements) to Redis
+      await this.redisTelemetryService.storeLatestData(meterId, data);
 
       // Store to time-series for aggregation
       await this.redisTelemetryService.storeTimeSeriesSnapshot({
         meterId,
         datetime: data.datetime,
-        meterData: data, // Device metadata (wifi, mqtt, system, sensors)
+        meterData: data, // Energy measurements (battery, solar, load, grid)
         timestamp,
       });
 
@@ -274,9 +272,9 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Process meter status from enerlink/meters/status topic (via handleMessage swapping)
-   * Actually receives energy measurements (battery, solar, load, grid) from enerlink/meters/data
-   * Stores to telemetry:latest:data
+   * Process meter status from enerlink/meters/status topic
+   * Receives device metadata (wifi, mqtt, system, sensors)
+   * Stores to telemetry:latest:status
    */
   private async processMeterStatus(
     meterId: string,
@@ -285,18 +283,14 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     try {
       const timestamp = Date.now();
 
-      // Store latest data (energy measurements) to Redis
-      // Type cast because interface naming is swapped
-      await this.redisTelemetryService.storeLatestData(
-        meterId,
-        status as any as MeterDataPayload,
-      );
+      // Store latest status (device metadata) to Redis
+      await this.redisTelemetryService.storeLatestStatus(meterId, status);
 
       // Store to time-series for aggregation
       await this.redisTelemetryService.storeTimeSeriesSnapshot({
         meterId,
         datetime: status.datetime,
-        statusData: status, // Energy measurements (battery, solar, load, grid)
+        statusData: status, // Device metadata (wifi, mqtt, system, sensors)
         timestamp,
       });
 
@@ -315,6 +309,10 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     return DeviceCommandType.COMPONENT_CONTROL;
   }
 
+  /**
+   * MQTT Message logging - DISABLED
+   * @deprecated MQTT logging is now disabled. Messages are stored in Redis only.
+   */
   private async logMessage(
     topic: string,
     message: string,
@@ -324,6 +322,9 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     correlationId?: string,
     errorMessage?: string,
   ) {
+    // MQTT logging disabled - Redis is now the single source of truth
+    // Uncomment below if you need database audit trail:
+    /*
     try {
       await this.mqttMessageLogsService.create({
         meterId: meterId || 'unknown',
@@ -340,6 +341,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     } catch (error) {
       this.logger.error('Error logging MQTT message:', error);
     }
+    */
   }
 
   private getTopicType(topic: string): MqttTopicType {

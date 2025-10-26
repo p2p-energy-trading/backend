@@ -174,90 +174,90 @@ export class TelemetryAggregationService {
 
     // Process each snapshot
     for (const snapshot of snapshots) {
-      const statusData = snapshot.statusData;
-      const meterData = snapshot.meterData;
+      const meterData = snapshot.meterData; // Energy measurements
+      const statusData = snapshot.statusData; // Device status (wifi, mqtt, system)
 
-      if (statusData && statusData.data) {
+      if (meterData && meterData.data) {
         // Battery metrics
-        if (statusData.data.battery) {
-          batteryVoltages.push(statusData.data.battery.voltage);
-          batterySocs.push(statusData.data.battery.soc);
-          batteryChargeRates.push(statusData.data.battery.charge_rate);
+        if (meterData.data.battery) {
+          batteryVoltages.push(meterData.data.battery.voltage);
+          batterySocs.push(meterData.data.battery.soc);
+          batteryChargeRates.push(meterData.data.battery.charge_rate);
         }
 
         // Export metrics
-        if (statusData.data.export) {
-          exportPowers.push(statusData.data.export.power);
+        if (meterData.data.export) {
+          exportPowers.push(meterData.data.export.power);
           if (exportEnergyStart === null) {
-            exportEnergyStart = statusData.data.export.total_energy;
+            exportEnergyStart = meterData.data.export.total_energy;
           }
-          exportEnergyEnd = statusData.data.export.total_energy;
+          exportEnergyEnd = meterData.data.export.total_energy;
         }
 
         // Import metrics
-        if (statusData.data.import) {
-          importPowers.push(statusData.data.import.power);
+        if (meterData.data.import) {
+          importPowers.push(meterData.data.import.power);
           if (importEnergyStart === null) {
-            importEnergyStart = statusData.data.import.total_energy;
+            importEnergyStart = meterData.data.import.total_energy;
           }
-          importEnergyEnd = statusData.data.import.total_energy;
+          importEnergyEnd = meterData.data.import.total_energy;
         }
 
         // Load Smart Meter metrics
-        if (statusData.data.load_smart_mtr) {
-          loadSmartPowers.push(statusData.data.load_smart_mtr.power);
+        if (meterData.data.load_smart_mtr) {
+          loadSmartPowers.push(meterData.data.load_smart_mtr.power);
           if (loadSmartEnergyStart === null) {
-            loadSmartEnergyStart = statusData.data.load_smart_mtr.total_energy;
+            loadSmartEnergyStart = meterData.data.load_smart_mtr.total_energy;
           }
-          loadSmartEnergyEnd = statusData.data.load_smart_mtr.total_energy;
+          loadSmartEnergyEnd = meterData.data.load_smart_mtr.total_energy;
         }
 
         // Load Home metrics
-        if (statusData.data.load_home) {
-          loadHomePowers.push(statusData.data.load_home.power);
+        if (meterData.data.load_home) {
+          loadHomePowers.push(meterData.data.load_home.power);
           if (loadHomeEnergyStart === null) {
-            loadHomeEnergyStart = statusData.data.load_home.total_energy;
+            loadHomeEnergyStart = meterData.data.load_home.total_energy;
           }
-          loadHomeEnergyEnd = statusData.data.load_home.total_energy;
+          loadHomeEnergyEnd = meterData.data.load_home.total_energy;
         }
 
         // Solar Input metrics
-        if (statusData.data.solar_input) {
-          solarInputPowers.push(statusData.data.solar_input.power);
+        if (meterData.data.solar_input) {
+          solarInputPowers.push(meterData.data.solar_input.power);
           if (solarInputEnergyStart === null) {
-            solarInputEnergyStart = statusData.data.solar_input.total_energy;
+            solarInputEnergyStart = meterData.data.solar_input.total_energy;
           }
-          solarInputEnergyEnd = statusData.data.solar_input.total_energy;
+          solarInputEnergyEnd = meterData.data.solar_input.total_energy;
         }
 
         // Solar Output metrics
-        if (statusData.data.solar_output) {
-          solarOutputPowers.push(statusData.data.solar_output.power);
+        if (meterData.data.solar_output) {
+          solarOutputPowers.push(meterData.data.solar_output.power);
           if (solarOutputEnergyStart === null) {
-            solarOutputEnergyStart = statusData.data.solar_output.total_energy;
+            solarOutputEnergyStart = meterData.data.solar_output.total_energy;
           }
-          solarOutputEnergyEnd = statusData.data.solar_output.total_energy;
+          solarOutputEnergyEnd = meterData.data.solar_output.total_energy;
         }
 
         // Net calculations
-        if (statusData.data.net_solar) {
-          netSolarPowers.push(statusData.data.net_solar.net_power);
+        if (meterData.data.net_solar) {
+          netSolarPowers.push(meterData.data.net_solar.net_power);
         }
 
-        if (statusData.data.net_grid) {
-          netGridPowers.push(statusData.data.net_grid.net_power);
+        if (meterData.data.net_grid) {
+          netGridPowers.push(meterData.data.net_grid.net_power);
         }
       }
 
-      if (meterData && meterData.data) {
+      if (statusData && statusData.data) {
         // WiFi RSSI
-        if (meterData.data.wifi && meterData.data.wifi.rssi) {
-          wifiRssis.push(meterData.data.wifi.rssi);
+        if (statusData.data.wifi && statusData.data.wifi.rssi) {
+          wifiRssis.push(statusData.data.wifi.rssi);
         }
 
         // MQTT disconnections
-        if (meterData.data.mqtt) {
-          const currentConnected = meterData.data.mqtt.connected;
+        if (statusData.data.mqtt) {
+          const currentConnected = statusData.data.mqtt.connected;
           if (lastMqttConnected && !currentConnected) {
             mqttDisconnections++;
           }
@@ -265,8 +265,8 @@ export class TelemetryAggregationService {
         }
 
         // System free heap
-        if (meterData.data.system && meterData.data.system.free_heap) {
-          freeHeaps.push(meterData.data.system.free_heap);
+        if (statusData.data.system && statusData.data.system.free_heap) {
+          freeHeaps.push(statusData.data.system.free_heap);
         }
       }
     }
