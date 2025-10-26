@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EnergyController } from './energy.controller';
 import { DeviceController } from './device.controller';
 import { TradingController } from './trading.controller';
+import { BlockchainController } from './blockchain.controller';
 import { WalletController } from './wallet.controller';
 import { DashboardController } from './dashboard.controller';
 import { HealthController } from './health.controller';
@@ -49,6 +50,7 @@ import { TelemetryAggregate } from '../models/TelemetryAggregate/TelemetryAggreg
     EnergyController,
     DeviceController,
     TradingController,
+    BlockchainController,
     WalletController,
     DashboardController,
     HealthController,

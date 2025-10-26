@@ -21,6 +21,7 @@ import {
 } from '@nestjs/swagger';
 import { BlockchainService } from '../services/blockchain.service';
 import { EnergySettlementService } from '../services/energy-settlement.service';
+import { TradingAnalyticsService } from '../services/trading-analytics.service';
 import { WalletsService } from '../models/Wallets/Wallets.service';
 import { TradeOrdersCacheService } from '../models/TradeOrdersCache/TradeOrdersCache.service';
 import { MarketTradesService } from '../models/MarketTrades/MarketTrades.service';
@@ -59,6 +60,7 @@ export class TradingController {
   constructor(
     private blockchainService: BlockchainService,
     private energySettlementService: EnergySettlementService,
+    private tradingAnalyticsService: TradingAnalyticsService,
     private walletsService: WalletsService,
     private tradeOrdersCacheService: TradeOrdersCacheService,
     private marketTradesService: MarketTradesService,
@@ -1262,5 +1264,87 @@ export class TradingController {
         IDRS: 0,
       };
     }
+  }
+
+  /**
+   * Get detailed trading performance metrics
+   * Moved from DashboardController for better organization
+   */
+  @Get('performance')
+  @ApiOperation({
+    summary: 'Get Trading Performance',
+    description:
+      'Get detailed trading performance metrics including trade statistics, financial summary, and current balances',
+  })
+  @ApiQuery({
+    name: 'days',
+    required: false,
+    type: Number,
+    description: 'Number of days to analyze (default: 30)',
+    example: 30,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Trading performance retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            period: { type: 'string', example: '30 days' },
+            summary: {
+              type: 'object',
+              properties: {
+                totalTrades: { type: 'number', example: 25 },
+                totalVolume: { type: 'string', example: '150.500' },
+                averagePrice: { type: 'string', example: '1250.75' },
+                last24hVolume: { type: 'string', example: '12.350' },
+              },
+            },
+            financial: {
+              type: 'object',
+              properties: {
+                totalEarnings: { type: 'string', example: '95000.50' },
+                totalSpending: { type: 'string', example: '85000.25' },
+                netProfit: { type: 'string', example: '10000.25' },
+                profitMargin: { type: 'number', example: 10 },
+              },
+            },
+            balances: {
+              type: 'object',
+              properties: {
+                etkBalance: { type: 'string', example: '45.750' },
+                idrsBalance: { type: 'string', example: '50000.00' },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing token',
+  })
+  @ApiBearerAuth()
+  async getTradingPerformance(
+    @Request() req: User,
+    @Query('days') days?: number,
+  ) {
+    const prosumerId = req.user.prosumerId;
+    const analysisDays = days ? Number(days) : 30;
+
+    const performance =
+      await this.tradingAnalyticsService.getTradingPerformance(
+        prosumerId,
+        analysisDays,
+      );
+
+    return {
+      success: true,
+      data: performance,
+    };
   }
 }

@@ -7,6 +7,9 @@ import { SmartMetersService } from '../models/SmartMeters/SmartMeters.service';
 import { WalletsService } from '../models/Wallets/Wallets.service';
 import { BlockchainService } from './blockchain.service';
 import { EnergySettlementService } from './energy-settlement.service';
+import { EnergyAnalyticsService } from './energy-analytics.service';
+import { DeviceHealthService } from './device-health.service';
+import { TradingAnalyticsService } from './trading-analytics.service';
 import { RedisTelemetryService } from './redis-telemetry.service';
 import { TelemetryAggregate } from '../models/TelemetryAggregate/TelemetryAggregate.entity';
 
@@ -71,6 +74,9 @@ export class DashboardService {
     private marketTradesService: MarketTradesService,
     private smartMetersService: SmartMetersService,
     private walletsService: WalletsService,
+    private energyAnalyticsService: EnergyAnalyticsService,
+    private deviceHealthService: DeviceHealthService,
+    private tradingAnalyticsService: TradingAnalyticsService,
     @Inject(forwardRef(() => BlockchainService))
     private blockchainService: BlockchainService,
     @Inject(forwardRef(() => EnergySettlementService))
@@ -390,97 +396,14 @@ export class DashboardService {
     }
   }
 
+  /**
+   * Get device status for dashboard stats
+   * Now uses DeviceHealthService for consistency
+   */
   private async getDeviceStatus(meterIds: string[]) {
     try {
-      if (meterIds.length === 0) {
-        return {
-          totalDevices: 0,
-          onlineDevices: 0,
-          lastHeartbeat: null,
-          authorizedDevices: 0,
-          settlementsToday: 0,
-          averageUptime: 0,
-        };
-      }
-
-      const totalDevices = meterIds.length;
-      let onlineDevices = 0;
-      let lastHeartbeat: string | null = null;
-      let totalUptime = 0;
-      let deviceCount = 0;
-
-      // Check online status from Redis
-      const statusPromises = meterIds.map((meterId) =>
-        this.redisTelemetryService.getLatestStatus(meterId),
-      );
-      const statusData = await Promise.all(statusPromises);
-
-      const now = Date.now();
-      for (const status of statusData) {
-        if (status) {
-          const timestamp = new Date(status.datetime);
-          const timeSinceUpdate = now - timestamp.getTime();
-
-          // Device is online if updated within last 30 seconds
-          if (timeSinceUpdate < 30 * 1000) {
-            onlineDevices++;
-          }
-
-          // Track latest heartbeat
-          if (!lastHeartbeat || status.datetime > lastHeartbeat) {
-            lastHeartbeat = status.datetime;
-          }
-
-          // Calculate uptime
-          if (status.data.system?.uptime) {
-            totalUptime += status.data.system.uptime;
-            deviceCount++;
-          }
-        }
-      }
-
-      // Get settlements today
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-
-      let settlementsToday = 0;
-      try {
-        const allSettlements = await this.energySettlementsService.findAll();
-        settlementsToday = allSettlements.filter((s) => {
-          return (
-            meterIds.includes(s.meterId) &&
-            new Date(s.createdAtBackend) >= todayStart
-          );
-        }).length;
-      } catch (error) {
-        this.logger.warn('Error counting settlements today:', error);
-      }
-
-      // Check authorized devices on blockchain
-      let authorizedDevices = 0;
-      try {
-        const authPromises = meterIds.map((meterId) =>
-          this.blockchainService
-            .isMeterIdAuthorized(meterId)
-            .catch(() => false),
-        );
-        const authResults = await Promise.all(authPromises);
-        authorizedDevices = authResults.filter(Boolean).length;
-      } catch (error) {
-        this.logger.warn('Error checking meter authorizations:', error);
-      }
-
-      const averageUptime =
-        deviceCount > 0 ? Math.floor(totalUptime / deviceCount) : 0;
-
-      return {
-        totalDevices,
-        onlineDevices,
-        lastHeartbeat,
-        authorizedDevices,
-        settlementsToday,
-        averageUptime,
-      };
+      // Use DeviceHealthService to get aggregated status
+      return await this.deviceHealthService.getDeviceStatus(meterIds);
     } catch (error) {
       this.logger.error('Error getting device status:', error);
       return {
@@ -594,154 +517,26 @@ export class DashboardService {
     }
   }
 
+  /**
+   * Get energy chart data
+   * @deprecated Use EnergyAnalyticsService.getEnergyChartData instead
+   */
   async getEnergyChartData(prosumerId: string, days: number = 7) {
-    try {
-      const devices = await this.getProsumeDevices(prosumerId);
-      const meterIds = devices.map((d) => d.meterId);
-
-      if (meterIds.length === 0) {
-        return [];
-      }
-
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - days);
-      startDate.setHours(0, 0, 0, 0);
-
-      // Query TelemetryAggregate for daily totals
-      const aggregates = await this.telemetryAggregateRepository
-        .createQueryBuilder('agg')
-        .select('DATE(agg.hourStart)', 'date')
-        .addSelect('SUM(agg.solarInputEnergyTotal)', 'generation')
-        .addSelect(
-          'SUM(agg.loadHomeEnergyTotal + agg.loadSmartEnergyTotal)',
-          'consumption',
-        )
-        .addSelect('SUM(agg.exportEnergyTotal)', 'gridExport')
-        .addSelect('SUM(agg.importEnergyTotal)', 'gridImport')
-        .addSelect('SUM(agg.netSolarEnergyTotal)', 'netSolar')
-        .addSelect('SUM(agg.netGridEnergyTotal)', 'netGrid')
-        .where('agg.meterId IN (:...meterIds)', { meterIds })
-        .andWhere('agg.hourStart >= :startDate', { startDate })
-        .andWhere('agg.hourStart < :endDate', { endDate })
-        .groupBy('DATE(agg.hourStart)')
-        .orderBy('DATE(agg.hourStart)', 'ASC')
-        .getRawMany();
-
-      // Convert Wh to kWh and format data
-      return aggregates.map((agg) => ({
-        date: agg.date,
-        generation: Number(agg.generation || 0) / 1000, // Wh to kWh
-        consumption: Number(agg.consumption || 0) / 1000,
-        gridExport: Number(agg.gridExport || 0) / 1000,
-        gridImport: Number(agg.gridImport || 0) / 1000,
-        netSolar: Number(agg.netSolar || 0) / 1000,
-        netGrid: Number(agg.netGrid || 0) / 1000,
-      }));
-    } catch (error) {
-      this.logger.error('Error getting energy chart data:', error);
-      return [];
-    }
+    this.logger.warn(
+      'DEPRECATED: DashboardService.getEnergyChartData is deprecated. Use EnergyAnalyticsService.getEnergyChartData instead.',
+    );
+    return this.energyAnalyticsService.getEnergyChartData(prosumerId, days);
   }
 
-  // Enhanced method to get real-time energy and settlement data
+  /**
+   * Get real-time energy data
+   * @deprecated Use EnergyAnalyticsService.getRealTimeEnergyData instead
+   */
   async getRealTimeEnergyData(prosumerId: string) {
-    try {
-      const devices = await this.getProsumeDevices(prosumerId);
-      const meterIds = devices.map((d) => d.meterId);
-
-      if (meterIds.length === 0) {
-        return {
-          lastUpdate: null,
-          timeSeries: [],
-        };
-      }
-
-      // Get latest data from Redis for all meters
-      const latestDataPromises = meterIds.map((meterId) =>
-        this.redisTelemetryService.getLatestData(meterId),
-      );
-      const latestDataArray = await Promise.all(latestDataPromises);
-
-      // Find most recent update
-      let lastUpdate: string | null = null;
-      for (const data of latestDataArray) {
-        if (data && data.datetime) {
-          if (!lastUpdate || data.datetime > lastUpdate) {
-            lastUpdate = data.datetime;
-          }
-        }
-      }
-
-      // Get time-series data from Redis
-      const timeSeries: any[] = [];
-      const now = Date.now();
-      const oneHourAgo = now - 60 * 60 * 1000;
-
-      for (let i = 0; i < meterIds.length; i++) {
-        const meterId = meterIds[i];
-        const snapshots =
-          await this.redisTelemetryService.getTimeSeriesSnapshots(
-            meterId,
-            oneHourAgo,
-            now,
-          );
-
-        // Take the 20 most recent snapshots
-        const recentSnapshots = snapshots.slice(-20);
-
-        for (const snapshot of recentSnapshots) {
-          const meterData = snapshot.meterData;
-          const timestamp = meterData?.datetime || snapshot.timestamp;
-
-          if (meterData && meterData.data) {
-            const solar = Number(meterData.data.solar_input?.power || 0);
-            const loadHome = Number(meterData.data.load_home?.power || 0);
-            const loadSmart = Number(meterData.data.load_smart_mtr?.power || 0);
-            const battery = Number(meterData.data.battery?.charge_rate || 0);
-            const gridExport = Number(meterData.data.export?.power || 0);
-            const gridImport = Number(meterData.data.import?.power || 0);
-
-            timeSeries.push({
-              timestamp,
-              solar: solar / 1000, // Convert W to kW
-              load: (loadHome + loadSmart) / 1000, // Convert W to kW
-              battery: battery / 1000, // Convert W to kW
-              batteryDirection:
-                battery < 0 ? 'discharging' : battery > 0 ? 'charging' : 'idle',
-              gridExport: gridExport / 1000, // Convert W to kW
-              gridImport: gridImport / 1000, // Convert W to kW
-              netFlow: (gridExport - gridImport) / 1000, // Convert W to kW
-              meterId,
-              settlementEnergyWh: {
-                export:
-                  Number(meterData.data.export?.settlement_energy || 0) / 1000,
-                import:
-                  Number(meterData.data.import?.settlement_energy || 0) / 1000,
-              },
-            });
-          }
-        }
-      }
-
-      // Sort by timestamp descending and take 20 most recent
-      timeSeries.sort(
-        (a, b) =>
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-      );
-      const limitedTimeSeries = timeSeries.slice(0, 20);
-
-      return {
-        lastUpdate,
-        timeSeries: limitedTimeSeries,
-      };
-    } catch (error) {
-      this.logger.error('Error getting real-time energy data:', error);
-      return {
-        lastUpdate: null,
-        timeSeries: [],
-      };
-    }
+    this.logger.warn(
+      'DEPRECATED: DashboardService.getRealTimeEnergyData is deprecated. Use EnergyAnalyticsService.getRealTimeEnergyData instead.',
+    );
+    return this.energyAnalyticsService.getRealTimeEnergyData(prosumerId);
   }
 
   // Enhanced method to get settlement recommendations
@@ -777,6 +572,22 @@ export class DashboardService {
             const importWh = Number(
               latestData.data.import?.settlement_energy || 0,
             );
+
+            // Validate that we have valid numbers
+            if (!isFinite(exportWh) || isNaN(exportWh)) {
+              this.logger.warn(
+                `Invalid export settlement_energy for meter ${meterId}: ${latestData.data.export?.settlement_energy}`,
+              );
+              continue;
+            }
+
+            if (!isFinite(importWh) || isNaN(importWh)) {
+              this.logger.warn(
+                `Invalid import settlement_energy for meter ${meterId}: ${latestData.data.import?.settlement_energy}`,
+              );
+              continue;
+            }
+
             const netEnergyWh = exportWh - importWh;
             const absoluteNetEnergyWh = Math.abs(netEnergyWh);
 

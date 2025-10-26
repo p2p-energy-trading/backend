@@ -77,8 +77,11 @@ export class DashboardController {
   @Get('energy-chart')
   @Header('Cache-Control', 'public, max-age=300') // Cache for 5 minutes
   @ApiOperation({
-    summary: 'Get energy chart data',
-    description: 'Retrieve time-series energy data for dashboard charts',
+    summary:
+      '[DEPRECATED] Get energy chart data - Use GET /energy/chart instead',
+    description:
+      'DEPRECATED: This endpoint will be removed. Use GET /energy/chart instead. Retrieve time-series energy data for dashboard charts',
+    deprecated: true,
   })
   @ApiQuery({
     name: 'days',
@@ -107,6 +110,9 @@ export class DashboardController {
     @Request() req: AuthenticatedUser,
     @Query('days') days?: string,
   ) {
+    this.logger.warn(
+      'DEPRECATED: /dashboard/energy-chart is deprecated. Use /energy/chart instead.',
+    );
     const prosumerId = req.user.prosumerId;
     const dayCount = days ? parseInt(days) : 7;
 
@@ -123,9 +129,11 @@ export class DashboardController {
 
   @Get('real-time-energy')
   @ApiOperation({
-    summary: 'Get real-time energy data',
+    summary:
+      '[DEPRECATED] Get real-time energy data - Use GET /energy/real-time instead',
     description:
-      'Retrieve latest real-time energy measurements from smart meters',
+      'DEPRECATED: This endpoint will be removed. Use GET /energy/real-time instead. Retrieve latest real-time energy measurements from smart meters',
+    deprecated: true,
   })
   @ApiResponse({
     status: 200,
@@ -145,6 +153,9 @@ export class DashboardController {
     description: 'Internal server error - Failed to retrieve real-time data',
   })
   async getRealTimeEnergyData(@Request() req: AuthenticatedUser) {
+    this.logger.warn(
+      'DEPRECATED: /dashboard/real-time-energy is deprecated. Use /energy/real-time instead.',
+    );
     const prosumerId = req.user.prosumerId;
 
     // this.logger.debug(
@@ -224,8 +235,11 @@ export class DashboardController {
 
   @Get('device-health')
   @ApiOperation({
-    summary: 'Get device health status',
-    description: 'Monitor smart meter health, uptime, and connectivity status',
+    summary:
+      '[DEPRECATED] Get device health status - Use GET /device/health instead',
+    description:
+      'DEPRECATED: This endpoint will be removed. Use GET /device/health instead. Monitor smart meter health, uptime, and connectivity status',
+    deprecated: true,
   })
   @ApiQuery({
     name: 'includeOffline',
@@ -267,6 +281,9 @@ export class DashboardController {
     description: 'Internal server error - Failed to retrieve device health',
   })
   async getDeviceHealthStatus(@Request() req: AuthenticatedUser) {
+    this.logger.warn(
+      'DEPRECATED: /dashboard/device-health is deprecated. Use /device/health instead.',
+    );
     const prosumerId = req.user.prosumerId;
 
     try {
@@ -307,9 +324,11 @@ export class DashboardController {
 
   @Get('energy-summary')
   @ApiOperation({
-    summary: 'Get energy summary',
+    summary:
+      '[DEPRECATED] Get energy summary - Use GET /energy/summary instead',
     description:
-      'Comprehensive energy statistics with generation, consumption, and settlement data',
+      'DEPRECATED: This endpoint will be removed. Use GET /energy/summary instead. Comprehensive energy statistics with generation, consumption, and settlement data',
+    deprecated: true,
   })
   @ApiQuery({
     name: 'period',
@@ -383,8 +402,11 @@ export class DashboardController {
   })
   async getEnergySummary(
     @Request() req: AuthenticatedUser,
-    @Query('period') period?: 'daily' | 'weekly' | 'monthly',
+    @Query('period') period?: string,
   ) {
+    this.logger.warn(
+      'DEPRECATED: /dashboard/energy-summary is deprecated. Use /energy/summary instead.',
+    );
     const prosumerId = req.user.prosumerId;
     const summaryPeriod = period || 'daily';
 
@@ -438,9 +460,11 @@ export class DashboardController {
 
   @Get('trading-performance')
   @ApiOperation({
-    summary: 'Get trading performance metrics',
+    summary:
+      '[DEPRECATED] Get trading performance metrics - Use GET /trading/performance instead',
     description:
-      'Detailed trading statistics including volume, earnings, and profitability',
+      'DEPRECATED: This endpoint will be removed. Use GET /trading/performance instead. Detailed trading statistics including volume, earnings, and profitability',
+    deprecated: true,
   })
   @ApiQuery({
     name: 'days',
@@ -505,6 +529,9 @@ export class DashboardController {
     @Request() req: AuthenticatedUser,
     @Query('days') days?: string,
   ) {
+    this.logger.warn(
+      'DEPRECATED: /dashboard/trading-performance is deprecated. Use /trading/performance instead.',
+    );
     const prosumerId = req.user.prosumerId;
     const dayCount = days ? parseInt(days) : 30;
 

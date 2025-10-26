@@ -21,6 +21,7 @@ import {
 } from '@nestjs/swagger';
 import { EnergySettlementService } from '../services/energy-settlement.service';
 import { EnergySettlementsService } from '../models/EnergySettlements/EnergySettlements.service';
+import { EnergyAnalyticsService } from '../services/energy-analytics.service';
 import { JwtAuthGuard } from '../auth/guards/auth.guards';
 import { AuthService } from '../auth/auth.service';
 import {
@@ -47,6 +48,7 @@ export class EnergyController {
   constructor(
     private energySettlementService: EnergySettlementService,
     private energySettlementsService: EnergySettlementsService,
+    private energyAnalyticsService: EnergyAnalyticsService,
     private authService: AuthService,
   ) {}
 
@@ -444,6 +446,246 @@ export class EnergyController {
         throw error;
       }
       throw new BadRequestException('Failed to retrieve hourly energy history');
+    }
+  }
+
+  @Get('chart')
+  @ApiOperation({
+    summary: 'Get energy chart data',
+    description:
+      'Retrieve time-series energy data for charts and graphs visualization',
+  })
+  @ApiQuery({
+    name: 'days',
+    required: false,
+    description: 'Number of days to include in chart (default: 7)',
+    example: '7',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Energy chart data retrieved successfully',
+    schema: {
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              timestamp: {
+                type: 'string',
+                example: '2025-10-23T10:00:00.000Z',
+              },
+              generation: { type: 'number', example: 12.5 },
+              consumption: { type: 'number', example: 8.3 },
+              export: { type: 'number', example: 4.2 },
+              import: { type: 'number', example: 0.5 },
+              battery: { type: 'number', example: 2.1 },
+              net: { type: 'number', example: 4.2 },
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Invalid days parameter',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  async getEnergyChart(
+    @Request() req: AuthenticatedUser,
+    @Query('days') days?: string,
+  ) {
+    try {
+      const prosumerId = req.user.prosumerId;
+      const dayCount = days ? parseInt(days) : 7;
+
+      const chartData = await this.energyAnalyticsService.getEnergyChartData(
+        prosumerId,
+        dayCount,
+      );
+
+      return {
+        success: true,
+        data: chartData,
+      };
+    } catch (error) {
+      this.logger.error('Error getting energy chart data:', error);
+      throw new BadRequestException('Failed to retrieve energy chart data');
+    }
+  }
+
+  @Get('real-time')
+  @ApiOperation({
+    summary: 'Get real-time energy data',
+    description:
+      'Retrieve latest real-time energy measurements from all smart meters',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Real-time energy data retrieved successfully',
+    schema: {
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            timeSeries: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  meterId: { type: 'string', example: 'SM001' },
+                  timestamp: {
+                    type: 'string',
+                    example: '2025-10-23T12:00:00.000Z',
+                  },
+                  solar: { type: 'number', example: 3.5 },
+                  consumption: { type: 'number', example: 2.1 },
+                  battery: { type: 'number', example: 0.5 },
+                  gridExport: { type: 'number', example: 1.4 },
+                  gridImport: { type: 'number', example: 0.0 },
+                  netFlow: { type: 'number', example: 1.4 },
+                },
+              },
+            },
+            aggregated: {
+              type: 'object',
+              properties: {
+                totalSolar: { type: 'number', example: 10.5 },
+                totalConsumption: { type: 'number', example: 6.3 },
+                totalBattery: { type: 'number', example: 1.5 },
+                totalGridExport: { type: 'number', example: 4.2 },
+                totalGridImport: { type: 'number', example: 0.0 },
+                totalNetFlow: { type: 'number', example: 4.2 },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Not found - No smart meters found for user',
+  })
+  async getRealTimeEnergy(@Request() req: AuthenticatedUser) {
+    try {
+      const prosumerId = req.user.prosumerId;
+
+      const data =
+        await this.energyAnalyticsService.getRealTimeEnergyData(prosumerId);
+
+      return {
+        success: true,
+        data,
+      };
+    } catch (error) {
+      this.logger.error('Error getting real-time energy data:', error);
+      throw new BadRequestException('Failed to retrieve real-time energy data');
+    }
+  }
+
+  @Get('summary')
+  @ApiOperation({
+    summary: 'Get comprehensive energy summary',
+    description:
+      'Aggregated energy statistics with generation, consumption, and settlement data',
+  })
+  @ApiQuery({
+    name: 'period',
+    required: false,
+    enum: ['daily', 'weekly', 'monthly'],
+    description: 'Summary period (default: daily)',
+    example: 'daily',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Energy summary retrieved successfully',
+    schema: {
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            period: { type: 'string', example: 'daily' },
+            generation: {
+              type: 'object',
+              properties: {
+                today: { type: 'number', example: 45.5 },
+                total: { type: 'number', example: 1250.8 },
+                gridExport: { type: 'number', example: 12.3 },
+              },
+            },
+            consumption: {
+              type: 'object',
+              properties: {
+                today: { type: 'number', example: 35.2 },
+                total: { type: 'number', example: 980.5 },
+                gridImport: { type: 'number', example: 5.8 },
+              },
+            },
+            net: {
+              type: 'object',
+              properties: {
+                energy: { type: 'number', example: 270.3 },
+                gridEnergy: { type: 'number', example: 6.5 },
+              },
+            },
+            chartData: {
+              type: 'array',
+              items: { type: 'object' },
+            },
+            settlements: {
+              type: 'object',
+              properties: {
+                total: { type: 'number', example: 150 },
+                today: { type: 'number', example: 12 },
+                etkMinted: { type: 'number', example: 1250.8 },
+                etkBurned: { type: 'number', example: 980.5 },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Invalid period parameter',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  async getEnergySummary(
+    @Request() req: AuthenticatedUser,
+    @Query('period') period?: 'daily' | 'weekly' | 'monthly',
+  ) {
+    try {
+      const prosumerId = req.user.prosumerId;
+      const summaryPeriod = period || 'daily';
+
+      const data = await this.energyAnalyticsService.getEnergySummary(
+        prosumerId,
+        summaryPeriod,
+      );
+
+      return {
+        success: true,
+        data,
+      };
+    } catch (error) {
+      this.logger.error('Error getting energy summary:', error);
+      throw new BadRequestException('Failed to retrieve energy summary');
     }
   }
 }

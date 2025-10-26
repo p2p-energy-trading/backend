@@ -3,6 +3,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MqttService } from './mqtt.service';
 import { BlockchainService } from './blockchain.service';
 import { EnergySettlementService } from './energy-settlement.service';
+import { EnergyAnalyticsService } from './energy-analytics.service';
+import { DeviceHealthService } from './device-health.service';
+import { TradingAnalyticsService } from './trading-analytics.service';
 import { DashboardService } from './dashboard.service';
 import { PriceCacheService } from './price-cache.service';
 import { RedisTelemetryService } from './redis-telemetry.service';
@@ -46,6 +49,9 @@ import { TelemetryAggregate } from '../models/TelemetryAggregate/TelemetryAggreg
     MqttService,
     BlockchainService,
     EnergySettlementService,
+    EnergyAnalyticsService,
+    DeviceHealthService,
+    TradingAnalyticsService,
     DashboardService,
     PriceCacheService,
     RedisTelemetryService,
@@ -58,6 +64,9 @@ import { TelemetryAggregate } from '../models/TelemetryAggregate/TelemetryAggreg
     MqttService,
     BlockchainService,
     EnergySettlementService,
+    EnergyAnalyticsService,
+    DeviceHealthService,
+    TradingAnalyticsService,
     DashboardService,
     PriceCacheService,
     RedisTelemetryService,

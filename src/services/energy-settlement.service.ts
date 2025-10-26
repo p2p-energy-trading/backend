@@ -36,9 +36,6 @@ interface SettlementEstimatorData {
   timeRemaining: string;
   netEnergyWh: number;
   settlementEnergyWh?: {
-    solar: number;
-    load: number;
-    battery: number;
     gridExport: number;
     gridImport: number;
   };
@@ -53,23 +50,6 @@ export class EnergySettlementService {
   private powerLogArrays = new Map<
     string,
     Array<{ timestamp: Date; powerKw: number }>
-  >();
-
-  // Hourly energy history with caching for performance
-  private hourlyHistoryCache = new Map<
-    string,
-    {
-      data: {
-        solar: number;
-        consumption: number;
-        battery: number;
-        gridExport: number;
-        gridImport: number;
-        net: number;
-      };
-      timestamp: Date;
-      hour: number;
-    }
   >();
 
   constructor(
@@ -188,6 +168,14 @@ export class EnergySettlementService {
       // Calculate net energy (export - import)
       const netEnergyWh = latestReadings.netEnergyWh;
       const netEnergyKwh = netEnergyWh / 1000; // Convert Wh to kWh for logging
+
+      // Validate netEnergyWh
+      if (!isFinite(netEnergyWh) || isNaN(netEnergyWh)) {
+        this.logger.error(
+          `Invalid netEnergyWh for meter ${meterId}: ${netEnergyWh}`,
+        );
+        return null;
+      }
 
       // Check if settlement threshold is met (use blockchain's minimum threshold)
       const minSettlementWh = await this.blockchainService.getMinSettlementWh();
@@ -405,8 +393,38 @@ export class EnergySettlementService {
 
       // Extract settlement energy from the latest data
       // settlement_energy represents energy accumulated since last settlement reset
-      const exportEnergyWh = latestData.data.export?.settlement_energy || 0;
-      const importEnergyWh = latestData.data.import?.settlement_energy || 0;
+      const exportEnergyRaw = latestData.data.export?.settlement_energy;
+      const importEnergyRaw = latestData.data.import?.settlement_energy;
+
+      // Validate and convert to numbers with proper fallback
+      const exportEnergyWh =
+        typeof exportEnergyRaw === 'number' && isFinite(exportEnergyRaw)
+          ? exportEnergyRaw
+          : 0;
+      const importEnergyWh =
+        typeof importEnergyRaw === 'number' && isFinite(importEnergyRaw)
+          ? importEnergyRaw
+          : 0;
+
+      // Log warning if we had to use fallback values
+      if (
+        exportEnergyRaw !== undefined &&
+        exportEnergyWh === 0 &&
+        exportEnergyRaw !== 0
+      ) {
+        this.logger.warn(
+          `Invalid export settlement_energy for meter ${meterId}: ${exportEnergyRaw} (type: ${typeof exportEnergyRaw})`,
+        );
+      }
+      if (
+        importEnergyRaw !== undefined &&
+        importEnergyWh === 0 &&
+        importEnergyRaw !== 0
+      ) {
+        this.logger.warn(
+          `Invalid import settlement_energy for meter ${meterId}: ${importEnergyRaw} (type: ${typeof importEnergyRaw})`,
+        );
+      }
 
       // Calculate net energy: Export is positive (+), Import is negative (-)
       // Positive net = export to grid = mint tokens
@@ -739,29 +757,43 @@ export class EnergySettlementService {
         gridExport?: number;
         gridImport?: number;
         settlementEnergyWh?: {
-          solar: number;
-          load: number;
-          battery: number;
-          gridExport: number;
-          gridImport: number;
+          export: number; // Already in kWh from dashboard service
+          import: number; // Already in kWh from dashboard service
         };
         [key: string]: any;
       };
       const currentPowerKw: number = Number(latestData?.netFlow) || 0;
 
       // Extract settlement energy data from latest reading
-      const settlementEnergyWh = latestData?.settlementEnergyWh || {
-        solar: 0,
-        load: 0,
-        battery: 0,
-        gridExport: 0,
-        gridImport: 0,
+      const settlementEnergyKwh = latestData?.settlementEnergyWh || {
+        export: 0,
+        import: 0,
       };
 
+      // Validate settlement energy data
+      const exportKwh = Number(settlementEnergyKwh.export);
+      const importKwh = Number(settlementEnergyKwh.import);
+
+      if (!isFinite(exportKwh) || isNaN(exportKwh)) {
+        this.logger.warn(
+          `Invalid export settlement energy for meter ${meterId}: ${settlementEnergyKwh.export}`,
+        );
+        return null;
+      }
+
+      if (!isFinite(importKwh) || isNaN(importKwh)) {
+        this.logger.warn(
+          `Invalid import settlement energy for meter ${meterId}: ${settlementEnergyKwh.import}`,
+        );
+        return null;
+      }
+
+      // Convert kWh to Wh for blockchain calculations
+      const exportWh = exportKwh * 1000;
+      const importWh = importKwh * 1000;
+
       // Calculate actual net energy from settlement energy (gridExport - gridImport)
-      const actualNetEnergyWh =
-        Number(settlementEnergyWh.gridExport) -
-        Number(settlementEnergyWh.gridImport);
+      const actualNetEnergyWh = exportWh - importWh;
 
       // Get average power from logged power data (not from time series)
       const averagePowerKw = this.getAveragePowerFromLog(meterId);
@@ -858,7 +890,10 @@ export class EnergySettlementService {
         progressPercentage: Math.round(progressPercentage * 10) / 10, // Round to 1 decimal place
         timeRemaining,
         netEnergyWh: Math.round(actualNetEnergyWh * 10) / 10, // Use actual settlement energy
-        settlementEnergyWh,
+        settlementEnergyWh: {
+          gridExport: Math.round(exportWh * 10) / 10,
+          gridImport: Math.round(importWh * 10) / 10,
+        },
       };
     } catch (error) {
       this.logger.error(
@@ -918,10 +953,6 @@ export class EnergySettlementService {
     gridImport: number;
     net: number;
   }> {
-    this.logger.warn(
-      'calculateHourlyEnergyTotals is deprecated. Use TelemetryAggregate table instead.',
-    );
-
     // Return zeros as this method is no longer used
     return {
       solar: 0,
@@ -933,23 +964,12 @@ export class EnergySettlementService {
     };
   }
 
-  private cleanOldCacheEntries() {
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-
-    for (const [key, value] of this.hourlyHistoryCache.entries()) {
-      if (value.timestamp < sevenDaysAgo) {
-        this.hourlyHistoryCache.delete(key);
-      }
-    }
-  }
-
-  // Clean cache periodically (run once per hour)
-  @Cron('0 0 * * * *') // Run at the start of every hour
-  cleanCacheHourly() {
-    this.cleanOldCacheEntries();
-    this.logger.log('Hourly cache cleanup completed');
-  }
-
+  /**
+   * DEPRECATED: This method is no longer used.
+   * Hourly energy data should now be retrieved from TelemetryAggregate table.
+   *
+   * @deprecated Use TelemetryAggregationService or query TelemetryAggregate table directly
+   */
   async getHourlyEnergyHistory(
     prosumerId: string,
     hours: number = 24,
@@ -966,86 +986,13 @@ export class EnergySettlementService {
       net: number;
     }>
   > {
-    try {
-      // Get prosumer's meters
-      const devices = await this.smartMetersService.findAll({ prosumerId });
-      let meterIds: string[] = devices.map(
-        (d: { meterId: string }) => d.meterId,
-      );
+    this.logger.warn(
+      'getHourlyEnergyHistory is deprecated. Use TelemetryAggregate table instead.',
+    );
 
-      if (meterId) {
-        // Verify meter belongs to prosumer
-        if (!meterIds.includes(meterId)) {
-          throw new Error('Unauthorized access to meter');
-        }
-        meterIds = [meterId];
-      }
-
-      if (meterIds.length === 0) {
-        return [];
-      }
-
-      const now = new Date();
-      const result: Array<{
-        hour: string;
-        timestamp: string;
-        solar: number;
-        consumption: number;
-        battery: number;
-        gridExport: number;
-        gridImport: number;
-        net: number;
-      }> = [];
-
-      // Generate last N hours (always use XX:00:00 format)
-      for (let i = hours - 1; i >= 0; i--) {
-        const hourDate = new Date(now.getTime() - i * 60 * 60 * 1000);
-        hourDate.setMinutes(0, 0, 0); // Always set to XX:00:00 format
-
-        const hourKey = `${prosumerId}_${meterId || 'all'}_${hourDate.getFullYear()}_${hourDate.getMonth()}_${hourDate.getDate()}_${hourDate.getHours()}`;
-
-        let hourData: {
-          solar: number;
-          consumption: number;
-          battery: number;
-          gridExport: number;
-          gridImport: number;
-          net: number;
-        };
-
-        // Check cache for non-current hour data
-        if (i > 0 && this.hourlyHistoryCache.has(hourKey)) {
-          const cached = this.hourlyHistoryCache.get(hourKey)!;
-          hourData = cached.data;
-        } else {
-          // Calculate fresh data
-          hourData = await this.calculateHourlyEnergyTotals(meterIds, hourDate);
-
-          // Cache only non-current hour data
-          if (i > 0) {
-            this.hourlyHistoryCache.set(hourKey, {
-              data: hourData,
-              timestamp: new Date(),
-              hour: hourDate.getHours(),
-            });
-          }
-        }
-
-        result.push({
-          hour: `${hourDate.getHours().toString().padStart(2, '0')}:00`, // Always XX:00 format
-          timestamp: hourDate.toISOString(),
-          ...hourData,
-        });
-      }
-
-      // Clean old cache entries (keep only last 7 days)
-      this.cleanOldCacheEntries();
-
-      return result;
-    } catch (error) {
-      this.logger.error('Error getting hourly energy history:', error);
-      return [];
-    }
+    // Return empty array since this method is deprecated
+    // Use TelemetryAggregate table for hourly energy data
+    return [];
   }
 
   /**

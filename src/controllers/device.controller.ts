@@ -18,6 +18,7 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { MqttService } from '../services/mqtt.service';
+import { DeviceHealthService } from '../services/device-health.service';
 // Removed: DeviceCommandsService (table dropped)
 import { SmartMetersService } from '../models/SmartMeters/SmartMeters.service';
 import { JwtAuthGuard } from '../auth/guards/auth.guards';
@@ -53,6 +54,7 @@ export class DeviceController {
 
   constructor(
     private mqttService: MqttService,
+    private deviceHealthService: DeviceHealthService,
     // Removed: deviceCommandsService (DeviceCommands table dropped)
     private smartMetersService: SmartMetersService,
     private prosumersService: ProsumersService,
@@ -291,5 +293,314 @@ export class DeviceController {
         heartbeatThreshold: '30 seconds',
       },
     };
+  }
+
+  @Get('health')
+  @ApiOperation({
+    summary: 'Get overall device health status',
+    description:
+      'Monitor overall smart meter health, uptime, and connectivity status across all devices',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Device health status retrieved successfully',
+    schema: {
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            totalDevices: { type: 'number', example: 3 },
+            onlineDevices: { type: 'number', example: 2 },
+            offlineDevices: { type: 'number', example: 1 },
+            healthPercentage: { type: 'number', example: 67 },
+            lastHeartbeat: {
+              type: 'string',
+              example: '2025-10-26T12:00:00.000Z',
+            },
+            averageUptime: { type: 'number', example: 95.5 },
+            authorizedDevices: { type: 'number', example: 3 },
+            settlementsToday: { type: 'number', example: 12 },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error - Failed to retrieve device health',
+  })
+  async getDeviceHealth(@Request() req: AuthenticatedUser) {
+    try {
+      const prosumerId = req.user.prosumerId;
+      const health = await this.deviceHealthService.getDeviceHealth(prosumerId);
+
+      return {
+        success: true,
+        data: health,
+      };
+    } catch (error) {
+      this.logger.error('Error getting device health:', error);
+      throw new BadRequestException('Failed to retrieve device health status');
+    }
+  }
+
+  @Get('health/:meterId')
+  @ApiOperation({
+    summary: 'Get specific meter health details',
+    description:
+      'Retrieve detailed health information for a specific smart meter including connectivity, system metrics, and energy data',
+  })
+  @ApiParam({
+    name: 'meterId',
+    description: 'Smart meter ID',
+    example: 'SM001',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Meter health details retrieved successfully',
+    schema: {
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            meterId: { type: 'string', example: 'SM001' },
+            isOnline: { type: 'boolean', example: true },
+            lastSeen: { type: 'string', example: '2025-10-26T12:00:00.000Z' },
+            lastSeenMinutes: { type: 'number', example: 2 },
+            connectivity: {
+              type: 'object',
+              properties: {
+                wifi: {
+                  type: 'object',
+                  properties: {
+                    connected: { type: 'boolean', example: true },
+                    rssi: { type: 'number', example: -65 },
+                    ip: { type: 'string', example: '192.168.1.100' },
+                  },
+                },
+                mqtt: {
+                  type: 'object',
+                  properties: {
+                    connected: { type: 'boolean', example: true },
+                    attempts: { type: 'number', example: 0 },
+                    qos: { type: 'number', example: 2 },
+                  },
+                },
+              },
+            },
+            system: {
+              type: 'object',
+              properties: {
+                uptime: { type: 'number', example: 3600000 },
+                uptimeHours: { type: 'number', example: 1 },
+                freeHeap: { type: 'number', example: 225000 },
+                status: { type: 'string', example: 'alive' },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Meter not found or unauthorized',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Meter not found',
+  })
+  async getMeterHealth(
+    @Param('meterId') meterId: string,
+    @Request() req: AuthenticatedUser,
+  ) {
+    try {
+      const prosumerId = req.user.prosumerId;
+
+      // Verify meter belongs to prosumer
+      const prosumers = await this.prosumersService.findByMeterId(meterId);
+      if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
+        throw new BadRequestException('Unauthorized access to this meter');
+      }
+
+      const health =
+        await this.deviceHealthService.getDeviceHealthDetails(meterId);
+
+      if (!health) {
+        throw new BadRequestException('Meter not found or no data available');
+      }
+
+      return {
+        success: true,
+        data: health,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      this.logger.error(`Error getting meter health for ${meterId}:`, error);
+      throw new BadRequestException('Failed to retrieve meter health details');
+    }
+  }
+
+  @Get('list')
+  @ApiOperation({
+    summary: 'List all devices with status',
+    description:
+      'Get a list of all smart meters owned by the prosumer with their current status and connectivity',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Device list retrieved successfully',
+    schema: {
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              meterId: { type: 'string', example: 'SM001' },
+              name: { type: 'string', example: 'Main Building Meter' },
+              location: { type: 'string', example: 'Building A' },
+              status: { type: 'string', example: 'online' },
+              lastSeen: {
+                type: 'string',
+                example: '2025-10-26T12:00:00.000Z',
+              },
+              connectivity: {
+                type: 'object',
+                properties: {
+                  wifi: { type: 'boolean', example: true },
+                  mqtt: { type: 'boolean', example: true },
+                  rssi: { type: 'number', example: -65 },
+                },
+              },
+              system: {
+                type: 'object',
+                properties: {
+                  uptime: { type: 'number', example: 3600000 },
+                  freeHeap: { type: 'number', example: 225000 },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  async listDevices(@Request() req: AuthenticatedUser) {
+    try {
+      const prosumerId = req.user.prosumerId;
+      const devices = await this.deviceHealthService.getDeviceList(prosumerId);
+
+      return {
+        success: true,
+        data: devices,
+      };
+    } catch (error) {
+      this.logger.error('Error listing devices:', error);
+      throw new BadRequestException('Failed to retrieve device list');
+    }
+  }
+
+  @Get('connectivity/:meterId')
+  @ApiOperation({
+    summary: 'Check device connectivity status',
+    description:
+      'Check detailed connectivity status including WiFi, MQTT, and last seen information',
+  })
+  @ApiParam({
+    name: 'meterId',
+    description: 'Smart meter ID',
+    example: 'SM001',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Connectivity status retrieved successfully',
+    schema: {
+      properties: {
+        success: { type: 'boolean', example: true },
+        data: {
+          type: 'object',
+          properties: {
+            meterId: { type: 'string', example: 'SM001' },
+            connected: { type: 'boolean', example: true },
+            lastSeen: { type: 'string', example: '2025-10-26T12:00:00.000Z' },
+            reason: { type: 'string', example: 'Connected' },
+            details: {
+              type: 'object',
+              properties: {
+                wifi: {
+                  type: 'object',
+                  properties: {
+                    connected: { type: 'boolean', example: true },
+                    rssi: { type: 'number', example: -65 },
+                    ip: { type: 'string', example: '192.168.1.100' },
+                  },
+                },
+                mqtt: {
+                  type: 'object',
+                  properties: {
+                    connected: { type: 'boolean', example: true },
+                    qos: { type: 'number', example: 2 },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Meter not found or unauthorized',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  async checkConnectivity(
+    @Param('meterId') meterId: string,
+    @Request() req: AuthenticatedUser,
+  ) {
+    try {
+      const prosumerId = req.user.prosumerId;
+
+      // Verify meter belongs to prosumer
+      const prosumers = await this.prosumersService.findByMeterId(meterId);
+      if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
+        throw new BadRequestException('Unauthorized access to this meter');
+      }
+
+      const connectivity =
+        await this.deviceHealthService.checkDeviceConnectivity(meterId);
+
+      return {
+        success: true,
+        data: connectivity,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      this.logger.error(`Error checking connectivity for ${meterId}:`, error);
+      throw new BadRequestException('Failed to check device connectivity');
+    }
   }
 }

@@ -125,6 +125,15 @@ export class BlockchainService {
 
   public getCalculateEtkAmount(energyWh: number): Promise<number> {
     return new Promise((resolve, reject) => {
+      // Validate input
+      if (!isFinite(energyWh) || isNaN(energyWh)) {
+        this.logger.error(
+          `Invalid energyWh value: ${energyWh} (type: ${typeof energyWh})`,
+        );
+        reject(new Error(`Invalid energy value: ${energyWh}`));
+        return;
+      }
+
       const contract = new ethers.Contract(
         this.config.contracts.energyConverter,
         this.energyConverterABI,
@@ -628,6 +637,14 @@ export class BlockchainService {
 
   async calculateEtkAmount(energyWh: number): Promise<number> {
     try {
+      // Validate input
+      if (!isFinite(energyWh) || isNaN(energyWh)) {
+        this.logger.error(
+          `Invalid energyWh value in calculateEtkAmount: ${energyWh} (type: ${typeof energyWh})`,
+        );
+        return 0;
+      }
+
       const contract = new ethers.Contract(
         this.config.contracts.energyConverter,
         this.energyConverterABI,
@@ -636,6 +653,15 @@ export class BlockchainService {
 
       // Use absolute value because calculateEtkAmount expects uint256 (unsigned integer)
       const energyWhInteger = Math.round(Math.abs(energyWh));
+
+      // Additional check after rounding
+      if (!isFinite(energyWhInteger) || isNaN(energyWhInteger)) {
+        this.logger.error(
+          `Invalid energyWhInteger after rounding: ${energyWhInteger}`,
+        );
+        return 0;
+      }
+
       const etkAmount = (await contract.calculateEtkAmount(
         energyWhInteger,
       )) as bigint;
@@ -652,13 +678,31 @@ export class BlockchainService {
 
   async calculateEnergyWh(etkAmount: number): Promise<number> {
     try {
+      // Validate input
+      if (!isFinite(etkAmount) || isNaN(etkAmount)) {
+        this.logger.error(
+          `Invalid etkAmount value: ${etkAmount} (type: ${typeof etkAmount})`,
+        );
+        return 0;
+      }
+
       const contract = new ethers.Contract(
         this.config.contracts.energyConverter,
         this.energyConverterABI,
         this.provider,
       );
+
       // Convert ETK to contract units (2 decimals)
       const etkAmountUnits = Math.floor(etkAmount * 100);
+
+      // Additional check after conversion
+      if (!isFinite(etkAmountUnits) || isNaN(etkAmountUnits)) {
+        this.logger.error(
+          `Invalid etkAmountUnits after conversion: ${etkAmountUnits}`,
+        );
+        return 0;
+      }
+
       const energyWh = (await contract.calculateEnergyWh(
         etkAmountUnits,
       )) as bigint;
