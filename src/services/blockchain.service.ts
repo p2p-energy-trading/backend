@@ -117,7 +117,7 @@ export class BlockchainService {
       },
     };
 
-    this.logger.debug(this.config);
+    // this.logger.debug(this.config);
 
     this.provider = new ethers.JsonRpcProvider(this.config.rpcUrl);
     this.setupEventListeners();

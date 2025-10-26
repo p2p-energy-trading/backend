@@ -1,5 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { ConfigService } from '@nestjs/config';
+import Redis from 'ioredis';
 import { MarketTradesService } from '../models/MarketTrades/MarketTrades.service';
 import { BlockchainService } from './blockchain.service';
 
@@ -29,12 +31,22 @@ interface MarketCandle {
 }
 
 @Injectable()
-export class PriceCacheService {
+export class PriceCacheService implements OnModuleInit {
   private readonly logger = new Logger(PriceCacheService.name);
+  private redisClient: Redis;
 
-  // Price cache for different intervals
-  private priceCache: Map<string, PricePoint[]> = new Map();
-  private candleCache: Map<string, CandleData[]> = new Map();
+  // Redis key patterns
+  private readonly PRICE_KEY_PREFIX = 'price:history'; // Sorted Set: price_1s, price_1m, etc.
+  private readonly CANDLE_KEY_PREFIX = 'price:candles'; // Sorted Set: candles_1m, candles_5m, etc.
+  private readonly CURRENT_PRICE_KEY = 'price:current'; // String: latest price
+
+  // TTL configurations (in seconds)
+  private readonly TTL_CONFIG = {
+    '1s': 3600, // 1 hour
+    '1m': 86400, // 24 hours
+    '5m': 604800, // 1 week
+    '1h': 2592000, // 30 days
+  };
 
   private readonly MAX_CACHE_SIZE = {
     '1s': 3600, // 1 hour at 1s intervals
@@ -44,25 +56,41 @@ export class PriceCacheService {
   };
 
   constructor(
+    private configService: ConfigService,
     private marketTradesService: MarketTradesService,
     private blockchainService: BlockchainService,
-  ) {
-    this.initializeCache();
+  ) {}
+
+  async onModuleInit() {
+    const redisHost = this.configService.get<string>('REDIS_HOST', 'localhost');
+    const redisPort = this.configService.get<number>('REDIS_PORT', 6379);
+    const redisPassword = this.configService.get<string>('REDIS_PASSWORD');
+
+    this.redisClient = new Redis({
+      host: redisHost,
+      port: redisPort,
+      password: redisPassword,
+      retryStrategy: (times) => {
+        const delay = Math.min(times * 50, 2000);
+        this.logger.warn(
+          `Redis connection retry attempt ${times}, delay: ${delay}ms`,
+        );
+        return delay;
+      },
+    });
+
+    this.redisClient.on('connect', () => {
+      this.logger.log(
+        `Price Cache connected to Redis at ${redisHost}:${redisPort}`,
+      );
+    });
+
+    this.redisClient.on('error', (err) => {
+      this.logger.error('Redis connection error:', err);
+    });
+
     // Initialize historical data in background
     void this.initializeHistoricalData();
-  }
-
-  private initializeCache() {
-    // Initialize cache maps for price history
-    this.priceCache.set('price_1s', []);
-    this.priceCache.set('price_1m', []);
-    this.priceCache.set('price_5m', []);
-    this.priceCache.set('price_1h', []);
-
-    // Initialize cache maps for candle data
-    this.candleCache.set('candles_1m', []);
-    this.candleCache.set('candles_5m', []);
-    this.candleCache.set('candles_1h', []);
   }
 
   @Cron(CronExpression.EVERY_SECOND)
@@ -70,14 +98,8 @@ export class PriceCacheService {
     try {
       // Get current price from blockchain
       const currentPrice = await this.blockchainService.getMarketPrice();
-      if (!currentPrice || currentPrice === 0) {
-        return; // Skip if no valid price
-      }
-
-      // this.logger.debug(`Current price: ${currentPrice}`);
-
+   
       const now = new Date().toISOString();
-
       // Get recent trades volume (last minute)
       const recentTrades = await this.marketTradesService.findRecentTrades(10);
       const lastMinuteVolume = recentTrades
@@ -94,10 +116,16 @@ export class PriceCacheService {
         volume: lastMinuteVolume,
       };
 
-      // this.logger.debug(`Adding price point: ${JSON.stringify(pricePoint)}`);
+      // Store current price
+      await this.redisClient.set(
+        this.CURRENT_PRICE_KEY,
+        currentPrice.toString(),
+        'EX',
+        60, // 1 minute TTL
+      );
 
       // Add to 1-second cache
-      this.addToPriceCache('price_1s', pricePoint);
+      await this.addToPriceCache('price_1s', pricePoint);
 
       // Generate minute candles from seconds if needed
       void this.generateMinuteCandles();
@@ -107,11 +135,8 @@ export class PriceCacheService {
   }
 
   @Cron('0 * * * * *') // Every minute
-  generateMinuteCandles() {
+  async generateMinuteCandles() {
     try {
-      const secondsCache = this.priceCache.get('price_1s') || [];
-      if (secondsCache.length === 0) return;
-
       const now = new Date();
       const currentMinute = new Date(
         now.getFullYear(),
@@ -122,11 +147,12 @@ export class PriceCacheService {
       );
       const lastMinute = new Date(currentMinute.getTime() - 60000);
 
-      // Get points from last complete minute
-      const lastMinutePoints = secondsCache.filter((point) => {
-        const pointTime = new Date(point.timestamp);
-        return pointTime >= lastMinute && pointTime < currentMinute;
-      });
+      // Get points from last complete minute from Redis
+      const lastMinutePoints = await this.getPricePointsInRange(
+        'price_1s',
+        lastMinute.getTime(),
+        currentMinute.getTime(),
+      );
 
       if (lastMinutePoints.length > 0) {
         const candle: CandleData = {
@@ -138,7 +164,7 @@ export class PriceCacheService {
           volume: lastMinutePoints.reduce((sum, p) => sum + p.volume, 0),
         };
 
-        this.addToCandleCache('candles_1m', candle);
+        await this.addToCandleCache('candles_1m', candle);
       }
 
       // Generate 5-minute candles from 1-minute candles
@@ -149,11 +175,8 @@ export class PriceCacheService {
   }
 
   @Cron('0 */5 * * * *') // Every 5 minutes
-  generate5MinuteCandles() {
+  async generate5MinuteCandles() {
     try {
-      const minuteCandles = this.candleCache.get('candles_1m') || [];
-      if (minuteCandles.length < 5) return;
-
       const now = new Date();
       const current5Min = new Date(
         now.getFullYear(),
@@ -165,10 +188,11 @@ export class PriceCacheService {
       const last5Min = new Date(current5Min.getTime() - 5 * 60000);
 
       // Get candles from last complete 5-minute period
-      const last5MinCandles = minuteCandles.filter((candle) => {
-        const candleTime = new Date(candle.time);
-        return candleTime >= last5Min && candleTime < current5Min;
-      });
+      const last5MinCandles = await this.getCandlesInRange(
+        'candles_1m',
+        last5Min.getTime(),
+        current5Min.getTime(),
+      );
 
       if (last5MinCandles.length > 0) {
         const candle5Min: CandleData = {
@@ -180,7 +204,7 @@ export class PriceCacheService {
           volume: last5MinCandles.reduce((sum, c) => sum + c.volume, 0),
         };
 
-        this.addToCandleCache('candles_5m', candle5Min);
+        await this.addToCandleCache('candles_5m', candle5Min);
       }
     } catch (error) {
       this.logger.error('Error generating 5-minute candles:', error);
@@ -203,11 +227,8 @@ export class PriceCacheService {
     }
   }
 
-  private generate1MinutePricePoints() {
+  private async generate1MinutePricePoints() {
     try {
-      const secondsCache = this.priceCache.get('price_1s') || [];
-      if (secondsCache.length === 0) return;
-
       const now = new Date();
       const currentMinute = new Date(
         now.getFullYear(),
@@ -221,9 +242,9 @@ export class PriceCacheService {
       const lastMinute = new Date(currentMinute.getTime() - 60000);
 
       // Check if we already have data for this minute
-      const minuteCache = this.priceCache.get('price_1m') || [];
-      const existingMinuteData = minuteCache.find(
-        (point) => point.timestamp === lastMinute.toISOString(),
+      const existingMinuteData = await this.getPricePointAtTime(
+        'price_1m',
+        lastMinute.getTime(),
       );
 
       if (existingMinuteData) {
@@ -231,10 +252,11 @@ export class PriceCacheService {
       }
 
       // Get points from last complete minute
-      const lastMinutePoints = secondsCache.filter((point) => {
-        const pointTime = new Date(point.timestamp);
-        return pointTime >= lastMinute && pointTime < currentMinute;
-      });
+      const lastMinutePoints = await this.getPricePointsInRange(
+        'price_1s',
+        lastMinute.getTime(),
+        currentMinute.getTime(),
+      );
 
       if (lastMinutePoints.length > 0) {
         // Calculate average price and total volume for the minute
@@ -252,8 +274,8 @@ export class PriceCacheService {
           volume: totalVolume,
         };
 
-        this.addToPriceCache('price_1m', pricePoint);
-        this.logger.debug(
+        await this.addToPriceCache('price_1m', pricePoint);
+        this.logger.log(
           `Generated 1-minute price point for ${lastMinute.toISOString()}: price=${avgPrice}, volume=${totalVolume}`,
         );
       }
@@ -263,11 +285,8 @@ export class PriceCacheService {
   }
 
   @Cron('0 */5 * * * *') // Every 5 minutes
-  private generate5MinutePricePoints() {
+  private async generate5MinutePricePoints() {
     try {
-      const minuteCache = this.priceCache.get('price_1m') || [];
-      if (minuteCache.length < 5) return;
-
       const now = new Date();
       const current5Min = new Date(
         now.getFullYear(),
@@ -281,9 +300,9 @@ export class PriceCacheService {
       const last5Min = new Date(current5Min.getTime() - 5 * 60000);
 
       // Check if we already have data for this 5-minute period
-      const fiveMinCache = this.priceCache.get('price_5m') || [];
-      const existing5MinData = fiveMinCache.find(
-        (point) => point.timestamp === last5Min.toISOString(),
+      const existing5MinData = await this.getPricePointAtTime(
+        'price_5m',
+        last5Min.getTime(),
       );
 
       if (existing5MinData) {
@@ -291,10 +310,11 @@ export class PriceCacheService {
       }
 
       // Get points from last complete 5-minute period
-      const last5MinPoints = minuteCache.filter((point) => {
-        const pointTime = new Date(point.timestamp);
-        return pointTime >= last5Min && pointTime < current5Min;
-      });
+      const last5MinPoints = await this.getPricePointsInRange(
+        'price_1m',
+        last5Min.getTime(),
+        current5Min.getTime(),
+      );
 
       if (last5MinPoints.length > 0) {
         // Calculate average price and total volume for the 5-minute period
@@ -312,8 +332,8 @@ export class PriceCacheService {
           volume: totalVolume,
         };
 
-        this.addToPriceCache('price_5m', pricePoint);
-        this.logger.debug(
+        await this.addToPriceCache('price_5m', pricePoint);
+        this.logger.log(
           `Generated 5-minute price point for ${last5Min.toISOString()}: price=${avgPrice}, volume=${totalVolume}`,
         );
       }
@@ -323,11 +343,8 @@ export class PriceCacheService {
   }
 
   @Cron('0 0 * * * *') // Every hour
-  private generate1HourPricePoints() {
+  private async generate1HourPricePoints() {
     try {
-      const fiveMinCache = this.priceCache.get('price_5m') || [];
-      if (fiveMinCache.length < 12) return; // Need at least 12 five-minute points for 1 hour
-
       const now = new Date();
       const currentHour = new Date(
         now.getFullYear(),
@@ -341,9 +358,9 @@ export class PriceCacheService {
       const lastHour = new Date(currentHour.getTime() - 60 * 60000);
 
       // Check if we already have data for this hour
-      const hourCache = this.priceCache.get('price_1h') || [];
-      const existingHourData = hourCache.find(
-        (point) => point.timestamp === lastHour.toISOString(),
+      const existingHourData = await this.getPricePointAtTime(
+        'price_1h',
+        lastHour.getTime(),
       );
 
       if (existingHourData) {
@@ -351,10 +368,11 @@ export class PriceCacheService {
       }
 
       // Get points from last complete hour
-      const lastHourPoints = fiveMinCache.filter((point) => {
-        const pointTime = new Date(point.timestamp);
-        return pointTime >= lastHour && pointTime < currentHour;
-      });
+      const lastHourPoints = await this.getPricePointsInRange(
+        'price_5m',
+        lastHour.getTime(),
+        currentHour.getTime(),
+      );
 
       if (lastHourPoints.length > 0) {
         // Calculate average price and total volume for the hour
@@ -372,8 +390,8 @@ export class PriceCacheService {
           volume: totalVolume,
         };
 
-        this.addToPriceCache('price_1h', pricePoint);
-        this.logger.debug(
+        await this.addToPriceCache('price_1h', pricePoint);
+        this.logger.log(
           `Generated 1-hour price point for ${lastHour.toISOString()}: price=${avgPrice}, volume=${totalVolume}`,
         );
       }
@@ -382,175 +400,216 @@ export class PriceCacheService {
     }
   }
 
-  private addToPriceCache(cacheKey: string, pricePoint: PricePoint) {
-    if (!this.priceCache.has(cacheKey)) {
-      this.priceCache.set(cacheKey, []);
+  /**
+   * Add price point to Redis sorted set
+   */
+  private async addToPriceCache(
+    cacheKey: string,
+    pricePoint: PricePoint,
+  ): Promise<void> {
+    try {
+      const redisKey = `${this.PRICE_KEY_PREFIX}:${cacheKey}`;
+      const score = new Date(pricePoint.timestamp).getTime();
+
+      // Add to sorted set
+      await this.redisClient.zadd(redisKey, score, JSON.stringify(pricePoint));
+
+      // Set TTL based on interval
+      const interval = cacheKey.split('_')[1] as keyof typeof this.TTL_CONFIG;
+      const ttl = this.TTL_CONFIG[interval] || 3600;
+      await this.redisClient.expire(redisKey, ttl);
+
+      // Trim to max size
+      const maxSize =
+        this.MAX_CACHE_SIZE[interval as keyof typeof this.MAX_CACHE_SIZE] ||
+        1000;
+      const currentSize = await this.redisClient.zcard(redisKey);
+      if (currentSize > maxSize) {
+        // Remove oldest entries
+        await this.redisClient.zremrangebyrank(
+          redisKey,
+          0,
+          currentSize - maxSize - 1,
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Error adding to price cache ${cacheKey}:`, error);
+      throw error;
     }
-
-    const cache = this.priceCache.get(cacheKey)!;
-
-    // Check if price point with same timestamp already exists
-    const existingIndex = cache.findIndex(
-      (p) => p.timestamp === pricePoint.timestamp,
-    );
-    if (existingIndex >= 0) {
-      // Update existing price point instead of adding duplicate
-      cache[existingIndex] = pricePoint;
-    } else {
-      // Add new price point
-      cache.push(pricePoint);
-    }
-
-    // Keep only max size and sort by timestamp
-    cache.sort(
-      (a, b) =>
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
-    );
-    const maxSize =
-      this.MAX_CACHE_SIZE[
-        cacheKey.split('_')[1] as keyof typeof this.MAX_CACHE_SIZE
-      ] || 1000;
-    if (cache.length > maxSize) {
-      cache.splice(0, cache.length - maxSize);
-    }
-
-    // this.logger.debug(
-    //   `Adding price point to cache ${cacheKey}: ${JSON.stringify(pricePoint)}`,
-    // );
-
-    this.priceCache.set(cacheKey, cache);
   }
 
-  private addToCandleCache(cacheKey: string, candle: CandleData) {
-    if (!this.candleCache.has(cacheKey)) {
-      this.candleCache.set(cacheKey, []);
+  /**
+   * Add candle to Redis sorted set
+   */
+  private async addToCandleCache(
+    cacheKey: string,
+    candle: CandleData,
+  ): Promise<void> {
+    try {
+      const redisKey = `${this.CANDLE_KEY_PREFIX}:${cacheKey}`;
+      const score = new Date(candle.time).getTime();
+
+      // Add to sorted set
+      await this.redisClient.zadd(redisKey, score, JSON.stringify(candle));
+
+      // Set TTL based on interval
+      const interval = cacheKey.split('_')[1] as keyof typeof this.TTL_CONFIG;
+      const ttl = this.TTL_CONFIG[interval] || 3600;
+      await this.redisClient.expire(redisKey, ttl);
+
+      // Trim to max size
+      const maxSize =
+        this.MAX_CACHE_SIZE[interval as keyof typeof this.MAX_CACHE_SIZE] ||
+        1000;
+      const currentSize = await this.redisClient.zcard(redisKey);
+      if (currentSize > maxSize) {
+        await this.redisClient.zremrangebyrank(
+          redisKey,
+          0,
+          currentSize - maxSize - 1,
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Error adding to candle cache ${cacheKey}:`, error);
+      throw error;
     }
+  }
 
-    const cache = this.candleCache.get(cacheKey)!;
-
-    // Check if candle for this time already exists
-    const existingIndex = cache.findIndex((c) => c.time === candle.time);
-    if (existingIndex >= 0) {
-      cache[existingIndex] = candle; // Update existing
-    } else {
-      cache.push(candle); // Add new
+  /**
+   * Get price history from Redis
+   */
+  async getPriceHistory(
+    interval: string,
+    limit: number,
+  ): Promise<PricePoint[]> {
+    try {
+      const redisKey = `${this.PRICE_KEY_PREFIX}:price_${interval}`;
+      // Get last N entries (most recent)
+      const results = await this.redisClient.zrevrange(redisKey, 0, limit - 1);
+      return results.map((item) => JSON.parse(item)).reverse();
+    } catch (error) {
+      this.logger.error(`Error getting price history for ${interval}:`, error);
+      return [];
     }
+  }
 
-    // Sort by time and keep only max size
-    cache.sort(
-      (a, b) => new Date(a.time).getTime() - new Date(b.time).getTime(),
-    );
-    const maxSize =
-      this.MAX_CACHE_SIZE[
-        cacheKey.split('_')[1] as keyof typeof this.MAX_CACHE_SIZE
-      ] || 1000;
-    if (cache.length > maxSize) {
-      cache.splice(0, cache.length - maxSize);
+  /**
+   * Get price candles from Redis
+   */
+  async getPriceCandles(
+    interval: string,
+    limit: number,
+  ): Promise<CandleData[]> {
+    try {
+      const redisKey = `${this.CANDLE_KEY_PREFIX}:candles_${interval}`;
+      // Get last N entries (most recent)
+      const results = await this.redisClient.zrevrange(redisKey, 0, limit - 1);
+      return results.map((item) => JSON.parse(item)).reverse();
+    } catch (error) {
+      this.logger.error(`Error getting candles for ${interval}:`, error);
+      return [];
     }
-
-    this.candleCache.set(cacheKey, cache);
   }
 
-  getPriceHistory(interval: string, limit: number): PricePoint[] {
-    const cacheKey = `price_${interval}`;
-    const cache = this.priceCache.get(cacheKey) || [];
-    return cache.slice(-limit);
+  /**
+   * Get current price from Redis
+   */
+  async getCurrentPrice(): Promise<number> {
+    try {
+      const priceStr = await this.redisClient.get(this.CURRENT_PRICE_KEY);
+      return priceStr ? parseFloat(priceStr) : 0;
+    } catch (error) {
+      this.logger.error('Error getting current price:', error);
+      return 0;
+    }
   }
 
-  getPriceCandles(interval: string, limit: number): CandleData[] {
-    const cacheKey = `candles_${interval}`;
-    const cache = this.candleCache.get(cacheKey) || [];
-    return cache.slice(-limit);
-  }
-
-  getCurrentPrice(): number {
-    const cache = this.priceCache.get('price_1s') || [];
-    return cache.length > 0 ? cache[cache.length - 1].price : 0;
-  }
-
-  getLatestCandle(interval: string): CandleData | null {
-    const cache = this.candleCache.get(`candles_${interval}`) || [];
-    return cache.length > 0 ? cache[cache.length - 1] : null;
+  /**
+   * Get latest candle from Redis
+   */
+  async getLatestCandle(interval: string): Promise<CandleData | null> {
+    try {
+      const redisKey = `${this.CANDLE_KEY_PREFIX}:candles_${interval}`;
+      // Get the most recent candle
+      const results = await this.redisClient.zrevrange(redisKey, 0, 0);
+      return results.length > 0 ? JSON.parse(results[0]) : null;
+    } catch (error) {
+      this.logger.error(`Error getting latest candle for ${interval}:`, error);
+      return null;
+    }
   }
 
   @Cron(CronExpression.EVERY_HOUR)
-  cleanupCache() {
+  async cleanupCache() {
     try {
-      // Clean up duplicates first
-      this.cleanupDuplicates();
+      // Redis handles TTL automatically, but we can manually trim if needed
+      const intervals = ['1s', '1m', '5m', '1h'];
 
-      // Clean up old data to prevent memory leaks
-      this.priceCache.forEach((cache, key) => {
-        const interval = key.split('_')[1];
-        const maxAge =
+      for (const interval of intervals) {
+        const priceKey = `${this.PRICE_KEY_PREFIX}:price_${interval}`;
+        const candleKey = `${this.CANDLE_KEY_PREFIX}:candles_${interval}`;
+
+        const maxSize =
           this.MAX_CACHE_SIZE[interval as keyof typeof this.MAX_CACHE_SIZE] ||
           1000;
-        if (cache.length > maxAge) {
-          cache.splice(0, cache.length - maxAge);
-        }
-      });
 
-      this.candleCache.forEach((cache, key) => {
-        const interval = key.split('_')[1];
-        const maxAge =
-          this.MAX_CACHE_SIZE[interval as keyof typeof this.MAX_CACHE_SIZE] ||
-          1000;
-        if (cache.length > maxAge) {
-          cache.splice(0, cache.length - maxAge);
+        // Trim price cache
+        const priceSize = await this.redisClient.zcard(priceKey);
+        if (priceSize > maxSize) {
+          await this.redisClient.zremrangebyrank(
+            priceKey,
+            0,
+            priceSize - maxSize - 1,
+          );
+          this.logger.log(
+            `Trimmed ${priceSize - maxSize} entries from ${priceKey}`,
+          );
         }
-      });
 
-      this.logger.debug('Cache cleanup completed');
+        // Trim candle cache
+        const candleSize = await this.redisClient.zcard(candleKey);
+        if (candleSize > maxSize) {
+          await this.redisClient.zremrangebyrank(
+            candleKey,
+            0,
+            candleSize - maxSize - 1,
+          );
+          this.logger.log(
+            `Trimmed ${candleSize - maxSize} entries from ${candleKey}`,
+          );
+        }
+      }
+
+      this.logger.log('Cache cleanup completed');
     } catch (error) {
       this.logger.error('Error during cache cleanup:', error);
     }
   }
 
-  // Method to clean duplicate entries from price cache
+  /**
+   * Clean duplicate entries is handled automatically by Redis sorted sets
+   * (same score overwrites existing entry)
+   */
   cleanupDuplicates() {
-    try {
-      this.priceCache.forEach((cache, cacheKey) => {
-        const uniquePoints = new Map<string, PricePoint>();
-
-        // Keep only the latest entry for each timestamp
-        cache.forEach((point) => {
-          uniquePoints.set(point.timestamp, point);
-        });
-
-        // Convert back to array and sort by timestamp
-        const cleanedCache = Array.from(uniquePoints.values()).sort(
-          (a, b) =>
-            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
-        );
-
-        this.priceCache.set(cacheKey, cleanedCache);
-
-        if (cache.length !== cleanedCache.length) {
-          this.logger.debug(
-            `Cleaned ${cache.length - cleanedCache.length} duplicate entries from ${cacheKey}`,
-          );
-        }
-      });
-    } catch (error) {
-      this.logger.error('Error cleaning up duplicates:', error);
-    }
+    // No longer needed with Redis sorted sets
+    this.logger.log('Duplicate cleanup not needed with Redis sorted sets');
   }
 
   async initializeHistoricalData() {
     try {
-      this.logger.log('Initializing historical price data...');
+      this.logger.log('Initializing historical price data in Redis...');
 
-      // Clean up any existing duplicates first
+      // Clean up any existing duplicates (Redis handles this automatically)
       this.cleanupDuplicates();
 
       // Initialize 1-minute data from database if cache is empty
       await this.backfill1MinuteData();
 
       // Initialize 5-minute data from 1-minute cache
-      this.backfill5MinuteData();
+      await this.backfill5MinuteData();
 
       // Initialize 1-hour data from 5-minute cache
-      this.backfill1HourData();
+      await this.backfill1HourData();
 
       this.logger.log('Historical price data initialization completed');
     } catch (error) {
@@ -560,8 +619,14 @@ export class PriceCacheService {
 
   private async backfill1MinuteData() {
     try {
-      const minuteCache = this.priceCache.get('price_1m') || [];
-      if (minuteCache.length > 0) return; // Already has data
+      // Check if we already have data
+      const existingCount = await this.redisClient.zcard(
+        `${this.PRICE_KEY_PREFIX}:price_1m`,
+      );
+      if (existingCount > 0) {
+        this.logger.log('1-minute data already exists, skipping backfill');
+        return;
+      }
 
       // Get recent trades for the last 24 hours
       const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -575,16 +640,16 @@ export class PriceCacheService {
       );
 
       // Convert candles to price points and add to cache
-      historicalCandles.forEach((candle: MarketCandle) => {
+      for (const candle of historicalCandles) {
         const pricePoint: PricePoint = {
           timestamp: candle.time,
           price: candle.close, // Use close price as the minute price
           volume: candle.volume,
         };
-        this.addToPriceCache('price_1m', pricePoint);
-      });
+        await this.addToPriceCache('price_1m', pricePoint);
+      }
 
-      this.logger.debug(
+      this.logger.log(
         `Backfilled ${historicalCandles.length} 1-minute price points`,
       );
     } catch (error) {
@@ -592,18 +657,28 @@ export class PriceCacheService {
     }
   }
 
-  private backfill5MinuteData() {
+  private async backfill5MinuteData() {
     try {
-      const fiveMinCache = this.priceCache.get('price_5m') || [];
-      if (fiveMinCache.length > 0) return; // Already has data
+      // Check if we already have data
+      const existingCount = await this.redisClient.zcard(
+        `${this.PRICE_KEY_PREFIX}:price_5m`,
+      );
+      if (existingCount > 0) {
+        this.logger.log('5-minute data already exists, skipping backfill');
+        return;
+      }
 
-      const minuteCache = this.priceCache.get('price_1m') || [];
-      if (minuteCache.length === 0) return; // No source data
+      // Get all 1-minute data from Redis
+      const minutePoints = await this.getPriceHistory('1m', 1440);
+      if (minutePoints.length === 0) {
+        this.logger.log('No 1-minute data available for 5-minute backfill');
+        return;
+      }
 
       // Group minute data into 5-minute intervals
       const fiveMinGroups = new Map<string, PricePoint[]>();
 
-      minuteCache.forEach((point) => {
+      minutePoints.forEach((point) => {
         const timestamp = new Date(point.timestamp);
         const fiveMinBucket = new Date(
           timestamp.getFullYear(),
@@ -621,7 +696,7 @@ export class PriceCacheService {
       });
 
       // Create 5-minute price points
-      fiveMinGroups.forEach((points, timestamp) => {
+      for (const [timestamp, points] of fiveMinGroups.entries()) {
         if (points.length > 0) {
           const avgPrice =
             points.reduce((sum, p) => sum + p.price, 0) / points.length;
@@ -633,11 +708,11 @@ export class PriceCacheService {
             volume: totalVolume,
           };
 
-          this.addToPriceCache('price_5m', pricePoint);
+          await this.addToPriceCache('price_5m', pricePoint);
         }
-      });
+      }
 
-      this.logger.debug(
+      this.logger.log(
         `Backfilled ${fiveMinGroups.size} 5-minute price points`,
       );
     } catch (error) {
@@ -645,18 +720,28 @@ export class PriceCacheService {
     }
   }
 
-  private backfill1HourData() {
+  private async backfill1HourData() {
     try {
-      const hourCache = this.priceCache.get('price_1h') || [];
-      if (hourCache.length > 0) return; // Already has data
+      // Check if we already have data
+      const existingCount = await this.redisClient.zcard(
+        `${this.PRICE_KEY_PREFIX}:price_1h`,
+      );
+      if (existingCount > 0) {
+        this.logger.log('1-hour data already exists, skipping backfill');
+        return;
+      }
 
-      const fiveMinCache = this.priceCache.get('price_5m') || [];
-      if (fiveMinCache.length === 0) return; // No source data
+      // Get all 5-minute data from Redis
+      const fiveMinPoints = await this.getPriceHistory('5m', 2016);
+      if (fiveMinPoints.length === 0) {
+        this.logger.log('No 5-minute data available for 1-hour backfill');
+        return;
+      }
 
       // Group 5-minute data into hourly intervals
       const hourGroups = new Map<string, PricePoint[]>();
 
-      fiveMinCache.forEach((point) => {
+      fiveMinPoints.forEach((point) => {
         const timestamp = new Date(point.timestamp);
         const hourBucket = new Date(
           timestamp.getFullYear(),
@@ -674,7 +759,7 @@ export class PriceCacheService {
       });
 
       // Create hourly price points
-      hourGroups.forEach((points, timestamp) => {
+      for (const [timestamp, points] of hourGroups.entries()) {
         if (points.length > 0) {
           const avgPrice =
             points.reduce((sum, p) => sum + p.price, 0) / points.length;
@@ -686,13 +771,88 @@ export class PriceCacheService {
             volume: totalVolume,
           };
 
-          this.addToPriceCache('price_1h', pricePoint);
+          await this.addToPriceCache('price_1h', pricePoint);
         }
-      });
+      }
 
-      this.logger.debug(`Backfilled ${hourGroups.size} 1-hour price points`);
+      this.logger.log(`Backfilled ${hourGroups.size} 1-hour price points`);
     } catch (error) {
       this.logger.error('Error backfilling 1-hour data:', error);
+    }
+  }
+
+  /**
+   * Helper: Get price points within a time range from Redis
+   */
+  private async getPricePointsInRange(
+    cacheKey: string,
+    startTime: number,
+    endTime: number,
+  ): Promise<PricePoint[]> {
+    try {
+      const redisKey = `${this.PRICE_KEY_PREFIX}:${cacheKey}`;
+      const results = await this.redisClient.zrangebyscore(
+        redisKey,
+        startTime,
+        endTime,
+      );
+      return results.map((item) => JSON.parse(item));
+    } catch (error) {
+      this.logger.error(
+        `Error getting price points in range for ${cacheKey}:`,
+        error,
+      );
+      return [];
+    }
+  }
+
+  /**
+   * Helper: Get candles within a time range from Redis
+   */
+  private async getCandlesInRange(
+    cacheKey: string,
+    startTime: number,
+    endTime: number,
+  ): Promise<CandleData[]> {
+    try {
+      const redisKey = `${this.CANDLE_KEY_PREFIX}:${cacheKey}`;
+      const results = await this.redisClient.zrangebyscore(
+        redisKey,
+        startTime,
+        endTime,
+      );
+      return results.map((item) => JSON.parse(item));
+    } catch (error) {
+      this.logger.error(
+        `Error getting candles in range for ${cacheKey}:`,
+        error,
+      );
+      return [];
+    }
+  }
+
+  /**
+   * Helper: Get a specific price point at a given time from Redis
+   */
+  private async getPricePointAtTime(
+    cacheKey: string,
+    timestamp: number,
+  ): Promise<PricePoint | null> {
+    try {
+      const redisKey = `${this.PRICE_KEY_PREFIX}:${cacheKey}`;
+      // Get entries with exact timestamp
+      const results = await this.redisClient.zrangebyscore(
+        redisKey,
+        timestamp,
+        timestamp,
+      );
+      return results.length > 0 ? JSON.parse(results[0]) : null;
+    } catch (error) {
+      this.logger.error(
+        `Error getting price point at time for ${cacheKey}:`,
+        error,
+      );
+      return null;
     }
   }
 }

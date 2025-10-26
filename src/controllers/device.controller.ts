@@ -23,15 +23,14 @@ import { SmartMetersService } from '../models/SmartMeters/SmartMeters.service';
 import { JwtAuthGuard } from '../auth/guards/auth.guards';
 import { DeviceCommandPayload } from '../common/interfaces';
 import { ProsumersService } from 'src/models/Prosumers/Prosumers.service';
-// TODO: Replace with Redis telemetry
-// import { DeviceStatusSnapshotsService } from 'src/models/DeviceStatusSnapshots/DeviceStatusSnapshots.service';
-// import { EnergyReadingsDetailedService } from 'src/models/EnergyReadingsDetailed/EnergyReadingsDetailed.service';
+import { RedisTelemetryService } from '../services/redis-telemetry.service';
 import {
   DeviceControlDto,
   GridControlDto,
   EnergyResetDto,
   DeviceStatusDto,
   CommandResponseDto,
+  DeviceStatusResponseDto,
 } from '../common/dto/device.dto';
 
 interface DeviceControlRequest {
@@ -57,9 +56,7 @@ export class DeviceController {
     // Removed: deviceCommandsService (DeviceCommands table dropped)
     private smartMetersService: SmartMetersService,
     private prosumersService: ProsumersService,
-    // TODO: Replace with Redis telemetry
-    // private deviceStatusSnapshotsService: DeviceStatusSnapshotsService,
-    // private energyReadingsDetailedService: EnergyReadingsDetailedService,
+    private redisTelemetryService: RedisTelemetryService,
   ) {}
 
   @Post('control')
@@ -176,7 +173,8 @@ export class DeviceController {
   @Get('status/:meterId')
   @ApiOperation({
     summary: 'Get device status',
-    description: 'Retrieve current operational status of smart meter',
+    description:
+      'Retrieve current operational status and telemetry data from Redis',
   })
   @ApiParam({
     name: 'meterId',
@@ -186,7 +184,7 @@ export class DeviceController {
   @ApiResponse({
     status: 200,
     description: 'Device status retrieved successfully',
-    type: DeviceStatusDto,
+    type: DeviceStatusResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -204,7 +202,6 @@ export class DeviceController {
 
     // Verify ownership
     try {
-      // const meter = await this.smartMetersService.findOne(meterId);
       const prosumers = await this.prosumersService.findByMeterId(meterId);
 
       if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
@@ -217,40 +214,81 @@ export class DeviceController {
       throw new BadRequestException('Device not found or unauthorized');
     }
 
-    // TODO: Get latest status data from Redis instead
-    // const statusSnapshots = await this.deviceStatusSnapshotsService.findAll({ meterId });
-    // For now, return mock data
-    const latestStatus = null;
+    // Get latest status and data from Redis
+    const latestStatus =
+      await this.redisTelemetryService.getLatestStatus(meterId);
+    const latestData = await this.redisTelemetryService.getLatestData(meterId);
 
-    // TODO: Get the latest sensor data timestamp from Redis for heartbeat detection
-    // const latestSensorTimestamp = await this.energyReadingsDetailedService.findLatestSensorTimestamp(meterId);
-    const latestSensorTimestamp: Date | null = null;
+    // Determine device online status
+    let isOnline = false;
+    let latestTimestamp: Date | null = null;
+    let timeSinceLastUpdate: number | null = null;
 
-    // Determine if device is online based on latest sensor data (10-second threshold)
-    const isOnline = false; // TODO: Implement with Redis
-    // latestSensorTimestamp && new Date().getTime() - latestSensorTimestamp.getTime() < 10 * 1000;
+    // Check both status and data timestamps
+    const statusTimestamp = latestStatus?.datetime
+      ? new Date(latestStatus.datetime)
+      : null;
+    const dataTimestamp = latestData?.datetime
+      ? new Date(latestData.datetime)
+      : null;
+
+    // Use the most recent timestamp
+    if (statusTimestamp && dataTimestamp) {
+      latestTimestamp =
+        statusTimestamp > dataTimestamp ? statusTimestamp : dataTimestamp;
+    } else if (statusTimestamp) {
+      latestTimestamp = statusTimestamp;
+    } else if (dataTimestamp) {
+      latestTimestamp = dataTimestamp;
+    }
+
+    // Device is online if last update was within 30 seconds
+    if (latestTimestamp) {
+      timeSinceLastUpdate = Date.now() - latestTimestamp.getTime();
+      isOnline = timeSinceLastUpdate < 30 * 1000; // 30 second threshold
+    }
 
     // this.logger.debug(
-    //   `Device ${meterId} - Latest sensor timestamp: ${latestSensorTimestamp?.toISOString()}, ` +
-    //     `Time since last sensor: ${latestSensorTimestamp ? new Date().getTime() - latestSensorTimestamp.getTime() : 'N/A'}ms, ` +
-    //     `Online: ${!!isOnline}`,
+    //   `Device ${meterId} - Latest timestamp: ${latestTimestamp?.toISOString()}, ` +
+    //     `Time since last update: ${timeSinceLastUpdate ? timeSinceLastUpdate + 'ms' : 'N/A'}, ` +
+    //     `Online: ${isOnline}`,
     // );
 
     return {
       success: true,
       data: {
         meterId,
-        lastHeartbeat: null, // TODO: Implement with Redis telemetry
-        // latestSensorTimestamp
-        //   ? {
-        //       timestamp: latestSensorTimestamp.toISOString(),
-        //       status: isOnline ? 'alive' : 'offline',
-        //       source: 'mqtt_sensor',
-        //     }
-        //   : null,
-        lastStatus: latestStatus,
-        isOnline: !!isOnline,
-        heartbeatThreshold: '10 seconds', // Document the threshold used
+        lastHeartbeat: latestTimestamp
+          ? {
+              timestamp: latestTimestamp.toISOString(),
+              status: isOnline ? 'alive' : 'offline',
+              timeSinceLastUpdate: timeSinceLastUpdate
+                ? `${Math.floor(timeSinceLastUpdate / 1000)}s`
+                : null,
+              source: 'redis_telemetry',
+            }
+          : null,
+        lastStatus: latestStatus
+          ? {
+              wifi: latestStatus.data.wifi,
+              grid: latestStatus.data.grid,
+              mqtt: latestStatus.data.mqtt,
+              system: latestStatus.data.system,
+              timestamp: latestStatus.datetime,
+            }
+          : null,
+        lastData: latestData
+          ? {
+              battery: latestData.data.battery,
+              export: latestData.data.export,
+              import: latestData.data.import,
+              solar: latestData.data.solar_input,
+              load: latestData.data.load_home,
+              timestamp: latestData.datetime,
+            }
+          : null,
+        isOnline,
+        heartbeatThreshold: '30 seconds',
       },
     };
   }

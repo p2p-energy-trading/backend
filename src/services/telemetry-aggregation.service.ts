@@ -118,7 +118,7 @@ export class TelemetryAggregationService {
         endTimestamp,
       );
 
-      this.logger.debug(
+      this.logger.log(
         `Aggregated ${snapshots.length} snapshots for meter ${meterId}`,
       );
     } catch (error) {

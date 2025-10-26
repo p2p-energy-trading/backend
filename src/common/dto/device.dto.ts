@@ -164,3 +164,80 @@ export class CommandResponseDto {
   })
   correlationId: string;
 }
+
+export class DeviceHeartbeatDto {
+  @ApiProperty({
+    description: 'Last update timestamp (ISO 8601)',
+    example: '2025-10-26T10:30:15.000Z',
+  })
+  timestamp: string;
+
+  @ApiProperty({
+    description: 'Device status: alive or offline',
+    example: 'alive',
+  })
+  status: string;
+
+  @ApiProperty({
+    description: 'Time since last update',
+    example: '5s',
+    required: false,
+  })
+  @IsOptional()
+  timeSinceLastUpdate?: string;
+
+  @ApiProperty({
+    description: 'Data source',
+    example: 'redis_telemetry',
+  })
+  source: string;
+}
+
+export class DeviceStatusResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Device status data',
+  })
+  data: {
+    meterId: string;
+    lastHeartbeat: DeviceHeartbeatDto | null;
+    lastStatus: {
+      wifi: {
+        connected: boolean;
+        rssi: number;
+        ip: string;
+      };
+      grid: {
+        mode: string;
+        importing: boolean;
+        exporting: boolean;
+      };
+      mqtt: {
+        connected: boolean;
+        attempts: number;
+        qos: number;
+      };
+      system: {
+        free_heap: number;
+        uptime: number;
+        status: string;
+      };
+      timestamp: string;
+    } | null;
+    lastData: {
+      battery: any;
+      export: any;
+      import: any;
+      solar: any;
+      load: any;
+      timestamp: string;
+    } | null;
+    isOnline: boolean;
+    heartbeatThreshold: string;
+  };
+}

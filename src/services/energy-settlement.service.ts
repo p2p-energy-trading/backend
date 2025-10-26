@@ -413,7 +413,7 @@ export class EnergySettlementService {
       // Negative net = import from grid = burn tokens
       const netEnergyWh = exportEnergyWh - importEnergyWh;
 
-      this.logger.debug(
+      this.logger.log(
         `Settlement calculation for meter ${meterId}: GRID_EXPORT=${exportEnergyWh}Wh, GRID_IMPORT=${importEnergyWh}Wh, Net=${netEnergyWh}Wh (${netEnergyWh > 0 ? 'MINT tokens' : netEnergyWh < 0 ? 'BURN tokens' : 'NO ACTION'})`,
       );
 
@@ -546,9 +546,9 @@ export class EnergySettlementService {
     scope: 'own' | 'public' | 'all' = 'own',
   ): Promise<any[]> {
     try {
-      this.logger.debug(
-        `Getting settlement history for meterId: ${meterId}, prosumerId: ${prosumerId}, limit: ${limit}, scope: ${scope}`,
-      );
+      // this.logger.debug(
+      //   `Getting settlement history for meterId: ${meterId}, prosumerId: ${prosumerId}, limit: ${limit}, scope: ${scope}`,
+      // );
 
       let settlements: any[] = [];
 
@@ -578,9 +578,9 @@ export class EnergySettlementService {
           return [];
         }
 
-        this.logger.debug(
-          `Found ${meters.length} meters for prosumer ${prosumerId}`,
-        );
+        // this.logger.debug(
+        //   `Found ${meters.length} meters for prosumer ${prosumerId}`,
+        // );
 
         // If specific meterId is provided, filter by that meter
         if (meterId) {
@@ -947,7 +947,7 @@ export class EnergySettlementService {
   @Cron('0 0 * * * *') // Run at the start of every hour
   cleanCacheHourly() {
     this.cleanOldCacheEntries();
-    this.logger.debug('Hourly cache cleanup completed');
+    this.logger.log('Hourly cache cleanup completed');
   }
 
   async getHourlyEnergyHistory(

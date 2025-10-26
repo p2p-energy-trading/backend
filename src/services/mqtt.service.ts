@@ -5,6 +5,7 @@ import {
   OnModuleDestroy,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import * as mqtt from 'mqtt';
 import { CryptoService } from '../common/crypto.service';
 import {
@@ -20,6 +21,13 @@ import {
   MeterStatusPayload,
 } from './redis-telemetry.service';
 
+interface MessageStats {
+  totalMessages: number;
+  dataMessages: number;
+  statusMessages: number;
+  meterIds: Set<string>;
+}
+
 @Injectable()
 export class MqttService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(MqttService.name);
@@ -28,6 +36,14 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     command: 'enerlink/meters/command',
     metersData: 'enerlink/meters/data',
     metersStatus: 'enerlink/meters/status',
+  };
+
+  // Message statistics tracking
+  private messageStats: MessageStats = {
+    totalMessages: 0,
+    dataMessages: 0,
+    statusMessages: 0,
+    meterIds: new Set<string>(),
   };
 
   constructor(
@@ -48,6 +64,36 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     if (this.client) {
       this.client.end();
     }
+  }
+
+  /**
+   * Log MQTT message statistics every minute
+   */
+  @Cron(CronExpression.EVERY_MINUTE)
+  logMessageStats() {
+    const stats = this.messageStats;
+
+    if (stats.totalMessages > 0) {
+      const meterIdList = Array.from(stats.meterIds).join(', ');
+
+      this.logger.log(
+        `MQTT Stats (Last Minute): ` +
+          `Total: ${stats.totalMessages} messages | ` +
+          `Data: ${stats.dataMessages} | ` +
+          `Status: ${stats.statusMessages} | ` +
+          `Active Meters: ${stats.meterIds.size} [${meterIdList}]`,
+      );
+    } else {
+      this.logger.log('MQTT Stats (Last Minute): No messages received');
+    }
+
+    // Reset statistics for next minute
+    this.messageStats = {
+      totalMessages: 0,
+      dataMessages: 0,
+      statusMessages: 0,
+      meterIds: new Set<string>(),
+    };
   }
 
   private connect() {
@@ -126,6 +172,11 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       // Extract meter ID from topic or payload
       const meterId = this.extractMeterId(topic, parsedPayload);
       // const meterId = 'METER001';
+
+      // Track message statistics
+      this.messageStats.totalMessages++;
+      this.messageStats.meterIds.add(meterId);
+
       // Log message
       await this.logMessage(topic, payload, meterId, MqttDirection.INBOUND);
 
@@ -138,12 +189,14 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
         topic.includes('enerlink/meters/data')
       ) {
         // Energy measurements in real-time (battery, solar, load, grid)
+        this.messageStats.dataMessages++;
         await this.processMeterData(meterId, parsedPayload as MeterDataPayload);
       } else if (
         topic === this.topics.metersStatus ||
         topic.includes('enerlink/meters/status')
       ) {
         // Device metadata (wifi, mqtt, system, sensors)
+        this.messageStats.statusMessages++;
         await this.processMeterStatus(
           meterId,
           parsedPayload as MeterStatusPayload,
@@ -264,8 +317,6 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
         meterData: data, // Energy measurements (battery, solar, load, grid)
         timestamp,
       });
-
-      this.logger.debug(`Stored meter data for ${meterId} to Redis`);
     } catch (error) {
       this.logger.error(`Error processing meter data for ${meterId}:`, error);
     }
@@ -293,8 +344,6 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
         statusData: status, // Device metadata (wifi, mqtt, system, sensors)
         timestamp,
       });
-
-      this.logger.debug(`Stored meter status for ${meterId} to Redis`);
     } catch (error) {
       this.logger.error(`Error processing meter status for ${meterId}:`, error);
     }

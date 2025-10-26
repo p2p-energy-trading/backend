@@ -427,9 +427,9 @@ export class TradingController {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
           const quantity = Number(order.amountEtk);
           acc[price] = (acc[price] || 0) + quantity;
-          this.logger.debug(
-            `Accumulating sell order: price=${price}, quantity=${quantity}, total=${acc[price]}`,
-          );
+          // this.logger.debug(
+          //   `Accumulating sell order: price=${price}, quantity=${quantity}, total=${acc[price]}`,
+          // );
           return acc;
         },
         {} as Record<number, number>,
@@ -955,12 +955,12 @@ export class TradingController {
       if (['1s', '1m', '5m'].includes(interval) && !from && !to) {
         // Use cache for real-time intervals
         if (interval === '1s' || interval === '1m') {
-          priceHistory = this.priceCacheService.getPriceHistory(
+          priceHistory = await this.priceCacheService.getPriceHistory(
             interval,
             maxLimit,
           );
         } else {
-          priceHistory = this.priceCacheService.getPriceCandles(
+          priceHistory = await this.priceCacheService.getPriceCandles(
             interval,
             maxLimit,
           );
@@ -1021,7 +1021,7 @@ export class TradingController {
   async getRealTimePriceData() {
     try {
       // Get cached current price for better performance
-      const currentPrice = this.priceCacheService.getCurrentPrice();
+      const currentPrice = await this.priceCacheService.getCurrentPrice();
 
       // Get last 100 trades for real-time price feed
       const recentTrades = await this.marketTradesService.findRecentTrades(100);
@@ -1132,7 +1132,10 @@ export class TradingController {
       // Try cache first for supported intervals
       let candles;
       if (['1m', '5m', '1h'].includes(interval)) {
-        candles = this.priceCacheService.getPriceCandles(interval, maxLimit);
+        candles = await this.priceCacheService.getPriceCandles(
+          interval,
+          maxLimit,
+        );
       } else {
         candles = await this.marketTradesService.getPriceCandles(
           interval,
@@ -1183,9 +1186,9 @@ export class TradingController {
       // Get wallet balances using helper method
       const balances = await this.getWalletBalances(orderRequest.walletAddress);
 
-      this.logger.debug(
-        `Wallet ${orderRequest.walletAddress} balances - ETK: ${balances.ETK}, IDRS: ${balances.IDRS}`,
-      );
+      // this.logger.debug(
+      //   `Wallet ${orderRequest.walletAddress} balances - ETK: ${balances.ETK}, IDRS: ${balances.IDRS}`,
+      // );
 
       if (orderRequest.orderType === 'BID') {
         // For BID (buy) orders, need sufficient IDRS to pay

@@ -34,7 +34,7 @@ export class HealthCheckService {
       // Simple database connection test
       await this.transactionLogsService.findAll();
 
-      this.logger.debug('Database health check passed');
+      this.logger.log('Database health check passed');
     } catch (error) {
       this.logger.error('Database health check failed:', error);
       throw new Error('Database connection failed');
