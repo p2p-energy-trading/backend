@@ -41,6 +41,8 @@ import { CommonModule } from './common/common.module';
 import { ServicesModule } from './services/services.module';
 import { ControllersModule } from './controllers/controllers.module';
 import { WebSocketModule } from './websocket/websocket.module';
+import { TelemetryDataModule } from './models/TelemetryData/TelemetryData.module';
+import { TelemetryData } from './models/TelemetryData/TelemetryData.entity';
 
 @Module({
   imports: [
@@ -76,6 +78,7 @@ import { WebSocketModule } from './websocket/websocket.module';
         TransactionLogs,
         Wallets,
         TokenBlacklist,
+        TelemetryData
       ],
       // synchronize: true,
     }),
@@ -99,6 +102,7 @@ import { WebSocketModule } from './websocket/websocket.module';
     ControllersModule,
     WebSocketModule,
     TokenBlacklistModule,
+    TelemetryDataModule,
   ],
 })
 export class AppModule {}
