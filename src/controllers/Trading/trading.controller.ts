@@ -19,17 +19,20 @@ import {
   ApiQuery,
   ApiParam,
 } from '@nestjs/swagger';
-import { BlockchainService } from '../services/blockchain.service';
-import { EnergySettlementService } from '../services/energy-settlement.service';
-import { TradingAnalyticsService } from '../services/trading-analytics.service';
-import { WalletsService } from '../models/Wallets/Wallets.service';
-import { TradeOrdersCacheRedisService } from '../services/trade-orders-cache-redis.service';
-import { MarketTradesService } from '../models/MarketTrades/MarketTrades.service';
-import { JwtAuthGuard } from '../auth/guards/auth.guards';
+import { BlockchainService } from '../../services/Blockchain/blockchain.service';
+import { EnergySettlementService } from '../../services/Energy/energy-settlement.service';
+import { TradingAnalyticsService } from '../../services/Trading/trading-analytics.service';
+import { WalletsService } from '../../models/Wallets/Wallets.service';
+import { TradeOrdersCacheRedisService } from '../../services/Trading/trade-orders-cache-redis.service';
+import { MarketTradesService } from '../../models/MarketTrades/MarketTrades.service';
+import { JwtAuthGuard } from '../../auth/guards/auth.guards';
 import { ProsumersService } from 'src/models/Prosumers/Prosumers.service';
-import { PriceCacheService } from '../services/price-cache.service';
-import { ApiSuccessResponse, ApiPaginatedResponse } from '../common/interfaces';
-import { ResponseFormatter } from '../common/response-formatter';
+import { PriceCacheService } from '../../services/Trading/price-cache.service';
+import {
+  ApiSuccessResponse,
+  ApiPaginatedResponse,
+} from '../../common/interfaces';
+import { ResponseFormatter } from '../../common/response-formatter';
 import {
   PlaceOrderDto,
   PlaceOrderResponseDto,
@@ -37,7 +40,7 @@ import {
   OrderResponseDto,
   TradeResponseDto,
   OrderBookSummaryDto,
-} from '../common/dto/trading.dto';
+} from '../../common/dto/trading.dto';
 
 interface User extends Request {
   user: {

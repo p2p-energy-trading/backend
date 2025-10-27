@@ -43,10 +43,12 @@ export class RedisOrdersService implements OnModuleInit {
     const redisHost =
       this.configService.get<string>('REDIS_HOST') || 'localhost';
     const redisPort = this.configService.get<number>('REDIS_PORT') || 6379;
+    const redisPassword = this.configService.get<string>('REDIS_PASSWORD');
 
     this.client = new Redis({
       host: redisHost,
       port: redisPort,
+      password: redisPassword || undefined,
       retryStrategy: (times) => {
         const delay = Math.min(times * 50, 2000);
         return delay;

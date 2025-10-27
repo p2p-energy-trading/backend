@@ -14,15 +14,15 @@ import {
   ApiBearerAuth,
   ApiQuery,
 } from '@nestjs/swagger';
-import { StatService, StatStats } from '../services/stat.service';
-import { JwtAuthGuard } from '../auth/guards/auth.guards';
-import { AuthenticatedUser, ApiSuccessResponse } from '../common/interfaces';
-import { ResponseFormatter } from '../common/response-formatter';
+import { StatService, StatStats } from '../../services/Stat/stat.service';
+import { JwtAuthGuard } from '../../auth/guards/auth.guards';
+import { AuthenticatedUser, ApiSuccessResponse } from '../../common/interfaces';
+import { ResponseFormatter } from '../../common/response-formatter';
 import {
   DashboardStatsDto,
   SettlementRecommendationDto,
   BlockchainSyncStatusDto,
-} from '../common/dto/dashboard.dto';
+} from '../../common/dto/dashboard.dto';
 
 @ApiTags('Statistics')
 @ApiBearerAuth('JWT-auth')

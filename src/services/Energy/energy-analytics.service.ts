@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { TelemetryAggregate } from '../models/TelemetryAggregate/TelemetryAggregate.entity';
-import { RedisTelemetryService } from './redis-telemetry.service';
-import { EnergySettlementsService } from '../models/EnergySettlements/EnergySettlements.service';
-import { SmartMetersService } from '../models/SmartMeters/SmartMeters.service';
+import { TelemetryAggregate } from '../../models/TelemetryAggregate/TelemetryAggregate.entity';
+import { RedisTelemetryService } from '../Telemetry/redis-telemetry.service';
+import { EnergySettlementsService } from '../../models/EnergySettlements/EnergySettlements.service';
+import { SmartMetersService } from '../../models/SmartMeters/SmartMeters.service';
 
 /**
  * Service for energy analytics and calculations

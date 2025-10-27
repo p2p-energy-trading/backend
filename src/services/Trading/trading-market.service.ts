@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ethers } from 'ethers';
-import MarketABI from '../ABI/Market.json';
-import { TransactionLogsService } from '../models/TransactionLogs/TransactionLogs.service';
+import MarketABI from '../../ABI/Market.json';
+import { TransactionLogsService } from '../../models/TransactionLogs/TransactionLogs.service';
 import { TradeOrdersCacheRedisService } from './trade-orders-cache-redis.service';
-import { BlockchainConfig } from '../common/interfaces';
-import { TransactionType, OrderType } from '../common/enums';
+import { BlockchainConfig } from '../../common/interfaces';
+import { TransactionType, OrderType } from '../../common/enums';
 
 /**
  * Trading Market Service

@@ -1,17 +1,17 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
-import { EnergySettlementsService } from '../models/EnergySettlements/EnergySettlements.service';
-import { MarketTradesService } from '../models/MarketTrades/MarketTrades.service';
-import { SmartMetersService } from '../models/SmartMeters/SmartMeters.service';
-import { WalletsService } from '../models/Wallets/Wallets.service';
-import { BlockchainService } from './blockchain.service';
-import { EnergySettlementService } from './energy-settlement.service';
-import { EnergyAnalyticsService } from './energy-analytics.service';
-import { SmartMeterHealthService } from './smart-meter-health.service';
-import { TradingAnalyticsService } from './trading-analytics.service';
-import { RedisTelemetryService } from './redis-telemetry.service';
-import { TelemetryAggregate } from '../models/TelemetryAggregate/TelemetryAggregate.entity';
+import { EnergySettlementsService } from '../../models/EnergySettlements/EnergySettlements.service';
+import { MarketTradesService } from '../../models/MarketTrades/MarketTrades.service';
+import { SmartMetersService } from '../../models/SmartMeters/SmartMeters.service';
+import { WalletsService } from '../../models/Wallets/Wallets.service';
+import { BlockchainService } from '../Blockchain/blockchain.service';
+import { EnergySettlementService } from '../Energy/energy-settlement.service';
+import { EnergyAnalyticsService } from '../Energy/energy-analytics.service';
+import { SmartMeterHealthService } from '../SmartMeter/smart-meter-health.service';
+import { TradingAnalyticsService } from '../Trading/trading-analytics.service';
+import { RedisTelemetryService } from '../Telemetry/redis-telemetry.service';
+import { TelemetryAggregate } from '../../models/TelemetryAggregate/TelemetryAggregate.entity';
 
 export interface StatStats {
   energyStats: {

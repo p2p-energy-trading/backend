@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { TransactionLogsService } from '../models/TransactionLogs/TransactionLogs.service';
+import { TransactionLogsService } from '../../models/TransactionLogs/TransactionLogs.service';
 // Removed: DeviceCommandsService (DeviceCommands table dropped)
-import { TransactionStatus, DeviceCommandStatus } from '../common/enums';
+import { TransactionStatus, DeviceCommandStatus } from '../../common/enums';
 
 @Injectable()
 export class HealthCheckService {

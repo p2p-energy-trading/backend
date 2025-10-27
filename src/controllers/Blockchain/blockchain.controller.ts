@@ -15,15 +15,15 @@ import {
   ApiBearerAuth,
   ApiBody,
 } from '@nestjs/swagger';
-import { BlockchainService } from '../services/blockchain.service';
-import { WalletsService } from '../models/Wallets/Wallets.service';
-import { JwtAuthGuard } from '../auth/guards/auth.guards';
-import { AuthenticatedUser, ApiSuccessResponse } from '../common/interfaces';
-import { ResponseFormatter } from '../common/response-formatter';
+import { BlockchainService } from '../../services/Blockchain/blockchain.service';
+import { WalletsService } from '../../models/Wallets/Wallets.service';
+import { JwtAuthGuard } from '../../auth/guards/auth.guards';
+import { AuthenticatedUser, ApiSuccessResponse } from '../../common/interfaces';
+import { ResponseFormatter } from '../../common/response-formatter';
 import {
   ConvertIDRSDto,
   ConvertIDRSResponseDto,
-} from '../common/dto/blockchain.dto';
+} from '../../common/dto/blockchain.dto';
 
 /**
  * Blockchain Controller

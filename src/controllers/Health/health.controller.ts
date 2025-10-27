@@ -1,14 +1,14 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { HealthCheckService } from '../services/health-check.service';
-import { Public } from '../common/decorators/custom.decorators';
+import { HealthCheckService } from '../../services/Health/health-check.service';
+import { Public } from '../../common/decorators/custom.decorators';
 import {
   HealthResponseDto,
   ReadinessResponseDto,
   LivenessResponseDto,
-} from '../common/dto/health.dto';
-import { ApiSuccessResponse } from '../common/interfaces';
-import { ResponseFormatter } from '../common/response-formatter';
+} from '../../common/dto/health.dto';
+import { ApiSuccessResponse } from '../../common/interfaces';
+import { ResponseFormatter } from '../../common/response-formatter';
 
 @ApiTags('System')
 @Controller('health')

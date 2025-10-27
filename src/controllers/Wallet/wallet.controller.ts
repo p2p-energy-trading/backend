@@ -20,20 +20,20 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { ethers } from 'ethers';
-import { WalletsService } from '../models/Wallets/Wallets.service';
-import { IdrsConversionsService } from '../models/IdrsConversions/IdrsConversions.service';
-import { CryptoService } from '../common/crypto.service';
-import { JwtAuthGuard } from '../auth/guards/auth.guards';
-import { ApiSuccessResponse } from '../common/interfaces';
-import { ResponseFormatter } from '../common/response-formatter';
+import { WalletsService } from '../../models/Wallets/Wallets.service';
+import { IdrsConversionsService } from '../../models/IdrsConversions/IdrsConversions.service';
+import { CryptoService } from '../../common/crypto.service';
+import { JwtAuthGuard } from '../../auth/guards/auth.guards';
+import { ApiSuccessResponse } from '../../common/interfaces';
+import { ResponseFormatter } from '../../common/response-formatter';
 import {
   ConversionType,
   WalletImportMethod,
   TransactionType,
-} from '../common/enums';
+} from '../../common/enums';
 import { ProsumersService } from 'src/models/Prosumers/Prosumers.service';
-import { BlockchainService } from '../services/blockchain.service';
-import { TransactionLogsService } from '../models/TransactionLogs/TransactionLogs.service';
+import { BlockchainService } from '../../services/Blockchain/blockchain.service';
+import { TransactionLogsService } from '../../models/TransactionLogs/TransactionLogs.service';
 import {
   CreateWalletDto,
   CreateWalletResponseDto,
@@ -41,7 +41,7 @@ import {
   IdrsConversionResponseDto,
   WalletBalanceDto,
   WalletInfoDto,
-} from '../common/dto/wallet.dto';
+} from '../../common/dto/wallet.dto';
 // import { create } from 'domain';
 
 interface User extends Request {

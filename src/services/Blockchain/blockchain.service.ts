@@ -1,23 +1,23 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ethers } from 'ethers';
-import { WalletsService } from '../models/Wallets/Wallets.service';
-import { TransactionLogsService } from '../models/TransactionLogs/TransactionLogs.service';
-import { TradeOrdersCacheRedisService } from './trade-orders-cache-redis.service';
-import { MarketTradesService } from '../models/MarketTrades/MarketTrades.service';
+import { WalletsService } from '../../models/Wallets/Wallets.service';
+import { TransactionLogsService } from '../../models/TransactionLogs/TransactionLogs.service';
+import { TradeOrdersCacheRedisService } from '../Trading/trade-orders-cache-redis.service';
+import { MarketTradesService } from '../../models/MarketTrades/MarketTrades.service';
 // Removed: BlockchainApprovalsService (not used)
-import { CryptoService } from '../common/crypto.service';
-import { TransactionType, OrderType } from '../common/enums';
-import { BlockchainConfig } from '../common/interfaces';
-import { EnergySettlementService } from './energy-settlement.service';
+import { CryptoService } from '../../common/crypto.service';
+import { TransactionType, OrderType } from '../../common/enums';
+import { BlockchainConfig } from '../../common/interfaces';
+import { EnergySettlementService } from '../Energy/energy-settlement.service';
 import { ProsumersService } from 'src/models/Prosumers/Prosumers.service';
-import { TradingMarketService } from './trading-market.service';
+import { TradingMarketService } from '../Trading/trading-market.service';
 
 // Import ABIs from JSON files for cleaner implementation
-import EnergyConverterABI from '../ABI/EnergyConverter.json';
-import MarketABI from '../ABI/Market.json';
-import ETKABI from '../ABI/ETK_ERC20.json';
-import IDRSABI from '../ABI/IDRS_ERC20.json';
+import EnergyConverterABI from '../../ABI/EnergyConverter.json';
+import MarketABI from '../../ABI/Market.json';
+import ETKABI from '../../ABI/ETK_ERC20.json';
+import IDRSABI from '../../ABI/IDRS_ERC20.json';
 
 @Injectable()
 export class BlockchainService {

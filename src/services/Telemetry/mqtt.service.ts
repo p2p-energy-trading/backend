@@ -7,13 +7,13 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import * as mqtt from 'mqtt';
-import { CryptoService } from '../common/crypto.service';
+import { CryptoService } from '../../common/crypto.service';
 import {
   MqttTopicType,
   MqttDirection,
   DeviceCommandType,
-} from '../common/enums';
-import { DeviceCommandPayload } from '../common/interfaces';
+} from '../../common/enums';
+import { DeviceCommandPayload } from '../../common/interfaces';
 import { SmartMetersService } from 'src/models/SmartMeters/SmartMeters.service';
 import {
   RedisTelemetryService,

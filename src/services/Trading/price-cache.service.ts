@@ -2,8 +2,8 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
-import { MarketTradesService } from '../models/MarketTrades/MarketTrades.service';
-import { BlockchainService } from './blockchain.service';
+import { MarketTradesService } from '../../models/MarketTrades/MarketTrades.service';
+import { BlockchainService } from '../Blockchain/blockchain.service';
 
 interface PricePoint {
   timestamp: string;

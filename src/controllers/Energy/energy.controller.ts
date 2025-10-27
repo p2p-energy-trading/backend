@@ -19,20 +19,20 @@ import {
   ApiQuery,
   ApiParam,
 } from '@nestjs/swagger';
-import { EnergySettlementService } from '../services/energy-settlement.service';
-import { EnergySettlementsService } from '../models/EnergySettlements/EnergySettlements.service';
-import { EnergyAnalyticsService } from '../services/energy-analytics.service';
-import { TelemetryAggregationService } from '../services/telemetry-aggregation.service';
-import { JwtAuthGuard } from '../auth/guards/auth.guards';
-import { AuthService } from '../auth/auth.service';
-import { AuthenticatedUser, ApiSuccessResponse } from '../common/interfaces';
-import { ResponseFormatter } from '../common/response-formatter';
+import { EnergySettlementService } from '../../services/Energy/energy-settlement.service';
+import { EnergySettlementsService } from '../../models/EnergySettlements/EnergySettlements.service';
+import { EnergyAnalyticsService } from '../../services/Energy/energy-analytics.service';
+import { TelemetryAggregationService } from '../../services/Telemetry/telemetry-aggregation.service';
+import { JwtAuthGuard } from '../../auth/guards/auth.guards';
+import { AuthService } from '../../auth/auth.service';
+import { AuthenticatedUser, ApiSuccessResponse } from '../../common/interfaces';
+import { ResponseFormatter } from '../../common/response-formatter';
 import {
   EnergyReadingDto,
   EnergyStatsDto,
   SettlementEstimateDto,
   SettlementRecordDto,
-} from '../common/dto/energy.dto';
+} from '../../common/dto/energy.dto';
 // import { SettlementTrigger } from '../common/enums';
 
 @ApiTags('Energy')

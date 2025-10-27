@@ -22,26 +22,29 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { SmartMetersService } from '../models/SmartMeters/SmartMeters.service';
-import { JwtAuthGuard } from '../auth/guards/auth.guards';
-import { MqttService } from '../services/mqtt.service';
-import { SmartMeterHealthService } from '../services/smart-meter-health.service';
+import { SmartMetersService } from '../../models/SmartMeters/SmartMeters.service';
+import { JwtAuthGuard } from '../../auth/guards/auth.guards';
+import { MqttService } from '../../services/Telemetry/mqtt.service';
+import { SmartMeterHealthService } from '../../services/SmartMeter/smart-meter-health.service';
 import { ProsumersService } from 'src/models/Prosumers/Prosumers.service';
-import { RedisTelemetryService } from '../services/redis-telemetry.service';
-import { TelemetryAggregationService } from '../services/telemetry-aggregation.service';
-import { TelemetryArchivalService } from '../services/telemetry-archival.service';
+import { RedisTelemetryService } from '../../services/Telemetry/redis-telemetry.service';
+import { TelemetryAggregationService } from '../../services/Telemetry/telemetry-aggregation.service';
+import { TelemetryArchivalService } from '../../services/Telemetry/telemetry-archival.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
-import { TelemetryAggregate } from '../models/TelemetryAggregate/TelemetryAggregate.entity';
-import { DeviceCommandPayload, ApiSuccessResponse } from '../common/interfaces';
-import { ResponseFormatter } from '../common/response-formatter';
+import { TelemetryAggregate } from '../../models/TelemetryAggregate/TelemetryAggregate.entity';
+import {
+  DeviceCommandPayload,
+  ApiSuccessResponse,
+} from '../../common/interfaces';
+import { ResponseFormatter } from '../../common/response-formatter';
 import {
   CreateSmartMeterDto,
   SmartMeterResponseDto,
   LinkSmartMeterDto,
   UnlinkSmartMeterDto,
   UpdateSettlementIntervalDto,
-} from '../common/dto/smart-meter.dto';
+} from '../../common/dto/smart-meter.dto';
 import {
   DeviceControlDto,
   GridControlDto,
@@ -49,7 +52,7 @@ import {
   DeviceStatusDto,
   CommandResponseDto,
   DeviceStatusResponseDto,
-} from '../common/dto/device.dto';
+} from '../../common/dto/device.dto';
 
 interface User extends Request {
   user: {
