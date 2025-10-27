@@ -16,7 +16,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { BlockchainService } from '../../services/blockchain/blockchain.service';
-import { WalletsService } from '../../models/wallet/Wallets.service';
+import { WalletsService } from '../../models/wallet/wallet.service';
 import { JwtAuthGuard } from '../../auth/guards/auth.guards';
 import { AuthenticatedUser, ApiSuccessResponse } from '../../common/interfaces';
 import { ResponseFormatter } from '../../common/response-formatter';

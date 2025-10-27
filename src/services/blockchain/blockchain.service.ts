@@ -1,8 +1,8 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ethers } from 'ethers';
-import { WalletsService } from '../../models/wallet/Wallets.service';
-import { TransactionLogsService } from '../../models/transactionLog/TransactionLogs.service';
+import { WalletsService } from '../../models/wallet/wallet.service';
+import { TransactionLogsService } from '../../models/transactionLog/transactionLog.service';
 import { TradeOrdersCacheRedisService } from '../trading/trade-orders-cache-redis.service';
 import { MarketTradesService } from '../../models/marketTrade/marketTrade.service';
 // Removed: BlockchainApprovalsService (not used)

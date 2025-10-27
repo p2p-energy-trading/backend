@@ -4,8 +4,8 @@ import { IdrsConversionsService } from './idrsConversion.service';
 import { IdrsConversions } from './idrsConversion.entity';
 import { Prosumers } from '../user/user.entity';
 import { ProsumersModule } from '../user/user.module';
-import { Wallets } from '../wallet/Wallets.entity';
-import { WalletsModule } from '../wallet/Wallets.module';
+import { Wallets } from '../wallet/wallet.entity';
+import { WalletsModule } from '../wallet/wallet.module';
 
 @Module({
   imports: [

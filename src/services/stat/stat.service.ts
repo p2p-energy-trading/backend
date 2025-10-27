@@ -3,15 +3,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
 import { EnergySettlementsService } from '../../models/energySettlement/energySettlement.service';
 import { MarketTradesService } from '../../models/marketTrade/marketTrade.service';
-import { SmartMetersService } from '../../models/smartMeter/SmartMeters.service';
-import { WalletsService } from '../../models/wallet/Wallets.service';
+import { SmartMetersService } from '../../models/smartMeter/smartMeter.service';
+import { WalletsService } from '../../models/wallet/wallet.service';
 import { BlockchainService } from '../blockchain/blockchain.service';
 import { EnergySettlementService } from '../energy/energy-settlement.service';
 import { EnergyAnalyticsService } from '../energy/energy-analytics.service';
 import { SmartMeterHealthService } from '../smartMeter/smart-meter-health.service';
 import { TradingAnalyticsService } from '../trading/trading-analytics.service';
 import { RedisTelemetryService } from '../telemetry/redis-telemetry.service';
-import { TelemetryAggregate } from '../../models/telemetryAggregate/TelemetryAggregate.entity';
+import { TelemetryAggregate } from '../../models/telemetryAggregate/telemetryAggregate.entity';
 
 export interface StatStats {
   energyStats: {

@@ -4,9 +4,9 @@ import { Repository } from 'typeorm';
 import { EnergySettlements } from './energySettlement.entity';
 import { CreateEnergySettlementsInput } from './dto/energySettlement.input';
 import { EnergySettlementsArgs } from './dto/energySettlement.args';
-import { SmartMeters } from '../smartMeter/SmartMeters.entity';
+import { SmartMeters } from '../smartMeter/smartMeter.entity';
 // Removed: MqttMessageLogs (table dropped)
-import { TransactionLogs } from '../transactionLog/TransactionLogs.entity';
+import { TransactionLogs } from '../transactionLog/transactionLog.entity';
 
 @Injectable()
 export class EnergySettlementsService {

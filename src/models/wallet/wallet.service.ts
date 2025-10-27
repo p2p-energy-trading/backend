@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Wallets } from './Wallets.entity';
-import { CreateWalletsInput } from './dto/Wallets.input';
-import { WalletsArgs } from './dto/Wallets.args';
+import { Wallets } from './wallet.entity';
+import { CreateWalletsInput } from './dto/wallet.input';
+import { WalletsArgs } from './dto/wallet.args';
 // Removed: BlockchainApprovals (not used)
 import { IdrsConversions } from '../idrsConversion/idrsConversion.entity';
 import { MarketTrades } from '../marketTrade/marketTrade.entity';
-import { TradeOrdersCache } from '../tradeOrdersCache/TradeOrdersCache.entity';
+import { TradeOrdersCache } from '../tradeOrderCache/tradeOrderCache.entity';
 import { Prosumers } from '../user/user.entity';
 
 @Injectable()

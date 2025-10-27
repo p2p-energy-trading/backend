@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { IdrsConversions } from '../idrsConversion/idrsConversion.entity';
 import { MarketTrades } from '../marketTrade/marketTrade.entity';
-import { TradeOrdersCache } from '../tradeOrdersCache/TradeOrdersCache.entity';
+import { TradeOrdersCache } from '../tradeOrderCache/tradeOrderCache.entity';
 import { Prosumers } from '../user/user.entity';
 
 // Removed: BlockchainApprovals (not used)

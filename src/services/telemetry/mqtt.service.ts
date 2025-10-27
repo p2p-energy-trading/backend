@@ -14,7 +14,7 @@ import {
   DeviceCommandType,
 } from '../../common/enums';
 import { DeviceCommandPayload } from '../../common/interfaces';
-import { SmartMetersService } from 'src/models/smartMeter/SmartMeters.service';
+import { SmartMetersService } from 'src/models/smartMeter/smartMeter.service';
 import {
   RedisTelemetryService,
   MeterDataPayload,

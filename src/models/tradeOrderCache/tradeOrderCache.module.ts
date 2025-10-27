@@ -1,13 +1,13 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { TradeOrdersCacheService } from './TradeOrdersCache.service';
-import { TradeOrdersCache } from './TradeOrdersCache.entity';
+import { TradeOrdersCacheService } from './tradeOrderCache.service';
+import { TradeOrdersCache } from './tradeOrderCache.entity';
 import { Prosumers } from '../user/user.entity';
 import { ProsumersModule } from '../user/user.module';
-import { Wallets } from '../wallet/Wallets.entity';
-import { WalletsModule } from '../wallet/Wallets.module';
-import { TransactionLogs } from '../transactionLog/TransactionLogs.entity';
-import { TransactionLogsModule } from '../transactionLog/TransactionLogs.module';
+import { Wallets } from '../wallet/wallet.entity';
+import { WalletsModule } from '../wallet/wallet.module';
+import { TransactionLogs } from '../transactionLog/transactionLog.entity';
+import { TransactionLogsModule } from '../transactionLog/transactionLog.module';
 
 @Module({
   imports: [

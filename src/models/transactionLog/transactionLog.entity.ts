@@ -5,7 +5,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { TradeOrdersCache } from '../tradeOrdersCache/TradeOrdersCache.entity';
+import { TradeOrdersCache } from '../tradeOrderCache/tradeOrderCache.entity';
 import { Prosumers } from '../user/user.entity';
 import { EnergySettlements } from '../energySettlement/energySettlement.entity';
 

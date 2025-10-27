@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { SystemConfig } from './SystemConfig.entity';
-import { CreateSystemConfigInput } from './dto/SystemConfig.input';
-import { SystemConfigArgs } from './dto/SystemConfig.args';
+import { SystemConfig } from './systemConfig.entity';
+import { CreateSystemConfigInput } from './dto/systemConfig.input';
+import { SystemConfigArgs } from './dto/systemConfig.args';
 
 @Injectable()
 export class SystemConfigService {

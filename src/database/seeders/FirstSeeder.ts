@@ -1,8 +1,8 @@
 import { Seeder, SeederFactoryManager } from 'typeorm-extension';
 import { DataSource } from 'typeorm';
 import { Prosumers } from '../../models/user/user.entity';
-import { Wallets } from '../../models/wallet/Wallets.entity';
-import { SmartMeters } from '../../models/smartMeter/SmartMeters.entity';
+import { Wallets } from '../../models/wallet/wallet.entity';
+import { SmartMeters } from '../../models/smartMeter/smartMeter.entity';
 
 export class FirstSeeder implements Seeder {
   public async run(

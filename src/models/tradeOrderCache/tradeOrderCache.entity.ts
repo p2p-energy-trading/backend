@@ -7,8 +7,8 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Prosumers } from '../user/user.entity';
-import { Wallets } from '../wallet/Wallets.entity';
-import { TransactionLogs } from '../transactionLog/TransactionLogs.entity';
+import { Wallets } from '../wallet/wallet.entity';
+import { TransactionLogs } from '../transactionLog/transactionLog.entity';
 
 @Entity()
 export class TradeOrdersCache {

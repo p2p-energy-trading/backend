@@ -2,7 +2,7 @@ import { ObjectType, Field, Float } from '@nestjs/graphql';
 import { GraphQLJSON } from 'graphql-type-json';
 import { SmartMeters } from '../../smartMeter/dto/SmartMeters.output';
 // Removed: MqttMessageLogs (table dropped)
-import { TransactionLogs } from '../../transactionLog/dto/TransactionLogs.output';
+import { TransactionLogs } from '../../transactionLog/dto/transactionLog.output';
 
 @ObjectType()
 export class EnergySettlements {

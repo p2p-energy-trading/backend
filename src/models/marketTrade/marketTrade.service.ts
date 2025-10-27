@@ -5,7 +5,7 @@ import { MarketTrades } from './marketTrade.entity';
 import { CreateMarketTradesInput } from './dto/marketTrade.input';
 import { MarketTradesArgs } from './dto/marketTrade.args';
 import { Prosumers } from '../user/user.entity';
-import { Wallets } from '../wallet/Wallets.entity';
+import { Wallets } from '../wallet/wallet.entity';
 
 @Injectable()
 export class MarketTradesService {

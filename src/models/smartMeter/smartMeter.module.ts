@@ -1,7 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { SmartMetersService } from './SmartMeters.service';
-import { SmartMeters } from './SmartMeters.entity';
+import { SmartMetersService } from './smartMeter.service';
+import { SmartMeters } from './smartMeter.entity';
 // Removed unused entities:
 // - DeviceCommands
 // - DeviceStatusSnapshots

@@ -6,7 +6,7 @@ import {
   RedisTelemetryService,
   TelemetrySnapshot,
 } from './redis-telemetry.service';
-import { TelemetryAggregate } from '../../models/telemetryAggregate/TelemetryAggregate.entity';
+import { TelemetryAggregate } from '../../models/telemetryAggregate/telemetryAggregate.entity';
 
 /**
  * Service to aggregate real-time telemetry data from Redis into hourly PostgreSQL records

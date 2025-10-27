@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { SmartMetersService } from '../../models/smartMeter/SmartMeters.service';
+import { SmartMetersService } from '../../models/smartMeter/smartMeter.service';
 import { RedisTelemetryService } from '../telemetry/redis-telemetry.service';
 import { EnergySettlementsService } from '../../models/energySettlement/energySettlement.service';
 

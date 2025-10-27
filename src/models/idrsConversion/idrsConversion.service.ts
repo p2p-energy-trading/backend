@@ -5,7 +5,7 @@ import { IdrsConversions } from './idrsConversion.entity';
 import { CreateIdrsConversionsInput } from './dto/idrsConversion.input';
 import { IdrsConversionsArgs } from './dto/idrsConversion.args';
 import { Prosumers } from '../user/user.entity';
-import { Wallets } from '../wallet/Wallets.entity';
+import { Wallets } from '../wallet/wallet.entity';
 
 @Injectable()
 export class IdrsConversionsService {

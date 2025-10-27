@@ -15,18 +15,18 @@ import { TradeOrdersCacheRedisService } from './trading/trade-orders-cache-redis
 import { TelemetryAggregationService } from './telemetry/telemetry-aggregation.service';
 import { TelemetryArchivalService } from './telemetry/telemetry-archival.service';
 import { HealthCheckService } from './health/health-check.service';
-import { WalletsModule } from '../models/wallet/Wallets.module';
-import { TransactionLogsModule } from '../models/transactionLog/TransactionLogs.module';
-import { TradeOrdersCacheModule } from '../models/tradeOrdersCache/TradeOrdersCache.module';
+import { WalletsModule } from '../models/wallet/wallet.module';
+import { TransactionLogsModule } from '../models/transactionLog/transactionLog.module';
+import { TradeOrdersCacheModule } from '../models/tradeOrderCache/tradeOrderCache.module';
 import { MarketTradesModule } from '../models/marketTrade/marketTrade.module';
 
 // Removed: BlockchainApprovals (not used)
 import { EnergySettlementsModule } from '../models/energySettlement/energySettlement.module';
-import { SmartMetersModule } from '../models/smartMeter/SmartMeters.module';
+import { SmartMetersModule } from '../models/smartMeter/smartMeter.module';
 import { CommonModule } from '../common/common.module';
 import { WebSocketModule } from '../websocket/websocket.module';
 import { ProsumersModule } from 'src/models/user/user.module';
-import { TelemetryAggregate } from '../models/telemetryAggregate/TelemetryAggregate.entity';
+import { TelemetryAggregate } from '../models/telemetryAggregate/telemetryAggregate.entity';
 
 @Module({
   imports: [

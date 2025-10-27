@@ -20,7 +20,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { ethers } from 'ethers';
-import { WalletsService } from '../../models/wallet/Wallets.service';
+import { WalletsService } from '../../models/wallet/wallet.service';
 import { IdrsConversionsService } from '../../models/idrsConversion/idrsConversion.service';
 import { CryptoService } from '../../common/crypto.service';
 import { JwtAuthGuard } from '../../auth/guards/auth.guards';
@@ -33,7 +33,7 @@ import {
 } from '../../common/enums';
 import { ProsumersService } from 'src/models/user/user.service';
 import { BlockchainService } from '../../services/blockchain/blockchain.service';
-import { TransactionLogsService } from '../../models/transactionLog/TransactionLogs.service';
+import { TransactionLogsService } from '../../models/transactionLog/transactionLog.service';
 import {
   CreateWalletDto,
   CreateWalletResponseDto,

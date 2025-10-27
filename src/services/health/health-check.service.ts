@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { TransactionLogsService } from '../../models/transactionLog/TransactionLogs.service';
+import { TransactionLogsService } from '../../models/transactionLog/transactionLog.service';
 // Removed: DeviceCommandsService (DeviceCommands table dropped)
 import { TransactionStatus, DeviceCommandStatus } from '../../common/enums';
 

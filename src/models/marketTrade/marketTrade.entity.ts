@@ -6,7 +6,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Prosumers } from '../user/user.entity';
-import { Wallets } from '../wallet/Wallets.entity';
+import { Wallets } from '../wallet/wallet.entity';
 
 @Entity()
 export class MarketTrades {

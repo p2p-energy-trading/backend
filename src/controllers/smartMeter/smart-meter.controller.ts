@@ -22,7 +22,7 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { SmartMetersService } from '../../models/smartMeter/SmartMeters.service';
+import { SmartMetersService } from '../../models/smartMeter/smartMeter.service';
 import { JwtAuthGuard } from '../../auth/guards/auth.guards';
 import { MqttService } from '../../services/telemetry/mqtt.service';
 import { SmartMeterHealthService } from '../../services/smartMeter/smart-meter-health.service';
@@ -32,7 +32,7 @@ import { TelemetryAggregationService } from '../../services/telemetry/telemetry-
 import { TelemetryArchivalService } from '../../services/telemetry/telemetry-archival.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
-import { TelemetryAggregate } from '../../models/telemetryAggregate/TelemetryAggregate.entity';
+import { TelemetryAggregate } from '../../models/telemetryAggregate/telemetryAggregate.entity';
 import {
   DeviceCommandPayload,
   ApiSuccessResponse,

@@ -6,8 +6,8 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { SmartMeters } from '../smartMeter/SmartMeters.entity';
-import { TransactionLogs } from '../transactionLog/TransactionLogs.entity';
+import { SmartMeters } from '../smartMeter/smartMeter.entity';
+import { TransactionLogs } from '../transactionLog/transactionLog.entity';
 
 // Removed import for unused entity (replaced by Redis):
 // - MqttMessageLogs

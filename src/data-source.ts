@@ -13,14 +13,14 @@ import { Prosumers } from './models/user/user.entity';
 import { EnergySettlements } from './models/energySettlement/energySettlement.entity';
 import { IdrsConversions } from './models/idrsConversion/idrsConversion.entity';
 import { MarketTrades } from './models/marketTrade/marketTrade.entity';
-import { SmartMeters } from './models/smartMeter/SmartMeters.entity';
-import { SystemConfig } from './models/systemConfig/SystemConfig.entity';
+import { SmartMeters } from './models/smartMeter/smartMeter.entity';
+import { SystemConfig } from './models/systemConfig/systemConfig.entity';
 // Removed: TelemetryData (replaced by Redis)
 import { TokenBlacklist } from './models/tokenBlacklist/TokenBlacklist.entity';
-import { TradeOrdersCache } from './models/tradeOrdersCache/TradeOrdersCache.entity';
-import { TransactionLogs } from './models/transactionLog/TransactionLogs.entity';
-import { Wallets } from './models/wallet/Wallets.entity';
-import { TelemetryAggregate } from './models/telemetryAggregate/TelemetryAggregate.entity';
+import { TradeOrdersCache } from './models/tradeOrderCache/tradeOrderCache.entity';
+import { TransactionLogs } from './models/transactionLog/transactionLog.entity';
+import { Wallets } from './models/wallet/wallet.entity';
+import { TelemetryAggregate } from './models/telemetryAggregate/telemetryAggregate.entity';
 
 // Base TypeORM DataSource configuration
 const dataSourceOptions: DataSourceOptions = {

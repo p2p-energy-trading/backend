@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { TransactionLogs } from './TransactionLogs.entity';
-import { CreateTransactionLogsInput } from './dto/TransactionLogs.input';
-import { TransactionLogsArgs } from './dto/TransactionLogs.args';
-import { TradeOrdersCache } from '../tradeOrdersCache/TradeOrdersCache.entity';
+import { TransactionLogs } from './transactionLog.entity';
+import { CreateTransactionLogsInput } from './dto/transactionLog.input';
+import { TransactionLogsArgs } from './dto/transactionLog.args';
+import { TradeOrdersCache } from '../tradeOrderCache/tradeOrderCache.entity';
 import { Prosumers } from '../user/user.entity';
 import { EnergySettlements } from '../energySettlement/energySettlement.entity';
 

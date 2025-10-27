@@ -8,11 +8,11 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtAuthGuard } from './guards/auth.guards';
 import { ProsumersModule } from '../models/user/user.module';
-import { WalletsModule } from '../models/wallet/Wallets.module';
-import { TransactionLogsModule } from '../models/transactionLog/TransactionLogs.module';
+import { WalletsModule } from '../models/wallet/wallet.module';
+import { TransactionLogsModule } from '../models/transactionLog/transactionLog.module';
 import { TokenBlacklistModule } from '../models/tokenBlacklist/TokenBlacklist.module';
 import { CommonModule } from '../common/common.module';
-import { SmartMetersModule } from 'src/models/smartMeter/SmartMeters.module';
+import { SmartMetersModule } from 'src/models/smartMeter/smartMeter.module';
 
 @Module({
   imports: [

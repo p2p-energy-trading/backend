@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { TradeOrdersCache } from './TradeOrdersCache.entity';
-import { CreateTradeOrdersCacheInput } from './dto/TradeOrdersCache.input';
-import { TradeOrdersCacheArgs } from './dto/TradeOrdersCache.args';
+import { TradeOrdersCache } from './tradeOrderCache.entity';
+import { CreateTradeOrdersCacheInput } from './dto/tradeOrderCache.input';
+import { TradeOrdersCacheArgs } from './dto/tradeOrderCache.args';
 import { Prosumers } from '../user/user.entity';
-import { Wallets } from '../wallet/Wallets.entity';
-import { TransactionLogs } from '../transactionLog/TransactionLogs.entity';
+import { Wallets } from '../wallet/wallet.entity';
+import { TransactionLogs } from '../transactionLog/transactionLog.entity';
 
 @Injectable()
 export class TradeOrdersCacheService {

@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import * as Minio from 'minio';
-import { TelemetryAggregate } from '../../models/telemetryAggregate/TelemetryAggregate.entity';
+import { TelemetryAggregate } from '../../models/telemetryAggregate/telemetryAggregate.entity';
 import { createObjectCsvStringifier } from 'csv-writer';
 
 /**

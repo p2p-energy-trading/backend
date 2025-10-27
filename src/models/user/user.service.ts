@@ -7,10 +7,10 @@ import { ProsumersArgs } from './dto/Prosumers.args';
 // Removed: BlockchainApprovals (not used), DeviceCommands (table dropped)
 import { IdrsConversions } from '../idrsConversion/idrsConversion.entity';
 import { MarketTrades } from '../marketTrade/marketTrade.entity';
-import { SmartMeters } from '../smartMeter/SmartMeters.entity';
-import { TradeOrdersCache } from '../tradeOrdersCache/TradeOrdersCache.entity';
-import { TransactionLogs } from '../transactionLog/TransactionLogs.entity';
-import { Wallets } from '../wallet/Wallets.entity';
+import { SmartMeters } from '../smartMeter/smartMeter.entity';
+import { TradeOrdersCache } from '../tradeOrderCache/tradeOrderCache.entity';
+import { TransactionLogs } from '../transactionLog/transactionLog.entity';
+import { Wallets } from '../wallet/wallet.entity';
 
 @Injectable()
 export class ProsumersService {

@@ -1,9 +1,9 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { TransactionLogsService } from './TransactionLogs.service';
-import { TransactionLogs } from './TransactionLogs.entity';
-import { TradeOrdersCache } from '../tradeOrdersCache/TradeOrdersCache.entity';
-import { TradeOrdersCacheModule } from '../tradeOrdersCache/TradeOrdersCache.module';
+import { TransactionLogsService } from './transactionLog.service';
+import { TransactionLogs } from './transactionLog.entity';
+import { TradeOrdersCache } from '../tradeOrderCache/tradeOrderCache.entity';
+import { TradeOrdersCacheModule } from '../tradeOrderCache/tradeOrderCache.module';
 import { Prosumers } from '../user/user.entity';
 import { ProsumersModule } from '../user/user.module';
 import { EnergySettlements } from '../energySettlement/energySettlement.entity';

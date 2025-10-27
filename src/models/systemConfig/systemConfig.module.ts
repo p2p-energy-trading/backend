@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { SystemConfigService } from './SystemConfig.service';
-import { SystemConfig } from './SystemConfig.entity';
+import { SystemConfigService } from './systemConfig.service';
+import { SystemConfig } from './systemConfig.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([SystemConfig])],
