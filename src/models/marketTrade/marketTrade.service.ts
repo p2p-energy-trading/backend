@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { MarketTrades } from './marketTrade.entity';
 import { CreateMarketTradesInput } from './dto/marketTrade.input';
 import { MarketTradesArgs } from './dto/marketTrade.args';
-import { Prosumers } from '../prosumer/user.entity';
+import { Prosumers } from '../user/user.entity';
 import { Wallets } from '../wallet/Wallets.entity';
 
 @Injectable()

@@ -10,7 +10,7 @@ import { CryptoService } from '../../common/crypto.service';
 import { TransactionType, OrderType } from '../../common/enums';
 import { BlockchainConfig } from '../../common/interfaces';
 import { EnergySettlementService } from '../energy/energy-settlement.service';
-import { ProsumersService } from 'src/models/prosumer/user.service';
+import { ProsumersService } from 'src/models/user/user.service';
 import { TradingMarketService } from '../trading/trading-market.service';
 
 // Import ABIs from JSON files for cleaner implementation

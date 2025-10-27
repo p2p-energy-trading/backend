@@ -6,7 +6,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Prosumers } from '../prosumer/user.entity';
+import { Prosumers } from '../user/user.entity';
 import { Wallets } from '../wallet/Wallets.entity';
 import { TransactionLogs } from '../transactionLog/TransactionLogs.entity';
 

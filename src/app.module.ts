@@ -16,8 +16,8 @@ import { IdrsConversionsModule } from './models/idrsConversion/idrsConversion.mo
 import { IdrsConversions } from './models/idrsConversion/idrsConversion.entity';
 import { MarketTradesModule } from './models/marketTrade/marketTrade.module';
 import { MarketTrades } from './models/marketTrade/marketTrade.entity';
-import { ProsumersModule } from './models/prosumer/user.module';
-import { Prosumers } from './models/prosumer/user.entity';
+import { ProsumersModule } from './models/user/user.module';
+import { Prosumers } from './models/user/user.entity';
 import { SmartMetersModule } from './models/smartMeter/SmartMeters.module';
 import { SmartMeters } from './models/smartMeter/SmartMeters.entity';
 import { SystemConfigModule } from './models/systemConfig/SystemConfig.module';

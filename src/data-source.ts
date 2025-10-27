@@ -8,7 +8,7 @@ import { FirstSeeder } from './database/seeders/FirstSeeder';
 import { ProsumersFactory } from './database/factories/ProsumersFactory';
 import { WalletsFactory } from './database/factories/WalletsFactory';
 import { SmartMetersFactory } from './database/factories/SmartMetersFactory';
-import { Prosumers } from './models/prosumer/user.entity';
+import { Prosumers } from './models/user/user.entity';
 // Removed: BlockchainApprovals (not used)
 import { EnergySettlements } from './models/energySettlement/energySettlement.entity';
 import { IdrsConversions } from './models/idrsConversion/idrsConversion.entity';

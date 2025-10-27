@@ -7,7 +7,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { EnergySettlements } from '../energySettlement/energySettlement.entity';
-import { Prosumers } from '../prosumer/user.entity';
+import { Prosumers } from '../user/user.entity';
 
 // Removed imports for unused entities (replaced by Redis):
 // - DeviceCommands

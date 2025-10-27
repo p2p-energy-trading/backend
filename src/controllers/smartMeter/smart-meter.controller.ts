@@ -26,7 +26,7 @@ import { SmartMetersService } from '../../models/smartMeter/SmartMeters.service'
 import { JwtAuthGuard } from '../../auth/guards/auth.guards';
 import { MqttService } from '../../services/telemetry/mqtt.service';
 import { SmartMeterHealthService } from '../../services/smartMeter/smart-meter-health.service';
-import { ProsumersService } from 'src/models/prosumer/user.service';
+import { ProsumersService } from 'src/models/user/user.service';
 import { RedisTelemetryService } from '../../services/telemetry/redis-telemetry.service';
 import { TelemetryAggregationService } from '../../services/telemetry/telemetry-aggregation.service';
 import { TelemetryArchivalService } from '../../services/telemetry/telemetry-archival.service';

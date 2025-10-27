@@ -9,8 +9,8 @@ import { MarketTrades } from '../marketTrade/marketTrade.entity';
 import { MarketTradesModule } from '../marketTrade/marketTrade.module';
 import { TradeOrdersCache } from '../tradeOrdersCache/TradeOrdersCache.entity';
 import { TradeOrdersCacheModule } from '../tradeOrdersCache/TradeOrdersCache.module';
-import { Prosumers } from '../prosumer/user.entity';
-import { ProsumersModule } from '../prosumer/user.module';
+import { Prosumers } from '../user/user.entity';
+import { ProsumersModule } from '../user/user.module';
 
 @Module({
   imports: [

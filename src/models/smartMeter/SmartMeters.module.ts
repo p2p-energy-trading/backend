@@ -9,8 +9,8 @@ import { SmartMeters } from './SmartMeters.entity';
 // - MqttMessageLogs
 import { EnergySettlements } from '../energySettlement/energySettlement.entity';
 import { EnergySettlementsModule } from '../energySettlement/energySettlement.module';
-import { Prosumers } from '../prosumer/user.entity';
-import { ProsumersModule } from '../prosumer/user.module';
+import { Prosumers } from '../user/user.entity';
+import { ProsumersModule } from '../user/user.module';
 
 @Module({
   imports: [

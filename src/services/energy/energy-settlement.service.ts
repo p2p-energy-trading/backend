@@ -10,7 +10,7 @@ import { TransactionLogsService } from '../../models/transactionLog/TransactionL
 import { SettlementTrigger, TransactionStatus } from '../../common/enums';
 import { DeviceCommandPayload } from '../../common/interfaces';
 import { WalletsService } from 'src/models/wallet/Wallets.service';
-import { ProsumersService } from 'src/models/prosumer/user.service';
+import { ProsumersService } from 'src/models/user/user.service';
 import { StatService } from '../stat/stat.service';
 import { EnergyAnalyticsService } from './energy-analytics.service';
 import { RedisTelemetryService } from '../telemetry/redis-telemetry.service';

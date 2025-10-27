@@ -10,7 +10,7 @@ import { SmartMetersArgs } from './dto/SmartMeters.args';
 // - EnergyReadingsDetailed
 // - MqttMessageLogs
 import { EnergySettlements } from '../energySettlement/energySettlement.entity';
-import { Prosumers } from '../prosumer/user.entity';
+import { Prosumers } from '../user/user.entity';
 
 @Injectable()
 export class SmartMetersService {

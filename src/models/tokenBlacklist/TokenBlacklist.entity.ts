@@ -1,5 +1,5 @@
 // entities/token-blacklist.entity.ts
-import { Prosumers } from '../prosumer/user.entity';
+import { Prosumers } from '../user/user.entity';
 import {
   Entity,
   Column,

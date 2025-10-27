@@ -6,7 +6,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { TradeOrdersCache } from '../tradeOrdersCache/TradeOrdersCache.entity';
-import { Prosumers } from '../prosumer/user.entity';
+import { Prosumers } from '../user/user.entity';
 import { EnergySettlements } from '../energySettlement/energySettlement.entity';
 
 @Entity()

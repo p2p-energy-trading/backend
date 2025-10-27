@@ -5,7 +5,7 @@ import { TransactionLogs } from './TransactionLogs.entity';
 import { CreateTransactionLogsInput } from './dto/TransactionLogs.input';
 import { TransactionLogsArgs } from './dto/TransactionLogs.args';
 import { TradeOrdersCache } from '../tradeOrdersCache/TradeOrdersCache.entity';
-import { Prosumers } from '../prosumer/user.entity';
+import { Prosumers } from '../user/user.entity';
 import { EnergySettlements } from '../energySettlement/energySettlement.entity';
 
 @Injectable()

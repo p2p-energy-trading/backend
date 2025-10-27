@@ -25,7 +25,7 @@ import { EnergySettlementsModule } from '../models/energySettlement/energySettle
 import { SmartMetersModule } from '../models/smartMeter/SmartMeters.module';
 import { CommonModule } from '../common/common.module';
 import { WebSocketModule } from '../websocket/websocket.module';
-import { ProsumersModule } from 'src/models/prosumer/user.module';
+import { ProsumersModule } from 'src/models/user/user.module';
 import { TelemetryAggregate } from '../models/telemetryAggregate/TelemetryAggregate.entity';
 
 @Module({

@@ -4,7 +4,7 @@ import { Repository, In } from 'typeorm';
 import { TradeOrdersCache } from './TradeOrdersCache.entity';
 import { CreateTradeOrdersCacheInput } from './dto/TradeOrdersCache.input';
 import { TradeOrdersCacheArgs } from './dto/TradeOrdersCache.args';
-import { Prosumers } from '../prosumer/user.entity';
+import { Prosumers } from '../user/user.entity';
 import { Wallets } from '../wallet/Wallets.entity';
 import { TransactionLogs } from '../transactionLog/TransactionLogs.entity';
 

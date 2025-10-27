@@ -9,7 +9,7 @@ import {
 import { IdrsConversions } from '../idrsConversion/idrsConversion.entity';
 import { MarketTrades } from '../marketTrade/marketTrade.entity';
 import { TradeOrdersCache } from '../tradeOrdersCache/TradeOrdersCache.entity';
-import { Prosumers } from '../prosumer/user.entity';
+import { Prosumers } from '../user/user.entity';
 
 // Removed: BlockchainApprovals (not used)
 

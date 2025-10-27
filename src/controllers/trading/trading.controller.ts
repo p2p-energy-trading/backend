@@ -26,7 +26,7 @@ import { WalletsService } from '../../models/wallet/Wallets.service';
 import { TradeOrdersCacheRedisService } from '../../services/trading/trade-orders-cache-redis.service';
 import { MarketTradesService } from '../../models/marketTrade/marketTrade.service';
 import { JwtAuthGuard } from '../../auth/guards/auth.guards';
-import { ProsumersService } from 'src/models/prosumer/user.service';
+import { ProsumersService } from 'src/models/user/user.service';
 import { PriceCacheService } from '../../services/trading/price-cache.service';
 import {
   ApiSuccessResponse,

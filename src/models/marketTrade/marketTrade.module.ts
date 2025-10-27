@@ -2,8 +2,8 @@ import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MarketTradesService } from './marketTrade.service';
 import { MarketTrades } from './marketTrade.entity';
-import { Prosumers } from '../prosumer/user.entity';
-import { ProsumersModule } from '../prosumer/user.module';
+import { Prosumers } from '../user/user.entity';
+import { ProsumersModule } from '../user/user.module';
 import { Wallets } from '../wallet/Wallets.entity';
 import { WalletsModule } from '../wallet/Wallets.module';
 

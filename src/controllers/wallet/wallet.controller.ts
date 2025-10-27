@@ -31,7 +31,7 @@ import {
   WalletImportMethod,
   TransactionType,
 } from '../../common/enums';
-import { ProsumersService } from 'src/models/prosumer/user.service';
+import { ProsumersService } from 'src/models/user/user.service';
 import { BlockchainService } from '../../services/blockchain/blockchain.service';
 import { TransactionLogsService } from '../../models/transactionLog/TransactionLogs.service';
 import {

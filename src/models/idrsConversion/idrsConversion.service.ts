@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { IdrsConversions } from './idrsConversion.entity';
 import { CreateIdrsConversionsInput } from './dto/idrsConversion.input';
 import { IdrsConversionsArgs } from './dto/idrsConversion.args';
-import { Prosumers } from '../prosumer/user.entity';
+import { Prosumers } from '../user/user.entity';
 import { Wallets } from '../wallet/Wallets.entity';
 
 @Injectable()

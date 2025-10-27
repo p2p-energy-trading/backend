@@ -8,7 +8,7 @@ import { WalletsArgs } from './dto/Wallets.args';
 import { IdrsConversions } from '../idrsConversion/idrsConversion.entity';
 import { MarketTrades } from '../marketTrade/marketTrade.entity';
 import { TradeOrdersCache } from '../tradeOrdersCache/TradeOrdersCache.entity';
-import { Prosumers } from '../prosumer/user.entity';
+import { Prosumers } from '../user/user.entity';
 
 @Injectable()
 export class WalletsService {

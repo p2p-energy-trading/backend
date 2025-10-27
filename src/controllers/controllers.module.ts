@@ -21,7 +21,7 @@ import { SmartMetersModule } from '../models/smartMeter/SmartMeters.module';
 import { TradeOrdersCacheModule } from '../models/tradeOrdersCache/TradeOrdersCache.module';
 import { MarketTradesModule } from '../models/marketTrade/marketTrade.module';
 import { CommonModule } from '../common/common.module';
-import { ProsumersModule } from 'src/models/prosumer/user.module';
+import { ProsumersModule } from 'src/models/user/user.module';
 import { TokenBlacklistModule } from 'src/models/tokenBlacklist/TokenBlacklist.module';
 import { TransactionLogsModule } from 'src/models/transactionLog/TransactionLogs.module';
 import { EnergySettlementsModule } from 'src/models/energySettlement/energySettlement.module';
