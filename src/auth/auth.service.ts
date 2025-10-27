@@ -7,7 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ethers } from 'ethers';
-import { ProsumersService } from '../models/Prosumers/Prosumers.service';
+import { ProsumersService } from '../models/prosumer/Prosumers.service';
 import { WalletsService } from '../models/Wallets/Wallets.service';
 import { CryptoService } from '../common/crypto.service';
 import { LoginDto, RegisterDto } from './dto/auth.dto';

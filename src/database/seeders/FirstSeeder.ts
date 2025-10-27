@@ -1,6 +1,6 @@
 import { Seeder, SeederFactoryManager } from 'typeorm-extension';
 import { DataSource } from 'typeorm';
-import { Prosumers } from '../../models/Prosumers/Prosumers.entity';
+import { Prosumers } from '../../models/prosumer/Prosumers.entity';
 import { Wallets } from '../../models/Wallets/Wallets.entity';
 import { SmartMeters } from '../../models/SmartMeters/SmartMeters.entity';
 

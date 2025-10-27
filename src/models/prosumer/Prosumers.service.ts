@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Prosumers } from '../Prosumers/Prosumers.entity';
+import { Prosumers } from './Prosumers.entity';
 import { CreateProsumersInput } from './dto/Prosumers.input';
 import { ProsumersArgs } from './dto/Prosumers.args';
 // Removed: BlockchainApprovals (not used), DeviceCommands (table dropped)
-import { IdrsConversions } from '../IdrsConversions/IdrsConversions.entity';
-import { MarketTrades } from '../MarketTrades/MarketTrades.entity';
+import { IdrsConversions } from '../idrsConversion/IdrsConversions.entity';
+import { MarketTrades } from '../marketTrade/MarketTrades.entity';
 import { SmartMeters } from '../SmartMeters/SmartMeters.entity';
 import { TradeOrdersCache } from '../TradeOrdersCache/TradeOrdersCache.entity';
 import { TransactionLogs } from '../TransactionLogs/TransactionLogs.entity';

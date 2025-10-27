@@ -5,8 +5,8 @@ import { TransactionLogs } from '../TransactionLogs/TransactionLogs.entity';
 import { CreateTransactionLogsInput } from './dto/TransactionLogs.input';
 import { TransactionLogsArgs } from './dto/TransactionLogs.args';
 import { TradeOrdersCache } from '../TradeOrdersCache/TradeOrdersCache.entity';
-import { Prosumers } from '../Prosumers/Prosumers.entity';
-import { EnergySettlements } from '../EnergySettlements/EnergySettlements.entity';
+import { Prosumers } from '../prosumer/Prosumers.entity';
+import { EnergySettlements } from '../energySettlement/EnergySettlements.entity';
 
 @Injectable()
 export class TransactionLogsService {

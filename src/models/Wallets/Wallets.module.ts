@@ -3,14 +3,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { WalletsService } from './Wallets.service';
 import { Wallets } from './Wallets.entity';
 // Removed: BlockchainApprovals (not used)
-import { IdrsConversions } from '../IdrsConversions/IdrsConversions.entity';
-import { IdrsConversionsModule } from '../IdrsConversions/IdrsConversions.module';
-import { MarketTrades } from '../MarketTrades/MarketTrades.entity';
-import { MarketTradesModule } from '../MarketTrades/MarketTrades.module';
+import { IdrsConversions } from '../idrsConversion/IdrsConversions.entity';
+import { IdrsConversionsModule } from '../idrsConversion/IdrsConversions.module';
+import { MarketTrades } from '../marketTrade/MarketTrades.entity';
+import { MarketTradesModule } from '../marketTrade/MarketTrades.module';
 import { TradeOrdersCache } from '../TradeOrdersCache/TradeOrdersCache.entity';
 import { TradeOrdersCacheModule } from '../TradeOrdersCache/TradeOrdersCache.module';
-import { Prosumers } from '../Prosumers/Prosumers.entity';
-import { ProsumersModule } from '../Prosumers/Prosumers.module';
+import { Prosumers } from '../prosumer/Prosumers.entity';
+import { ProsumersModule } from '../prosumer/Prosumers.module';
 
 @Module({
   imports: [

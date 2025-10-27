@@ -1,8 +1,8 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
-import { EnergySettlementsService } from '../../models/EnergySettlements/EnergySettlements.service';
-import { MarketTradesService } from '../../models/MarketTrades/MarketTrades.service';
+import { EnergySettlementsService } from '../../models/energySettlement/EnergySettlements.service';
+import { MarketTradesService } from '../../models/marketTrade/MarketTrades.service';
 import { SmartMetersService } from '../../models/SmartMeters/SmartMeters.service';
 import { WalletsService } from '../../models/Wallets/Wallets.service';
 import { BlockchainService } from '../Blockchain/blockchain.service';

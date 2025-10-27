@@ -6,10 +6,10 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { IdrsConversions } from '../IdrsConversions/IdrsConversions.entity';
-import { MarketTrades } from '../MarketTrades/MarketTrades.entity';
+import { IdrsConversions } from '../idrsConversion/IdrsConversions.entity';
+import { MarketTrades } from '../marketTrade/MarketTrades.entity';
 import { TradeOrdersCache } from '../TradeOrdersCache/TradeOrdersCache.entity';
-import { Prosumers } from '../Prosumers/Prosumers.entity';
+import { Prosumers } from '../prosumer/Prosumers.entity';
 
 // Removed: BlockchainApprovals (not used)
 

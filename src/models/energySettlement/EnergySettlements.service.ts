@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { EnergySettlements } from '../EnergySettlements/EnergySettlements.entity';
+import { EnergySettlements } from './EnergySettlements.entity';
 import { CreateEnergySettlementsInput } from './dto/EnergySettlements.input';
 import { EnergySettlementsArgs } from './dto/EnergySettlements.args';
 import { SmartMeters } from '../SmartMeters/SmartMeters.entity';

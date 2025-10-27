@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { IdrsConversions } from '../IdrsConversions/IdrsConversions.entity';
+import { IdrsConversions } from './IdrsConversions.entity';
 import { CreateIdrsConversionsInput } from './dto/IdrsConversions.input';
 import { IdrsConversionsArgs } from './dto/IdrsConversions.args';
-import { Prosumers } from '../Prosumers/Prosumers.entity';
+import { Prosumers } from '../prosumer/Prosumers.entity';
 import { Wallets } from '../Wallets/Wallets.entity';
 
 @Injectable()

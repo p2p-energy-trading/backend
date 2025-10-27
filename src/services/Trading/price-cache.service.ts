@@ -2,7 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
-import { MarketTradesService } from '../../models/MarketTrades/MarketTrades.service';
+import { MarketTradesService } from '../../models/marketTrade/MarketTrades.service';
 import { BlockchainService } from '../Blockchain/blockchain.service';
 
 interface PricePoint {

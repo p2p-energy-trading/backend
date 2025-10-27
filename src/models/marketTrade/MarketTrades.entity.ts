@@ -5,7 +5,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Prosumers } from '../Prosumers/Prosumers.entity';
+import { Prosumers } from '../prosumer/Prosumers.entity';
 import { Wallets } from '../Wallets/Wallets.entity';
 
 @Entity()

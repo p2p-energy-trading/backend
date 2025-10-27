@@ -6,8 +6,8 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { EnergySettlements } from '../EnergySettlements/EnergySettlements.entity';
-import { Prosumers } from '../Prosumers/Prosumers.entity';
+import { EnergySettlements } from '../energySettlement/EnergySettlements.entity';
+import { Prosumers } from '../prosumer/Prosumers.entity';
 
 // Removed imports for unused entities (replaced by Redis):
 // - DeviceCommands

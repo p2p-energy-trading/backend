@@ -2,7 +2,7 @@ import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 // import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
-import { EnergySettlementsService } from '../../models/EnergySettlements/EnergySettlements.service';
+import { EnergySettlementsService } from '../../models/energySettlement/EnergySettlements.service';
 import { SmartMetersService } from '../../models/SmartMeters/SmartMeters.service';
 import { BlockchainService } from '../Blockchain/blockchain.service';
 import { MqttService } from '../Telemetry/mqtt.service';
@@ -10,7 +10,7 @@ import { TransactionLogsService } from '../../models/TransactionLogs/Transaction
 import { SettlementTrigger, TransactionStatus } from '../../common/enums';
 import { DeviceCommandPayload } from '../../common/interfaces';
 import { WalletsService } from 'src/models/Wallets/Wallets.service';
-import { ProsumersService } from 'src/models/Prosumers/Prosumers.service';
+import { ProsumersService } from 'src/models/prosumer/Prosumers.service';
 import { StatService } from '../Stat/stat.service';
 import { EnergyAnalyticsService } from './energy-analytics.service';
 import { RedisTelemetryService } from '../Telemetry/redis-telemetry.service';

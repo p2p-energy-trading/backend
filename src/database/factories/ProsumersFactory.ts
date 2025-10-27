@@ -1,5 +1,5 @@
 import { setSeederFactory } from 'typeorm-extension';
-import { Prosumers } from '../../models/Prosumers/Prosumers.entity';
+import { Prosumers } from '../../models/prosumer/Prosumers.entity';
 import * as bcrypt from 'bcryptjs';
 
 export const ProsumersFactory = setSeederFactory(Prosumers, (faker) => {

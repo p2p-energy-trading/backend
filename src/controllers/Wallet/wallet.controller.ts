@@ -21,7 +21,7 @@ import {
 } from '@nestjs/swagger';
 import { ethers } from 'ethers';
 import { WalletsService } from '../../models/Wallets/Wallets.service';
-import { IdrsConversionsService } from '../../models/IdrsConversions/IdrsConversions.service';
+import { IdrsConversionsService } from '../../models/idrsConversion/IdrsConversions.service';
 import { CryptoService } from '../../common/crypto.service';
 import { JwtAuthGuard } from '../../auth/guards/auth.guards';
 import { ApiSuccessResponse } from '../../common/interfaces';
@@ -31,7 +31,7 @@ import {
   WalletImportMethod,
   TransactionType,
 } from '../../common/enums';
-import { ProsumersService } from 'src/models/Prosumers/Prosumers.service';
+import { ProsumersService } from 'src/models/prosumer/Prosumers.service';
 import { BlockchainService } from '../../services/Blockchain/blockchain.service';
 import { TransactionLogsService } from '../../models/TransactionLogs/TransactionLogs.service';
 import {

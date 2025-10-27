@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { MarketTrades } from '../MarketTrades/MarketTrades.entity';
+import { MarketTrades } from './MarketTrades.entity';
 import { CreateMarketTradesInput } from './dto/MarketTrades.input';
 import { MarketTradesArgs } from './dto/MarketTrades.args';
-import { Prosumers } from '../Prosumers/Prosumers.entity';
+import { Prosumers } from '../prosumer/Prosumers.entity';
 import { Wallets } from '../Wallets/Wallets.entity';
 
 @Injectable()

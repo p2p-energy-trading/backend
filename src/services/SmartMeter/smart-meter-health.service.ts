@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SmartMetersService } from '../../models/SmartMeters/SmartMeters.service';
 import { RedisTelemetryService } from '../Telemetry/redis-telemetry.service';
-import { EnergySettlementsService } from '../../models/EnergySettlements/EnergySettlements.service';
+import { EnergySettlementsService } from '../../models/energySettlement/EnergySettlements.service';
 
 /**
  * Service for smart meter health monitoring and connectivity

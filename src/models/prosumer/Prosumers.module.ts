@@ -3,10 +3,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProsumersService } from './Prosumers.service';
 import { Prosumers } from './Prosumers.entity';
 // Removed: BlockchainApprovals (not used), DeviceCommands (table dropped)
-import { IdrsConversions } from '../IdrsConversions/IdrsConversions.entity';
-import { IdrsConversionsModule } from '../IdrsConversions/IdrsConversions.module';
-import { MarketTrades } from '../MarketTrades/MarketTrades.entity';
-import { MarketTradesModule } from '../MarketTrades/MarketTrades.module';
+import { IdrsConversions } from '../idrsConversion/IdrsConversions.entity';
+import { IdrsConversionsModule } from '../idrsConversion/IdrsConversions.module';
+import { MarketTrades } from '../marketTrade/MarketTrades.entity';
+import { MarketTradesModule } from '../marketTrade/MarketTrades.module';
 import { SmartMeters } from '../SmartMeters/SmartMeters.entity';
 import { SmartMetersModule } from '../SmartMeters/SmartMeters.module';
 import { TradeOrdersCache } from '../TradeOrdersCache/TradeOrdersCache.entity';

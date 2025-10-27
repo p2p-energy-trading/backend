@@ -1,6 +1,6 @@
 import { Entity, Column, PrimaryColumn, OneToMany, OneToOne } from 'typeorm';
-import { IdrsConversions } from '../IdrsConversions/IdrsConversions.entity';
-import { MarketTrades } from '../MarketTrades/MarketTrades.entity';
+import { IdrsConversions } from '../idrsConversion/IdrsConversions.entity';
+import { MarketTrades } from '../marketTrade/MarketTrades.entity';
 import { SmartMeters } from '../SmartMeters/SmartMeters.entity';
 import { TradeOrdersCache } from '../TradeOrdersCache/TradeOrdersCache.entity';
 import { TransactionLogs } from '../TransactionLogs/TransactionLogs.entity';

@@ -10,14 +10,14 @@ import { ThrottlerModule } from '@nestjs/throttler';
 // - DeviceStatusSnapshots
 // - EnergyReadingsDetailed
 // - MqttMessageLogs
-import { EnergySettlementsModule } from './models/EnergySettlements/EnergySettlements.module';
-import { EnergySettlements } from './models/EnergySettlements/EnergySettlements.entity';
-import { IdrsConversionsModule } from './models/IdrsConversions/IdrsConversions.module';
-import { IdrsConversions } from './models/IdrsConversions/IdrsConversions.entity';
-import { MarketTradesModule } from './models/MarketTrades/MarketTrades.module';
-import { MarketTrades } from './models/MarketTrades/MarketTrades.entity';
-import { ProsumersModule } from './models/Prosumers/Prosumers.module';
-import { Prosumers } from './models/Prosumers/Prosumers.entity';
+import { EnergySettlementsModule } from './models/energySettlement/EnergySettlements.module';
+import { EnergySettlements } from './models/energySettlement/EnergySettlements.entity';
+import { IdrsConversionsModule } from './models/idrsConversion/IdrsConversions.module';
+import { IdrsConversions } from './models/idrsConversion/IdrsConversions.entity';
+import { MarketTradesModule } from './models/marketTrade/MarketTrades.module';
+import { MarketTrades } from './models/marketTrade/MarketTrades.entity';
+import { ProsumersModule } from './models/prosumer/Prosumers.module';
+import { Prosumers } from './models/prosumer/Prosumers.entity';
 import { SmartMetersModule } from './models/SmartMeters/SmartMeters.module';
 import { SmartMeters } from './models/SmartMeters/SmartMeters.entity';
 import { SystemConfigModule } from './models/SystemConfig/SystemConfig.module';

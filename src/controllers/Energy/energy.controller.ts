@@ -20,7 +20,7 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { EnergySettlementService } from '../../services/Energy/energy-settlement.service';
-import { EnergySettlementsService } from '../../models/EnergySettlements/EnergySettlements.service';
+import { EnergySettlementsService } from '../../models/energySettlement/EnergySettlements.service';
 import { EnergyAnalyticsService } from '../../services/Energy/energy-analytics.service';
 import { TelemetryAggregationService } from '../../services/Telemetry/telemetry-aggregation.service';
 import { JwtAuthGuard } from '../../auth/guards/auth.guards';

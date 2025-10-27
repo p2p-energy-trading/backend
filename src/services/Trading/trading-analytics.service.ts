@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { MarketTradesService } from '../../models/MarketTrades/MarketTrades.service';
+import { MarketTradesService } from '../../models/marketTrade/MarketTrades.service';
 import { WalletsService } from '../../models/Wallets/Wallets.service';
 import { TradeOrdersCacheRedisService } from './trade-orders-cache-redis.service';
 

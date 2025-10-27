@@ -12,19 +12,19 @@ import { SmartMeterController } from './SmartMeter/smart-meter.controller';
 import { ServicesModule } from '../services/services.module';
 import { AuthModule } from '../auth/auth.module';
 import { WalletsModule } from '../models/Wallets/Wallets.module';
-import { IdrsConversionsModule } from '../models/IdrsConversions/IdrsConversions.module';
+import { IdrsConversionsModule } from '../models/idrsConversion/IdrsConversions.module';
 import { SmartMetersModule } from '../models/SmartMeters/SmartMeters.module';
 // Removed unused modules:
 // - DeviceCommandsModule
 // - DeviceStatusSnapshotsModule
 // - EnergyReadingsDetailedModule
 import { TradeOrdersCacheModule } from '../models/TradeOrdersCache/TradeOrdersCache.module';
-import { MarketTradesModule } from '../models/MarketTrades/MarketTrades.module';
+import { MarketTradesModule } from '../models/marketTrade/MarketTrades.module';
 import { CommonModule } from '../common/common.module';
-import { ProsumersModule } from 'src/models/Prosumers/Prosumers.module';
+import { ProsumersModule } from 'src/models/prosumer/Prosumers.module';
 import { TokenBlacklistModule } from 'src/models/TokenBlacklist/TokenBlacklist.module';
 import { TransactionLogsModule } from 'src/models/TransactionLogs/TransactionLogs.module';
-import { EnergySettlementsModule } from 'src/models/EnergySettlements/EnergySettlements.module';
+import { EnergySettlementsModule } from 'src/models/energySettlement/EnergySettlements.module';
 // Removed: EnergyReadingsDetailedModule
 import { TelemetryAggregate } from '../models/TelemetryAggregate/TelemetryAggregate.entity';
 

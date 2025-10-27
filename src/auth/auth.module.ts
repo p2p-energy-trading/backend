@@ -7,7 +7,7 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtAuthGuard } from './guards/auth.guards';
-import { ProsumersModule } from '../models/Prosumers/Prosumers.module';
+import { ProsumersModule } from '../models/prosumer/Prosumers.module';
 import { WalletsModule } from '../models/Wallets/Wallets.module';
 import { TransactionLogsModule } from '../models/TransactionLogs/TransactionLogs.module';
 import { TokenBlacklistModule } from '../models/TokenBlacklist/TokenBlacklist.module';

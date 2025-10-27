@@ -24,9 +24,9 @@ import { EnergySettlementService } from '../../services/Energy/energy-settlement
 import { TradingAnalyticsService } from '../../services/Trading/trading-analytics.service';
 import { WalletsService } from '../../models/Wallets/Wallets.service';
 import { TradeOrdersCacheRedisService } from '../../services/Trading/trade-orders-cache-redis.service';
-import { MarketTradesService } from '../../models/MarketTrades/MarketTrades.service';
+import { MarketTradesService } from '../../models/marketTrade/MarketTrades.service';
 import { JwtAuthGuard } from '../../auth/guards/auth.guards';
-import { ProsumersService } from 'src/models/Prosumers/Prosumers.service';
+import { ProsumersService } from 'src/models/prosumer/Prosumers.service';
 import { PriceCacheService } from '../../services/Trading/price-cache.service';
 import {
   ApiSuccessResponse,

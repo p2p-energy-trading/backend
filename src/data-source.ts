@@ -8,11 +8,11 @@ import { FirstSeeder } from './database/seeders/FirstSeeder';
 import { ProsumersFactory } from './database/factories/ProsumersFactory';
 import { WalletsFactory } from './database/factories/WalletsFactory';
 import { SmartMetersFactory } from './database/factories/SmartMetersFactory';
-import { Prosumers } from './models/Prosumers/Prosumers.entity';
+import { Prosumers } from './models/prosumer/Prosumers.entity';
 // Removed: BlockchainApprovals (not used)
-import { EnergySettlements } from './models/EnergySettlements/EnergySettlements.entity';
-import { IdrsConversions } from './models/IdrsConversions/IdrsConversions.entity';
-import { MarketTrades } from './models/MarketTrades/MarketTrades.entity';
+import { EnergySettlements } from './models/energySettlement/EnergySettlements.entity';
+import { IdrsConversions } from './models/idrsConversion/IdrsConversions.entity';
+import { MarketTrades } from './models/marketTrade/MarketTrades.entity';
 import { SmartMeters } from './models/SmartMeters/SmartMeters.entity';
 import { SystemConfig } from './models/SystemConfig/SystemConfig.entity';
 // Removed: TelemetryData (replaced by Redis)

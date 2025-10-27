@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { SmartMeters } from '../SmartMeters/SmartMeters.entity';
+import { SmartMeters } from './SmartMeters.entity';
 import { CreateSmartMetersInput } from './dto/SmartMeters.input';
 import { SmartMetersArgs } from './dto/SmartMeters.args';
 // Removed unused entities:
@@ -9,8 +9,8 @@ import { SmartMetersArgs } from './dto/SmartMeters.args';
 // - DeviceStatusSnapshots
 // - EnergyReadingsDetailed
 // - MqttMessageLogs
-import { EnergySettlements } from '../EnergySettlements/EnergySettlements.entity';
-import { Prosumers } from '../Prosumers/Prosumers.entity';
+import { EnergySettlements } from '../energySettlement/EnergySettlements.entity';
+import { Prosumers } from '../prosumer/Prosumers.entity';
 
 @Injectable()
 export class SmartMetersService {

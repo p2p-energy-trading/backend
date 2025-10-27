@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TelemetryAggregate } from '../../models/TelemetryAggregate/TelemetryAggregate.entity';
 import { RedisTelemetryService } from '../Telemetry/redis-telemetry.service';
-import { EnergySettlementsService } from '../../models/EnergySettlements/EnergySettlements.service';
+import { EnergySettlementsService } from '../../models/energySettlement/EnergySettlements.service';
 import { SmartMetersService } from '../../models/SmartMeters/SmartMeters.service';
 
 /**

@@ -18,14 +18,14 @@ import { HealthCheckService } from './Health/health-check.service';
 import { WalletsModule } from '../models/Wallets/Wallets.module';
 import { TransactionLogsModule } from '../models/TransactionLogs/TransactionLogs.module';
 import { TradeOrdersCacheModule } from '../models/TradeOrdersCache/TradeOrdersCache.module';
-import { MarketTradesModule } from '../models/MarketTrades/MarketTrades.module';
+import { MarketTradesModule } from '../models/marketTrade/MarketTrades.module';
 
 // Removed: BlockchainApprovals (not used)
-import { EnergySettlementsModule } from '../models/EnergySettlements/EnergySettlements.module';
+import { EnergySettlementsModule } from '../models/energySettlement/EnergySettlements.module';
 import { SmartMetersModule } from '../models/SmartMeters/SmartMeters.module';
 import { CommonModule } from '../common/common.module';
 import { WebSocketModule } from '../websocket/websocket.module';
-import { ProsumersModule } from 'src/models/Prosumers/Prosumers.module';
+import { ProsumersModule } from 'src/models/prosumer/Prosumers.module';
 import { TelemetryAggregate } from '../models/TelemetryAggregate/TelemetryAggregate.entity';
 
 @Module({
