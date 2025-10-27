@@ -177,9 +177,6 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       this.messageStats.totalMessages++;
       this.messageStats.meterIds.add(meterId);
 
-      // Log message
-      await this.logMessage(topic, payload, meterId, MqttDirection.INBOUND);
-
       // Update last seen timestamp for the meter
       await this.updateLastSeen(meterId);
 
@@ -204,15 +201,6 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       }
     } catch (error) {
       this.logger.error('Error processing MQTT message:', error);
-      // Log error message
-      await this.logMessage(
-        topic,
-        message.toString(),
-        null,
-        MqttDirection.INBOUND,
-        'FAILED',
-        error instanceof Error ? error.message : String(error),
-      );
     }
   }
 
@@ -269,16 +257,6 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
         sentAt: new Date().toISOString(),
       });
       */
-
-      // Log MQTT message (disabled)
-      await this.logMessage(
-        topic,
-        message,
-        meterId,
-        MqttDirection.OUTBOUND,
-        'SENT',
-        correlationId,
-      );
 
       // Send via MQTT
       this.client.publish(topic, message, { qos: 1 }, (error) => {
@@ -356,41 +334,6 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       return DeviceCommandType.SETTLEMENT_RESET;
     if (command.mqtt) return DeviceCommandType.CONFIGURATION;
     return DeviceCommandType.COMPONENT_CONTROL;
-  }
-
-  /**
-   * MQTT Message logging - DISABLED
-   * @deprecated MQTT logging is now disabled. Messages are stored in Redis only.
-   */
-  private async logMessage(
-    topic: string,
-    message: string,
-    meterId: string | null,
-    direction: MqttDirection,
-    status: string = 'SUCCESS',
-    correlationId?: string,
-    errorMessage?: string,
-  ) {
-    // MQTT logging disabled - Redis is now the single source of truth
-    // Uncomment below if you need database audit trail:
-    /*
-    try {
-      await this.mqttMessageLogsService.create({
-        meterId: meterId || 'unknown',
-        topicType: this.getTopicType(topic),
-        direction,
-        mqttTopic: topic,
-        payload: message,
-        rawMessage: message,
-        messageTimestamp: new Date().toISOString(),
-        processingStatus: status,
-        errorMessage,
-        correlationId: correlationId || undefined,
-      });
-    } catch (error) {
-      this.logger.error('Error logging MQTT message:', error);
-    }
-    */
   }
 
   private getTopicType(topic: string): MqttTopicType {

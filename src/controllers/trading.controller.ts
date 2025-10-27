@@ -23,7 +23,7 @@ import { BlockchainService } from '../services/blockchain.service';
 import { EnergySettlementService } from '../services/energy-settlement.service';
 import { TradingAnalyticsService } from '../services/trading-analytics.service';
 import { WalletsService } from '../models/Wallets/Wallets.service';
-import { TradeOrdersCacheService } from '../models/TradeOrdersCache/TradeOrdersCache.service';
+import { TradeOrdersCacheRedisService } from '../services/trade-orders-cache-redis.service';
 import { MarketTradesService } from '../models/MarketTrades/MarketTrades.service';
 import { JwtAuthGuard } from '../auth/guards/auth.guards';
 import { ProsumersService } from 'src/models/Prosumers/Prosumers.service';
@@ -62,7 +62,7 @@ export class TradingController {
     private energySettlementService: EnergySettlementService,
     private tradingAnalyticsService: TradingAnalyticsService,
     private walletsService: WalletsService,
-    private tradeOrdersCacheService: TradeOrdersCacheService,
+    private tradeOrdersCacheService: TradeOrdersCacheRedisService,
     private marketTradesService: MarketTradesService,
     private prosumersService: ProsumersService,
     private priceCacheService: PriceCacheService,

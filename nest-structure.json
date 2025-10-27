@@ -1,0 +1,704 @@
+{
+  "app.controller.ts": {
+    "controller": {
+      "AppController": []
+    }
+  },
+  "app.module.ts": {
+    "module": {
+      "AppModule": []
+    }
+  },
+  "app.service.ts": {
+    "service": {
+      "AppService": [
+        "getHello"
+      ]
+    }
+  },
+  "auth": {
+    "controller": {
+      "AuthController": [
+        "login",
+        "register",
+        "getProfile",
+        "logout",
+        "logoutAll"
+      ]
+    },
+    "module": {
+      "AuthModule": []
+    },
+    "service": {
+      "AuthService": [
+        "validateProsumer",
+        "generateTokens",
+        "getJwtExpirationSeconds",
+        "register",
+        "generateWalletForProsumer",
+        "getProfile",
+        "logout",
+        "logoutAll"
+      ]
+    },
+    "other": {
+      "LoginDto": [],
+      "RegisterDto": [],
+      "JwtAuthGuard": [
+        "canActivate",
+        "handleRequest",
+        "extractTokenFromHeader"
+      ],
+      "LocalAuthGuard": [],
+      "OptionalJwtAuthGuard": [
+        "canActivate",
+        "handleRequest"
+      ],
+      "JwtStrategy": [
+        "validate"
+      ],
+      "LocalStrategy": [
+        "validate"
+      ]
+    }
+  },
+  "common": {
+    "module": {
+      "CommonModule": []
+    },
+    "service": {
+      "CryptoService": [
+        "encrypt",
+        "decrypt",
+        "generateRandomString",
+        "generateCorrelationId",
+        "hashPassword",
+        "verifyPassword"
+      ]
+    },
+    "other": {
+      "RegisterDto": [],
+      "LoginDto": [],
+      "LoginResponseDto": [],
+      "RegisterResponseDto": [],
+      "ProfileInfoDto": [],
+      "MeterInfoDto": [],
+      "ProfileResponseDto": [],
+      "DashboardStatsDto": [],
+      "EnergyChartDataDto": [],
+      "RealTimeEnergyDto": [],
+      "SettlementRecommendationDto": [],
+      "BlockchainSyncDataDto": [],
+      "BlockchainSyncStatusDto": [],
+      "DeviceControlDto": [],
+      "GridControlDto": [],
+      "EnergyResetDto": [],
+      "DeviceStatusDto": [],
+      "CommandResponseDto": [],
+      "DeviceHeartbeatDto": [],
+      "DeviceStatusResponseDto": [],
+      "EnergyReadingDto": [],
+      "EnergyStatsDto": [],
+      "SettlementEstimateDto": [],
+      "SettlementRecordDto": [],
+      "HealthResponseDto": [],
+      "ReadinessResponseDto": [],
+      "LivenessResponseDto": [],
+      "CreateSmartMeterDto": [],
+      "SmartMeterResponseDto": [],
+      "LinkSmartMeterDto": [],
+      "UnlinkSmartMeterDto": [],
+      "UpdateSettlementIntervalDto": [],
+      "PlaceOrderDto": [],
+      "PlaceOrderResponseDto": [],
+      "CancelOrderDto": [],
+      "OrderResponseDto": [],
+      "TradeResponseDto": [],
+      "OrderBookSummaryDto": [],
+      "WalletCreateDto": [],
+      "DeviceCommandDto": [],
+      "TokenApprovalDto": [],
+      "ManualSettlementDto": [],
+      "IdrsConversionDto": [],
+      "DeviceRegistrationDto": [],
+      "UpdateProfileDto": [],
+      "CreateWalletDto": [],
+      "CreateWalletResponseDto": [],
+      "IdrsConversionResponseDto": [],
+      "WalletBalanceDto": [],
+      "WalletInfoDto": [],
+      "DeviceNotFoundException": [],
+      "DeviceOfflineException": [],
+      "InsufficientFundsException": [],
+      "UnauthorizedWalletException": [],
+      "OrderNotActiveException": [],
+      "SettlementInProgressException": [],
+      "BlockchainTransactionFailedException": [],
+      "InvalidCommandException": [],
+      "CommandTimeoutException": [],
+      "WalletDecryptionFailedException": [],
+      "CustomThrottlerGuard": [
+        "canActivate",
+        "getTracker"
+      ],
+      "LoggingMiddleware": [
+        "use",
+        "sanitizeBody"
+      ]
+    }
+  },
+  "controllers": {
+    "controller": {
+      "BlockchainController": [
+        "convertIDRS",
+        "getNetworkInfo",
+        "getContractAddresses"
+      ],
+      "ControllersModule": [],
+      "DashboardController": [
+        "getDashboardStats",
+        "getEnergyChartData",
+        "getRealTimeEnergyData",
+        "getSettlementRecommendations",
+        "getBlockchainSyncStatus",
+        "getDeviceHealthStatus",
+        "getEnergySummary",
+        "getTradingPerformance",
+        "getSystemOverview"
+      ],
+      "EnergyController": [
+        "getSettlementHistory",
+        "getSettlement",
+        "getSettlementEstimator",
+        "getHourlyEnergyHistory",
+        "getEnergyChart",
+        "getRealTimeEnergy",
+        "getEnergySummary"
+      ],
+      "HealthController": [
+        "getHealth",
+        "getReadiness",
+        "getLiveness"
+      ],
+      "SmartMeterController": [
+        "createSmartMeter",
+        "getMySmartMeters",
+        "getSmartMeter",
+        "sendDeviceCommand",
+        "controlGrid",
+        "resetEnergy",
+        "getDeviceStatus",
+        "getDeviceHealth",
+        "getMeterHealth",
+        "listDevices",
+        "checkConnectivity",
+        "getLatestData",
+        "getLatestStatus",
+        "getAllLatest",
+        "getHistory",
+        "getAllHistory",
+        "getArchiveStats",
+        "telemetryHealthCheck",
+        "removeSmartMeter"
+      ],
+      "TradingController": [
+        "anonymizeString",
+        "anonymizeOrderData",
+        "anonymizeTradeData",
+        "placeOrder",
+        "getOrders",
+        "getOrderBookDetailed",
+        "getOrderBook",
+        "getTrades",
+        "getMarketStats",
+        "cancelOrder",
+        "getTradingWalletBalances",
+        "getETKSupplyInMarket",
+        "getIDRSSupplyInMarket",
+        "getMarketLiquidity",
+        "getPriceHistory",
+        "getRealTimePriceData",
+        "getPriceCandles",
+        "verifyWalletOwnership",
+        "checkSufficientBalance",
+        "getWalletBalances",
+        "getTradingPerformance"
+      ],
+      "WalletController": [
+        "formatTransactionData",
+        "createWallet",
+        "getWallets",
+        "getWallet",
+        "convertIdrs",
+        "getConversions",
+        "activateWallet",
+        "setPrimaryWallet",
+        "deactivateWallet",
+        "getWalletBalances",
+        "getIdrsTransactionHistory",
+        "getTokenMintingHistory"
+      ]
+    }
+  },
+  "services": {
+    "service": {
+      "BlockchainService": [
+        "initializeProvider",
+        "getCalculateEtkAmount",
+        "getSettlementIdDbByTxHash",
+        "getMeterIdDbByTxHash",
+        "safeTimestampToDate",
+        "setupEventListeners",
+        "processEnergySettlement",
+        "authorizeMeter",
+        "deauthorizeMeter",
+        "updateConversionRatio",
+        "updateMinSettlement",
+        "calculateEtkAmount",
+        "calculateEnergyWh",
+        "getSettlement",
+        "getSettlementCount",
+        "isMeterAuthorized",
+        "isMeterIdAuthorized",
+        "getConversionRatio",
+        "getMinSettlementWh",
+        "convertEnergyToTokens",
+        "burnTokensForEnergy",
+        "mintETKTokens",
+        "burnETKTokens",
+        "whiteListMarket",
+        "mintIDRSTokens",
+        "burnIDRSTokens",
+        "whiteListMarketIDRS",
+        "getETKTotalSupply",
+        "getETKDecimals",
+        "getIDRSTotalSupply",
+        "getIDRSDecimals",
+        "getTokenBalance",
+        "getEthBalance",
+        "getOwnerWalletSigner",
+        "getWalletSigner",
+        "getProsumerIdByWallet",
+        "handleOrderPlaced",
+        "handleTransactionCompleted",
+        "extractTransactionHash",
+        "handleSettlementProcessed",
+        "handleOrderCancelled",
+        "whiteListEnergyConverter",
+        "approveToken",
+        "placeBuyOrder",
+        "placeSellOrder",
+        "getMarketPrice",
+        "getTotalETKSupplyInMarket",
+        "getTotalIDRSSupplyInMarket",
+        "cancelOrder",
+        "getOrderDetails",
+        "getMarketLiquidity"
+      ],
+      "DashboardService": [
+        "getDashboardStats",
+        "getProsumeDevices",
+        "getEnergyStats",
+        "getTradingStats",
+        "getBalances",
+        "getDeviceStatus",
+        "getSettlementStats",
+        "getEnergyChartData",
+        "getRealTimeEnergyData",
+        "getSettlementRecommendations",
+        "getBlockchainSyncStatus"
+      ],
+      "DeviceMonitoringService": [
+        "monitorDeviceHealth",
+        "checkDeviceHealth",
+        "getDeviceHealthStatus",
+        "buildDeviceHealthStatus",
+        "getDeviceHealthSummary",
+        "calculateHealthScore",
+        "logDeviceAlert",
+        "getDeviceAlerts"
+      ],
+      "EnergyAnalyticsService": [
+        "getEnergyStats",
+        "getEnergyChartData",
+        "getRealTimeEnergyData",
+        "getEnergySummary",
+        "getSettlementStats",
+        "getHourlyEnergyHistory",
+        "getEmptyEnergyStats",
+        "getEmptyRealTimeData",
+        "getEmptySettlementStats"
+      ],
+      "EnergySettlementService": [
+        "periodicSettlement",
+        "logPowerData",
+        "getSettlementIdDbByTxHash",
+        "getMeterIdByTxHash",
+        "processAllMetersSettlement",
+        "processMeterSettlement",
+        "getLatestSettlementReadings",
+        "sendSettlementResetCommand",
+        "manualSettlement",
+        "confirmSettlement",
+        "getSettlementHistory",
+        "getBlockchainSettlement",
+        "getConversionRatio",
+        "getMinimumSettlementThreshold",
+        "authorizeMeterOnBlockchain",
+        "checkMeterAuthorization",
+        "getSettlementEstimator",
+        "addPowerLog",
+        "getAveragePowerFromLog",
+        "clearPowerLog",
+        "calculateHourlyEnergyTotals",
+        "getHourlyEnergyHistory",
+        "formatSettlementForPublic"
+      ],
+      "HealthCheckService": [
+        "performHealthCheck",
+        "checkDatabaseHealth",
+        "checkPendingTransactions",
+        "getSystemHealth"
+      ],
+      "MqttService": [
+        "onModuleInit",
+        "onModuleDestroy",
+        "logMessageStats",
+        "connect",
+        "subscribeToTopics",
+        "updateLastSeen",
+        "handleMessage",
+        "extractMeterId",
+        "sendCommand",
+        "processMeterData",
+        "processMeterStatus",
+        "getCommandType"
+      ],
+      "PriceCacheService": [
+        "onModuleInit",
+        "updatePriceCache",
+        "generateMinuteCandles",
+        "generate5MinuteCandles",
+        "generatePricePoints",
+        "generate1MinutePricePoints",
+        "generate5MinutePricePoints",
+        "generate1HourPricePoints",
+        "addToPriceCache",
+        "addToCandleCache",
+        "getPriceHistory",
+        "getPriceCandles",
+        "getCurrentPrice",
+        "getLatestCandle",
+        "cleanupCache",
+        "cleanupDuplicates",
+        "initializeHistoricalData",
+        "backfill1MinuteData",
+        "backfill5MinuteData",
+        "backfill1HourData",
+        "getPricePointsInRange",
+        "getCandlesInRange",
+        "getPricePointAtTime"
+      ],
+      "RedisOrdersService": [
+        "onModuleInit",
+        "getClient",
+        "setOrder",
+        "getOrder",
+        "getAllOrders",
+        "getOpenOrPartiallyFilledOrders",
+        "updateOrder",
+        "deleteOrder",
+        "getOrderCountByType",
+        "getOrderCountByStatus",
+        "clearAllOrders",
+        "ping",
+        "getStats"
+      ],
+      "RedisTelemetryService": [
+        "onModuleInit",
+        "onModuleDestroy",
+        "storeLatestStatus",
+        "storeLatestData",
+        "storeTimeSeriesSnapshot",
+        "getLatestStatus",
+        "getLatestData",
+        "getAllLatestStatus",
+        "getAllLatestData",
+        "getTimeSeriesSnapshots",
+        "cleanupOldTimeSeries",
+        "getClient",
+        "ping"
+      ],
+      "ServicesModule": [],
+      "SmartMeterHealthService": [
+        "getDeviceHealth",
+        "getDeviceHealthDetails",
+        "getDeviceStatus",
+        "checkDeviceConnectivity",
+        "getDeviceList",
+        "getEmptyDeviceHealth"
+      ],
+      "TelemetryAggregationService": [
+        "aggregateHourlyData",
+        "aggregateMeterData",
+        "calculateAggregates",
+        "avg",
+        "min",
+        "max",
+        "manualAggregate"
+      ],
+      "TelemetryArchivalService": [
+        "initializeMinioClient",
+        "ensureBucketExists",
+        "archiveOldData",
+        "archiveMeterData",
+        "convertToCSV",
+        "uploadToMinIO",
+        "deleteArchivedRecords",
+        "manualArchive",
+        "getArchiveStats"
+      ],
+      "TradeOrdersCacheRedisService": [
+        "findAll",
+        "findOpenOrPartiallyFilledOrders",
+        "findOne",
+        "create",
+        "update",
+        "remove",
+        "getStats"
+      ],
+      "TradingAnalyticsService": [
+        "getTradingStats",
+        "getTradingPerformance",
+        "getTradingMetrics",
+        "getTradeAnalytics",
+        "getEmptyTradingStats",
+        "getEmptyPerformance",
+        "getEmptyMetrics",
+        "getEmptyAnalytics"
+      ],
+      "TradingMarketService": [
+        "initialize",
+        "placeBuyOrder",
+        "placeSellOrder",
+        "placeOrder",
+        "getMarketPrice",
+        "getTotalETKSupplyInMarket",
+        "getTotalIDRSSupplyInMarket",
+        "cancelOrder",
+        "getOrderDetails",
+        "updateOrderStatusInCache",
+        "getMarketLiquidity"
+      ]
+    }
+  },
+  "websocket": {
+    "other": {
+      "NotificationGateway": [
+        "handleConnection",
+        "handleDisconnect",
+        "handleSubscribe",
+        "handleUnsubscribe",
+        "notifySettlementStarted",
+        "notifySettlementCompleted",
+        "notifySettlementFailed",
+        "notifyDeviceOffline",
+        "notifyDeviceOnline",
+        "notifyDeviceAlert",
+        "notifyOrderPlaced",
+        "notifyOrderMatched",
+        "notifyOrderCancelled",
+        "notifyTransactionSuccess",
+        "notifyTransactionFailed",
+        "notifyCommandAcknowledged",
+        "notifyCommandTimeout",
+        "notifyEnergyDataUpdate",
+        "sendToUser",
+        "sendToChannel",
+        "sendToClient",
+        "isValidChannel",
+        "broadcastSystemMessage",
+        "broadcastMarketUpdate"
+      ]
+    },
+    "module": {
+      "WebSocketModule": []
+    }
+  },
+  "database": {
+    "other": {
+      "AddTelemetryData1761445648576": [
+        "up",
+        "down"
+      ],
+      "ChangeNullableDeviceStatusSnapshot1761446044200": [
+        "up",
+        "down"
+      ],
+      "ChangeNullableDeviceStatusSnapshot1761446575782": [
+        "up",
+        "down"
+      ],
+      "AddTelemetryAggregate1761454218216": [
+        "up",
+        "down"
+      ],
+      "SetupTimescaleDB1761470060653": [
+        "up",
+        "down"
+      ],
+      "DropUnusedTables1761473245402": [
+        "up",
+        "down"
+      ],
+      "DropBlockchainApprovals1761477020000": [
+        "up",
+        "down"
+      ],
+      "FirstSeeder": [
+        "run"
+      ]
+    }
+  },
+  "models": {
+    "other": {
+      "EnergySettlements": [],
+      "IdrsConversions": [],
+      "MarketTrades": [],
+      "Prosumers": [],
+      "SmartMeters": [],
+      "SystemConfig": [],
+      "TelemetryAggregate": [],
+      "TokenBlacklist": [],
+      "TradeOrdersCache": [],
+      "TransactionLogs": [],
+      "Wallets": [],
+      "EnergySettlementsArgs": [],
+      "CreateEnergySettlementsInput": [],
+      "IdrsConversionsArgs": [],
+      "CreateIdrsConversionsInput": [],
+      "MarketTradesArgs": [],
+      "CreateMarketTradesInput": [],
+      "ProsumersArgs": [],
+      "CreateProsumersInput": [],
+      "SmartMetersArgs": [],
+      "CreateSmartMetersInput": [],
+      "SystemConfigArgs": [],
+      "CreateSystemConfigInput": [],
+      "TradeOrdersCacheArgs": [],
+      "CreateTradeOrdersCacheInput": [],
+      "TransactionLogsArgs": [],
+      "CreateTransactionLogsInput": [],
+      "WalletsArgs": [],
+      "CreateWalletsInput": []
+    },
+    "module": {
+      "EnergySettlementsModule": [],
+      "IdrsConversionsModule": [],
+      "MarketTradesModule": [],
+      "ProsumersModule": [],
+      "SmartMetersModule": [],
+      "SystemConfigModule": [],
+      "TokenBlacklistModule": [],
+      "TradeOrdersCacheModule": [],
+      "TransactionLogsModule": [],
+      "WalletsModule": []
+    },
+    "service": {
+      "EnergySettlementsService": [
+        "findAll",
+        "findOne",
+        "findByTxHash",
+        "create",
+        "update",
+        "remove"
+      ],
+      "IdrsConversionsService": [
+        "findAll",
+        "findOne",
+        "findByWalletAddress",
+        "create",
+        "update",
+        "remove"
+      ],
+      "MarketTradesService": [
+        "findAll",
+        "findOne",
+        "create",
+        "update",
+        "remove",
+        "findRecentTrades",
+        "getPriceHistory",
+        "getPriceCandles",
+        "convertIntervalToSQL",
+        "getIntervalMs"
+      ],
+      "ProsumersService": [
+        "findAll",
+        "findByMeterId",
+        "findByWalletAddress",
+        "findOne",
+        "create",
+        "updatePrimaryWalletAddress",
+        "getPrimaryWallet",
+        "update",
+        "remove"
+      ],
+      "SmartMetersService": [
+        "findAll",
+        "findOne",
+        "findByProsumerId",
+        "updateLastSeen",
+        "create",
+        "update",
+        "remove"
+      ],
+      "SystemConfigService": [
+        "findAll",
+        "findOne",
+        "create",
+        "update",
+        "remove"
+      ],
+      "BlacklistService": [
+        "blacklistToken",
+        "blacklistUser",
+        "isTokenBlacklisted",
+        "isUserBlacklisted",
+        "isBlacklisted",
+        "clearUserBlacklist",
+        "clearTokenBlacklist",
+        "getBlacklistHistory",
+        "cleanupExpiredEntries",
+        "getActiveBlacklistCount",
+        "bulkBlacklistTokens",
+        "hashToken",
+        "getJwtExpirationMs"
+      ],
+      "TradeOrdersCacheService": [
+        "findAll",
+        "findOpenOrPartiallyFilledOrders",
+        "findOne",
+        "create",
+        "update",
+        "remove"
+      ],
+      "TransactionLogsService": [
+        "findAll",
+        "findOne",
+        "findByTxHash",
+        "create",
+        "update",
+        "remove"
+      ],
+      "WalletsService": [
+        "findAll",
+        "findOne",
+        "findByProsumerId",
+        "create",
+        "update",
+        "remove"
+      ]
+    }
+  }
+}

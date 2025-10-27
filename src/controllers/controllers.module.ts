@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EnergyController } from './energy.controller';
-import { DeviceController } from './device.controller';
+// Removed: DeviceController (merged into SmartMeterController)
 import { TradingController } from './trading.controller';
 import { BlockchainController } from './blockchain.controller';
 import { WalletController } from './wallet.controller';
 import { DashboardController } from './dashboard.controller';
 import { HealthController } from './health.controller';
 import { SmartMeterController } from './smart-meter.controller';
-import { TelemetryController } from './telemetry.controller';
+// Removed: TelemetryController (merged into SmartMeterController)
 import { ServicesModule } from '../services/services.module';
 import { AuthModule } from '../auth/auth.module';
 import { WalletsModule } from '../models/Wallets/Wallets.module';
@@ -48,14 +48,14 @@ import { TelemetryAggregate } from '../models/TelemetryAggregate/TelemetryAggreg
   ],
   controllers: [
     EnergyController,
-    DeviceController,
+    // Removed: DeviceController (merged into SmartMeterController)
     TradingController,
     BlockchainController,
     WalletController,
     DashboardController,
     HealthController,
-    SmartMeterController,
-    TelemetryController,
+    SmartMeterController, // Now includes Device + Telemetry + SmartMeter endpoints
+    // Removed: TelemetryController (merged into SmartMeterController)
   ],
 })
 export class ControllersModule {}

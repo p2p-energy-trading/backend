@@ -8,7 +8,7 @@ import { WalletsService } from '../models/Wallets/Wallets.service';
 import { BlockchainService } from './blockchain.service';
 import { EnergySettlementService } from './energy-settlement.service';
 import { EnergyAnalyticsService } from './energy-analytics.service';
-import { DeviceHealthService } from './device-health.service';
+import { SmartMeterHealthService } from './smart-meter-health.service';
 import { TradingAnalyticsService } from './trading-analytics.service';
 import { RedisTelemetryService } from './redis-telemetry.service';
 import { TelemetryAggregate } from '../models/TelemetryAggregate/TelemetryAggregate.entity';
@@ -75,7 +75,7 @@ export class DashboardService {
     private smartMetersService: SmartMetersService,
     private walletsService: WalletsService,
     private energyAnalyticsService: EnergyAnalyticsService,
-    private deviceHealthService: DeviceHealthService,
+    private smartMeterHealthService: SmartMeterHealthService,
     private tradingAnalyticsService: TradingAnalyticsService,
     @Inject(forwardRef(() => BlockchainService))
     private blockchainService: BlockchainService,
@@ -398,12 +398,12 @@ export class DashboardService {
 
   /**
    * Get device status for dashboard stats
-   * Now uses DeviceHealthService for consistency
+   * Now uses SmartMeterHealthService for consistency
    */
   private async getDeviceStatus(meterIds: string[]) {
     try {
-      // Use DeviceHealthService to get aggregated status
-      return await this.deviceHealthService.getDeviceStatus(meterIds);
+      // Use SmartMeterHealthService to get aggregated status
+      return await this.smartMeterHealthService.getDeviceStatus(meterIds);
     } catch (error) {
       this.logger.error('Error getting device status:', error);
       return {
@@ -515,28 +515,6 @@ export class DashboardService {
         totalEtkBurned: 0,
       };
     }
-  }
-
-  /**
-   * Get energy chart data
-   * @deprecated Use EnergyAnalyticsService.getEnergyChartData instead
-   */
-  async getEnergyChartData(prosumerId: string, days: number = 7) {
-    this.logger.warn(
-      'DEPRECATED: DashboardService.getEnergyChartData is deprecated. Use EnergyAnalyticsService.getEnergyChartData instead.',
-    );
-    return this.energyAnalyticsService.getEnergyChartData(prosumerId, days);
-  }
-
-  /**
-   * Get real-time energy data
-   * @deprecated Use EnergyAnalyticsService.getRealTimeEnergyData instead
-   */
-  async getRealTimeEnergyData(prosumerId: string) {
-    this.logger.warn(
-      'DEPRECATED: DashboardService.getRealTimeEnergyData is deprecated. Use EnergyAnalyticsService.getRealTimeEnergyData instead.',
-    );
-    return this.energyAnalyticsService.getRealTimeEnergyData(prosumerId);
   }
 
   // Enhanced method to get settlement recommendations

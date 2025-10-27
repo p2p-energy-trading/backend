@@ -145,7 +145,6 @@ export class AuthService {
     };
   }
 
-
   private getJwtExpirationSeconds(): number {
     const expiresIn = this.configService.get<string>('JWT_EXPIRES_IN') || '1h';
 

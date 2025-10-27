@@ -18,12 +18,7 @@ import {
 import { BlockchainService } from '../services/blockchain.service';
 import { WalletsService } from '../models/Wallets/Wallets.service';
 import { JwtAuthGuard } from '../auth/guards/auth.guards';
-
-interface AuthenticatedUser extends Request {
-  user: {
-    prosumerId: string;
-  };
-}
+import { AuthenticatedUser } from '../common/interfaces';
 
 interface ConvertIDRSRequest {
   walletAddress: string;

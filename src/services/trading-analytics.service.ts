@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MarketTradesService } from '../models/MarketTrades/MarketTrades.service';
 import { WalletsService } from '../models/Wallets/Wallets.service';
-import { TradeOrdersCacheService } from '../models/TradeOrdersCache/TradeOrdersCache.service';
+import { TradeOrdersCacheRedisService } from './trade-orders-cache-redis.service';
 
 /**
  * Service for trading analytics and performance metrics
@@ -14,7 +14,7 @@ export class TradingAnalyticsService {
   constructor(
     private marketTradesService: MarketTradesService,
     private walletsService: WalletsService,
-    private tradeOrdersCacheService: TradeOrdersCacheService,
+    private tradeOrdersCacheService: TradeOrdersCacheRedisService,
   ) {}
 
   /**

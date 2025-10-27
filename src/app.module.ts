@@ -37,8 +37,7 @@ import { CommonModule } from './common/common.module';
 import { ServicesModule } from './services/services.module';
 import { ControllersModule } from './controllers/controllers.module';
 import { WebSocketModule } from './websocket/websocket.module';
-import { TelemetryDataModule } from './models/TelemetryData/TelemetryData.module';
-import { TelemetryData } from './models/TelemetryData/TelemetryData.entity';
+// Removed: TelemetryDataModule (replaced by Redis)
 import { TelemetryAggregate } from './models/TelemetryAggregate/TelemetryAggregate.entity';
 
 @Module({
@@ -60,7 +59,7 @@ import { TelemetryAggregate } from './models/TelemetryAggregate/TelemetryAggrega
       database: process.env.DB_NAME || 'dev2',
       schema: process.env.DB_SCHEMA || 'public',
       entities: [
-        // Removed: BlockchainApprovals (not used), DeviceCommands, DeviceStatusSnapshots, EnergyReadingsDetailed, MqttMessageLogs
+        // Removed: BlockchainApprovals (not used), DeviceCommands, DeviceStatusSnapshots, EnergyReadingsDetailed, MqttMessageLogs, TelemetryData (replaced by Redis)
         EnergySettlements,
         IdrsConversions,
         MarketTrades,
@@ -71,7 +70,6 @@ import { TelemetryAggregate } from './models/TelemetryAggregate/TelemetryAggrega
         TransactionLogs,
         Wallets,
         TokenBlacklist,
-        TelemetryData,
         TelemetryAggregate,
       ],
       // synchronize: true,
@@ -92,7 +90,7 @@ import { TelemetryAggregate } from './models/TelemetryAggregate/TelemetryAggrega
     ControllersModule,
     WebSocketModule,
     TokenBlacklistModule,
-    TelemetryDataModule,
+    // Removed: TelemetryDataModule (replaced by Redis)
   ],
 })
 export class AppModule {}

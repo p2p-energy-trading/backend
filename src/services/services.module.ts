@@ -2,16 +2,18 @@ import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MqttService } from './mqtt.service';
 import { BlockchainService } from './blockchain.service';
+import { TradingMarketService } from './trading-market.service';
 import { EnergySettlementService } from './energy-settlement.service';
 import { EnergyAnalyticsService } from './energy-analytics.service';
-import { DeviceHealthService } from './device-health.service';
+import { SmartMeterHealthService } from './smart-meter-health.service';
 import { TradingAnalyticsService } from './trading-analytics.service';
 import { DashboardService } from './dashboard.service';
 import { PriceCacheService } from './price-cache.service';
 import { RedisTelemetryService } from './redis-telemetry.service';
+import { RedisOrdersService } from './redis-orders.service';
+import { TradeOrdersCacheRedisService } from './trade-orders-cache-redis.service';
 import { TelemetryAggregationService } from './telemetry-aggregation.service';
 import { TelemetryArchivalService } from './telemetry-archival.service';
-// import { DeviceMonitoringService } from './device-monitoring.service';
 import { HealthCheckService } from './health-check.service';
 import { WalletsModule } from '../models/Wallets/Wallets.module';
 import { TransactionLogsModule } from '../models/TransactionLogs/TransactionLogs.module';
@@ -48,31 +50,35 @@ import { TelemetryAggregate } from '../models/TelemetryAggregate/TelemetryAggreg
   providers: [
     MqttService,
     BlockchainService,
+    TradingMarketService,
     EnergySettlementService,
     EnergyAnalyticsService,
-    DeviceHealthService,
+    SmartMeterHealthService,
     TradingAnalyticsService,
     DashboardService,
     PriceCacheService,
     RedisTelemetryService,
+    RedisOrdersService,
+    TradeOrdersCacheRedisService,
     TelemetryAggregationService,
     TelemetryArchivalService,
-    // DeviceMonitoringService,
     HealthCheckService,
   ],
   exports: [
     MqttService,
     BlockchainService,
+    TradingMarketService,
     EnergySettlementService,
     EnergyAnalyticsService,
-    DeviceHealthService,
+    SmartMeterHealthService,
     TradingAnalyticsService,
     DashboardService,
     PriceCacheService,
     RedisTelemetryService,
+    RedisOrdersService,
+    TradeOrdersCacheRedisService,
     TelemetryAggregationService,
     TelemetryArchivalService,
-    // DeviceMonitoringService,
     HealthCheckService,
   ],
 })

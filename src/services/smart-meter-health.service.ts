@@ -4,12 +4,13 @@ import { RedisTelemetryService } from './redis-telemetry.service';
 import { EnergySettlementsService } from '../models/EnergySettlements/EnergySettlements.service';
 
 /**
- * Service for device health monitoring and connectivity
+ * Service for smart meter health monitoring and connectivity
+ * Renamed from DeviceHealthService for better clarity
  * Extracted from DashboardService to follow Single Responsibility Principle
  */
 @Injectable()
-export class DeviceHealthService {
-  private readonly logger = new Logger(DeviceHealthService.name);
+export class SmartMeterHealthService {
+  private readonly logger = new Logger(SmartMeterHealthService.name);
   private readonly OFFLINE_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
 
   constructor(

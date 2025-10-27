@@ -98,7 +98,7 @@ export class PriceCacheService implements OnModuleInit {
     try {
       // Get current price from blockchain
       const currentPrice = await this.blockchainService.getMarketPrice();
-   
+
       const now = new Date().toISOString();
       // Get recent trades volume (last minute)
       const recentTrades = await this.marketTradesService.findRecentTrades(10);
@@ -420,9 +420,7 @@ export class PriceCacheService implements OnModuleInit {
       await this.redisClient.expire(redisKey, ttl);
 
       // Trim to max size
-      const maxSize =
-        this.MAX_CACHE_SIZE[interval as keyof typeof this.MAX_CACHE_SIZE] ||
-        1000;
+      const maxSize = this.MAX_CACHE_SIZE[interval] || 1000;
       const currentSize = await this.redisClient.zcard(redisKey);
       if (currentSize > maxSize) {
         // Remove oldest entries
@@ -458,9 +456,7 @@ export class PriceCacheService implements OnModuleInit {
       await this.redisClient.expire(redisKey, ttl);
 
       // Trim to max size
-      const maxSize =
-        this.MAX_CACHE_SIZE[interval as keyof typeof this.MAX_CACHE_SIZE] ||
-        1000;
+      const maxSize = this.MAX_CACHE_SIZE[interval] || 1000;
       const currentSize = await this.redisClient.zcard(redisKey);
       if (currentSize > maxSize) {
         await this.redisClient.zremrangebyrank(
@@ -712,9 +708,7 @@ export class PriceCacheService implements OnModuleInit {
         }
       }
 
-      this.logger.log(
-        `Backfilled ${fiveMinGroups.size} 5-minute price points`,
-      );
+      this.logger.log(`Backfilled ${fiveMinGroups.size} 5-minute price points`);
     } catch (error) {
       this.logger.error('Error backfilling 5-minute data:', error);
     }

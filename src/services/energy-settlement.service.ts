@@ -12,6 +12,7 @@ import { DeviceCommandPayload } from '../common/interfaces';
 import { WalletsService } from 'src/models/Wallets/Wallets.service';
 import { ProsumersService } from 'src/models/Prosumers/Prosumers.service';
 import { DashboardService } from './dashboard.service';
+import { EnergyAnalyticsService } from './energy-analytics.service';
 import { RedisTelemetryService } from './redis-telemetry.service';
 
 interface SettlementReadingsData {
@@ -65,6 +66,8 @@ export class EnergySettlementService {
     private readonly WalletsService: WalletsService, // Assuming this is imported correctly
     @Inject(forwardRef(() => DashboardService))
     private dashboardService: DashboardService,
+    @Inject(forwardRef(() => EnergyAnalyticsService))
+    private energyAnalyticsService: EnergyAnalyticsService,
   ) {}
 
   // Run every 5 minutes by default
@@ -99,9 +102,10 @@ export class EnergySettlementService {
         if (!prosumer.prosumerId) continue;
 
         // Get current real-time data
-        const realTimeData = await this.dashboardService.getRealTimeEnergyData(
-          prosumer.prosumerId,
-        );
+        const realTimeData =
+          await this.energyAnalyticsService.getRealTimeEnergyData(
+            prosumer.prosumerId,
+          );
 
         if (!realTimeData.timeSeries || realTimeData.timeSeries.length === 0)
           continue;
@@ -742,9 +746,10 @@ export class EnergySettlementService {
       }
 
       // Use optimized getRealTimeEnergyData for fast power data retrieval
-      const realTimeData = await this.dashboardService.getRealTimeEnergyData(
-        prosumer.prosumerId,
-      );
+      const realTimeData =
+        await this.energyAnalyticsService.getRealTimeEnergyData(
+          prosumer.prosumerId,
+        );
 
       if (!realTimeData.timeSeries || realTimeData.timeSeries.length === 0) {
         this.logger.warn(`No real-time data found for meter ${meterId}`);
@@ -962,37 +967,6 @@ export class EnergySettlementService {
       gridImport: 0,
       net: 0,
     };
-  }
-
-  /**
-   * DEPRECATED: This method is no longer used.
-   * Hourly energy data should now be retrieved from TelemetryAggregate table.
-   *
-   * @deprecated Use TelemetryAggregationService or query TelemetryAggregate table directly
-   */
-  async getHourlyEnergyHistory(
-    prosumerId: string,
-    hours: number = 24,
-    meterId?: string,
-  ): Promise<
-    Array<{
-      hour: string;
-      timestamp: string;
-      solar: number;
-      consumption: number;
-      battery: number;
-      gridExport: number;
-      gridImport: number;
-      net: number;
-    }>
-  > {
-    this.logger.warn(
-      'getHourlyEnergyHistory is deprecated. Use TelemetryAggregate table instead.',
-    );
-
-    // Return empty array since this method is deprecated
-    // Use TelemetryAggregate table for hourly energy data
-    return [];
   }
 
   /**

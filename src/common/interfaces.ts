@@ -1,3 +1,11 @@
+// Authentication
+export interface AuthenticatedUser {
+  user: {
+    prosumerId: string;
+  };
+}
+
+// Configuration Interfaces
 export interface BlockchainConfig {
   rpcUrl: string;
   chainId: number;

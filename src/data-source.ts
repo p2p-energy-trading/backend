@@ -15,7 +15,7 @@ import { IdrsConversions } from './models/IdrsConversions/IdrsConversions.entity
 import { MarketTrades } from './models/MarketTrades/MarketTrades.entity';
 import { SmartMeters } from './models/SmartMeters/SmartMeters.entity';
 import { SystemConfig } from './models/SystemConfig/SystemConfig.entity';
-import { TelemetryData } from './models/TelemetryData/TelemetryData.entity';
+// Removed: TelemetryData (replaced by Redis)
 import { TokenBlacklist } from './models/TokenBlacklist/TokenBlacklist.entity';
 import { TradeOrdersCache } from './models/TradeOrdersCache/TradeOrdersCache.entity';
 import { TransactionLogs } from './models/TransactionLogs/TransactionLogs.entity';
@@ -44,7 +44,7 @@ const dataSourceOptions: DataSourceOptions = {
     MarketTrades,
     SmartMeters,
     SystemConfig,
-    TelemetryData,
+    // Removed: TelemetryData (replaced by Redis)
     TokenBlacklist,
     TradeOrdersCache,
     TransactionLogs,

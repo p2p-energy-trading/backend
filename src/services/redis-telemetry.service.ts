@@ -212,7 +212,6 @@ export class RedisTelemetryService implements OnModuleInit, OnModuleDestroy {
 
       // Set expiration on the hash key
       await this.redisClient.expire(this.LATEST_STATUS_KEY, this.LATEST_TTL);
-
     } catch (error) {
       this.logger.error(
         `Failed to store latest status for meter ${meterId}:`,
@@ -237,7 +236,6 @@ export class RedisTelemetryService implements OnModuleInit, OnModuleDestroy {
       );
 
       await this.redisClient.expire(this.LATEST_DATA_KEY, this.LATEST_TTL);
-
     } catch (error) {
       this.logger.error(
         `Failed to store latest data for meter ${meterId}:`,
@@ -260,7 +258,6 @@ export class RedisTelemetryService implements OnModuleInit, OnModuleDestroy {
 
       // Set TTL on the sorted set
       await this.redisClient.expire(key, this.TIMESERIES_TTL);
-
     } catch (error) {
       this.logger.error(`Failed to store time-series snapshot:`, error);
       throw error;

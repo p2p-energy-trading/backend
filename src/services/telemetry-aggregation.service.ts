@@ -392,4 +392,54 @@ export class TelemetryAggregationService {
 
     this.logger.log('Manual aggregation completed');
   }
+
+  /**
+   * Get hourly energy history for a prosumer
+   * @param prosumerId Prosumer ID (not directly used, filtered by meterId)
+   * @param hours Number of hours to retrieve
+   * @param meterId Optional specific meter ID to filter
+   */
+  async getHourlyHistory(
+    prosumerId: string,
+    hours: number = 24,
+    meterId?: string,
+  ): Promise<
+    Array<{
+      hour: string;
+      timestamp: string;
+      solar: number;
+      consumption: number;
+      battery: number;
+      gridExport: number;
+      gridImport: number;
+      net: number;
+    }>
+  > {
+    const hourStart = new Date();
+    hourStart.setMinutes(0, 0, 0);
+    hourStart.setHours(hourStart.getHours() - hours);
+
+    const query = this.telemetryAggregateRepository
+      .createQueryBuilder('ta')
+      .where('ta.hour_start >= :hourStart', { hourStart })
+      .orderBy('ta.hour_start', 'ASC');
+
+    if (meterId) {
+      query.andWhere('ta.meter_id = :meterId', { meterId });
+    }
+
+    const aggregates = await query.getMany();
+
+    return aggregates.map((agg) => ({
+      hour: agg.hourStart.toISOString(),
+      timestamp: agg.hourStart.toISOString(),
+      solar: agg.solarInputEnergyTotal || 0,
+      consumption:
+        (agg.loadSmartEnergyTotal || 0) + (agg.loadHomeEnergyTotal || 0),
+      battery: agg.netGridEnergyTotal || 0, // Net battery usage approximation
+      gridExport: agg.exportEnergyTotal || 0,
+      gridImport: agg.importEnergyTotal || 0,
+      net: (agg.exportEnergyTotal || 0) - (agg.importEnergyTotal || 0),
+    }));
+  }
 }

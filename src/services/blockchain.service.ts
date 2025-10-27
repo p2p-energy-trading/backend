@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { ethers } from 'ethers';
 import { WalletsService } from '../models/Wallets/Wallets.service';
 import { TransactionLogsService } from '../models/TransactionLogs/TransactionLogs.service';
-import { TradeOrdersCacheService } from '../models/TradeOrdersCache/TradeOrdersCache.service';
+import { TradeOrdersCacheRedisService } from './trade-orders-cache-redis.service';
 import { MarketTradesService } from '../models/MarketTrades/MarketTrades.service';
 // Removed: BlockchainApprovalsService (not used)
 import { CryptoService } from '../common/crypto.service';
@@ -11,6 +11,13 @@ import { TransactionType, OrderType } from '../common/enums';
 import { BlockchainConfig } from '../common/interfaces';
 import { EnergySettlementService } from './energy-settlement.service';
 import { ProsumersService } from 'src/models/Prosumers/Prosumers.service';
+import { TradingMarketService } from './trading-market.service';
+
+// Import ABIs from JSON files for cleaner implementation
+import EnergyConverterABI from '../ABI/EnergyConverter.json';
+import MarketABI from '../ABI/Market.json';
+import ETKABI from '../ABI/ETK_ERC20.json';
+import IDRSABI from '../ABI/IDRS_ERC20.json';
 
 @Injectable()
 export class BlockchainService {
@@ -18,79 +25,25 @@ export class BlockchainService {
   private provider: ethers.JsonRpcProvider;
   private config: BlockchainConfig;
 
-  // Contract ABIs (simplified for demo)
-  private readonly energyConverterABI = [
-    'function processSettlement(string meterId, address prosumerAddress, int256 netEnergyWh, bytes32 settlementId) external returns (uint256)',
-    'function authorizeMeter(string meterId, address meterAddress) external',
-    'function deauthorizeMeter(string meterId, address meterAddress) external',
-    'function calculateEtkAmount(uint256 energyWh) external view returns (uint256)',
-    'function calculateEnergyWh(uint256 etkAmount) external view returns (uint256)',
-    'function updateConversionRatio(uint256 newRatio) external',
-    'function updateMinSettlement(uint256 newMinWh) external',
-    'function getSettlement(bytes32 settlementId) external view returns (string, address, int256, uint256, uint256, bool)',
-    'function getSettlementCount() external view returns (uint256)',
-    'function getSettlementIdByIndex(uint256 index) external view returns (bytes32)',
-    'function isMeterAuthorized(address meterAddress) external view returns (bool)',
-    'function isMeterIdAuthorized(string meterId) external view returns (bool)',
-    'function emergencyWithdrawETK(uint256 amount) external',
-    'function transferOwnership(address newOwner) external',
-    'function conversionRatio() external view returns (uint256)',
-    'function minSettlementWh() external view returns (uint256)',
-    'function owner() external view returns (address)',
-    'event SettlementProcessed(bytes32 indexed settlementId, string indexed meterId, address indexed prosumerAddress, int256 netEnergyWh, uint256 etkAmount, uint256 timestamp)',
-    'event MeterAuthorized(string meterId, address meterAddress, address authorizedBy)',
-    'event MeterDeauthorized(string meterId, address meterAddress, address deauthorizedBy)',
-    'event ConversionRatioUpdated(uint256 oldRatio, uint256 newRatio, address updatedBy)',
-    'event MinSettlementUpdated(uint256 oldMinWh, uint256 newMinWh, address updatedBy)',
-  ];
-
-  private readonly marketABI = [
-    'function placeOrder(uint256 _uuid, uint256 _amount, uint256 _price, bool _isBuy) external',
-    'function cancelOrder(uint256 id, bool isBuy) external',
-    'function getBuyOrders() external view returns (address[] memory, uint256[] memory, uint256[] memory)',
-    'function getSellOrders() external view returns (address[] memory, uint256[] memory, uint256[] memory)',
-    'function getMarketPrice() external view returns (uint256)',
-    // New methods for getting individual order details
-    'function buyOrders(uint256 id) external view returns (uint256, address, uint256, uint256, uint256)',
-    'function sellOrders(uint256 id) external view returns (uint256, address, uint256, uint256, uint256)',
-    // New methods for market supply and liquidity
-    'function getTotalETKSupplyInMarket() external view returns (uint256)',
-    'function getTotalIDRSSupplyInMarket() external view returns (uint256)',
-    'function getMarketLiquidity() external view returns (uint256, uint256, uint256, uint256)',
-    'event OrderPlaced(uint256 indexed id, address indexed user, uint256 amount, uint256 price, bool isBuy, uint256 timestamp)',
-    'event TransactionCompleted(address indexed buyer, address indexed seller, uint256 amount, uint256 price, uint256 timestamp, uint256 buyOrderId, uint256 sellOrderId)',
-    'event OrderCancelled(address indexed user, uint256 amount, uint256 price, bool isBuy, uint256 timestamp, uint256 orderId)',
-  ];
-
-  private readonly tokenABI = [
-    'function approve(address spender, uint256 amount) external returns (bool)',
-    'function allowance(address owner, address spender) external view returns (uint256)',
-    'function balanceOf(address account) external view returns (uint256)',
-    'function transfer(address to, uint256 amount) external returns (bool)',
-    'function transferFrom(address from, address to, uint256 amount) external returns (bool)',
-    'function totalSupply() external view returns (uint256)',
-    'function mint(uint256 amount) external',
-    'function burn(uint256 amount) external',
-    'function whiteListMarket(address marketAddress) external',
-    'function whiteListEnergyConverter(address energyConverterAddress) external',
-    'function decimals() external view returns (uint8)',
-    'function name() external view returns (string)',
-    'function symbol() external view returns (string)',
-    'event Approval(address indexed owner, address indexed spender, uint256 value)',
-    'event Transfer(address indexed from, address indexed to, uint256 value)',
-  ];
+  // Contract ABIs imported from JSON files
+  private readonly energyConverterABI = EnergyConverterABI;
+  private readonly marketABI = MarketABI;
+  private readonly etkTokenABI = ETKABI;
+  private readonly idrsTokenABI = IDRSABI;
+  private readonly tokenABI = ETKABI; // Generic ERC-20 ABI for dynamic token operations
 
   constructor(
     private configService: ConfigService,
     private walletsService: WalletsService,
     private transactionLogsService: TransactionLogsService,
-    private tradeOrdersCacheService: TradeOrdersCacheService,
+    private tradeOrdersCacheService: TradeOrdersCacheRedisService,
     private marketTradesService: MarketTradesService,
     // Removed: blockchainApprovalsService (not used)
     private cryptoService: CryptoService,
     @Inject(forwardRef(() => EnergySettlementService))
     private energySettlementService: EnergySettlementService,
     private prosumerService: ProsumersService,
+    private tradingMarketService: TradingMarketService,
   ) {
     this.initializeProvider();
   }
@@ -120,6 +73,15 @@ export class BlockchainService {
     // this.logger.debug(this.config);
 
     this.provider = new ethers.JsonRpcProvider(this.config.rpcUrl);
+
+    // Initialize TradingMarketService with provider, config, and helper functions
+    this.tradingMarketService.initialize(
+      this.provider,
+      this.config,
+      this.getWalletSigner.bind(this),
+      this.getProsumerIdByWallet.bind(this),
+    );
+
     this.setupEventListeners();
   }
 
@@ -822,13 +784,10 @@ export class BlockchainService {
     }
   }
 
-  // Update the old energy conversion methods to use the new contract pattern
   async convertEnergyToTokens(
     walletAddress: string,
     energyKwh: number,
   ): Promise<string> {
-    // This method is now deprecated in favor of processEnergySettlement
-    // but kept for backward compatibility
     try {
       const energyWh = energyKwh * 1000; // Convert kWh to Wh
       const settlementId = `legacy_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -850,8 +809,6 @@ export class BlockchainService {
     walletAddress: string,
     tokenAmount: number,
   ): Promise<string> {
-    // This method is now deprecated in favor of processEnergySettlement
-    // but kept for backward compatibility
     try {
       const energyWh = await this.calculateEnergyWh(tokenAmount);
       const settlementId = `legacy_burn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -874,7 +831,7 @@ export class BlockchainService {
       const wallet = await this.getWalletSigner(walletAddress);
       const contract = new ethers.Contract(
         this.config.contracts.etkToken,
-        this.tokenABI,
+        this.etkTokenABI,
         wallet,
       );
 
@@ -916,7 +873,7 @@ export class BlockchainService {
       const wallet = await this.getWalletSigner(walletAddress);
       const contract = new ethers.Contract(
         this.config.contracts.etkToken,
-        this.tokenABI,
+        this.etkTokenABI,
         wallet,
       );
 
@@ -1000,7 +957,7 @@ export class BlockchainService {
 
       const contract = new ethers.Contract(
         this.config.contracts.idrsToken,
-        this.tokenABI,
+        this.idrsTokenABI,
         ownerWallet,
       );
 
@@ -1048,7 +1005,7 @@ export class BlockchainService {
       const ownerWallet = await this.getOwnerWalletSigner();
       const contract = new ethers.Contract(
         this.config.contracts.idrsToken,
-        this.tokenABI,
+        this.idrsTokenABI,
         wallet,
       );
 
@@ -1062,7 +1019,7 @@ export class BlockchainService {
 
       const contract2 = new ethers.Contract(
         this.config.contracts.idrsToken,
-        this.tokenABI,
+        this.idrsTokenABI,
         ownerWallet,
       );
 
@@ -1140,7 +1097,7 @@ export class BlockchainService {
     try {
       const contract = new ethers.Contract(
         this.config.contracts.etkToken,
-        this.tokenABI,
+        this.etkTokenABI,
         this.provider,
       );
       const totalSupply = (await contract.totalSupply()) as bigint;
@@ -1156,7 +1113,7 @@ export class BlockchainService {
     try {
       const contract = new ethers.Contract(
         this.config.contracts.etkToken,
-        this.tokenABI,
+        this.etkTokenABI,
         this.provider,
       );
       const decimals = (await contract.decimals()) as bigint;
@@ -1171,7 +1128,7 @@ export class BlockchainService {
     try {
       const contract = new ethers.Contract(
         this.config.contracts.idrsToken,
-        this.tokenABI,
+        this.idrsTokenABI,
         this.provider,
       );
       const totalSupply = (await contract.totalSupply()) as bigint;
@@ -1187,7 +1144,7 @@ export class BlockchainService {
     try {
       const contract = new ethers.Contract(
         this.config.contracts.idrsToken,
-        this.tokenABI,
+        this.idrsTokenABI,
         this.provider,
       );
       const decimals = (await contract.decimals()) as bigint;
@@ -1456,7 +1413,7 @@ export class BlockchainService {
       const txHash = extractedTxHash;
 
       // Update buy order status
-      await this.updateOrderStatusInCache(
+      await this.tradingMarketService.updateOrderStatusInCache(
         buyOrderId.toString(),
         true, // isBuyOrder
         amountEtk,
@@ -1464,7 +1421,7 @@ export class BlockchainService {
       );
 
       // Update sell order status
-      await this.updateOrderStatusInCache(
+      await this.tradingMarketService.updateOrderStatusInCache(
         sellOrderId.toString(),
         false, // isBuyOrder
         amountEtk,
@@ -1826,151 +1783,75 @@ export class BlockchainService {
     }
   }
 
+  /**
+   * Place a buy order - delegates to TradingMarketService
+   */
   async placeBuyOrder(
     walletAddress: string,
     quantity: number,
     price: number,
   ): Promise<string> {
-    return this.placeOrder(walletAddress, quantity, price, true);
+    return this.tradingMarketService.placeBuyOrder(
+      walletAddress,
+      quantity,
+      price,
+    );
   }
 
+  /**
+   * Place a sell order - delegates to TradingMarketService
+   */
   async placeSellOrder(
     walletAddress: string,
     quantity: number,
     price: number,
   ): Promise<string> {
-    return this.placeOrder(walletAddress, quantity, price, false);
+    return this.tradingMarketService.placeSellOrder(
+      walletAddress,
+      quantity,
+      price,
+    );
   }
 
-  private async placeOrder(
-    walletAddress: string,
-    quantity: number,
-    price: number,
-    isBuy: boolean,
-  ): Promise<string> {
-    try {
-      const wallet = await this.getWalletSigner(walletAddress);
-      const contract = new ethers.Contract(
-        this.config.contracts.market,
-        this.marketABI,
-        wallet,
-      );
-
-      // Generate UUID for the order
-      const uuid = Math.floor(Math.random() * 1000000000000);
-
-      // Both ETK and IDRS use 2 decimals now
-      const amountWei = BigInt(Math.floor(quantity * 100)); // ETK uses 2 decimals
-      const priceWei = BigInt(Math.floor(price * 100)); // IDRS uses 2 decimals
-
-      const tx = (await contract.placeOrder(
-        uuid,
-        amountWei,
-        priceWei,
-        isBuy,
-      )) as ethers.ContractTransactionResponse;
-
-      // Log transaction
-      await this.transactionLogsService.create({
-        prosumerId:
-          (await this.getProsumerIdByWallet(walletAddress)) || 'UNKNOWN',
-        transactionType: TransactionType.ORDER_PLACED,
-        description: JSON.stringify({
-          orderType: isBuy ? OrderType.BID : OrderType.ASK,
-          quantity,
-          price,
-          uuid,
-          txHash: tx.hash,
-        }),
-        amountPrimary: quantity,
-        currencyPrimary: isBuy ? 'IDRS' : 'ETK',
-        blockchainTxHash: tx.hash,
-        transactionTimestamp: new Date().toISOString(),
-        // relatedOrderId: uuid.toString(),
-      });
-
-      return tx.hash;
-    } catch (error) {
-      this.logger.error('Error placing order:', error);
-      throw error;
-    }
-  }
-
+  /**
+   * Get market price - delegates to TradingMarketService
+   */
   async getMarketPrice(): Promise<number> {
-    try {
-      const contract = new ethers.Contract(
-        this.config.contracts.market,
-        this.marketABI,
-        this.provider,
-      );
-
-      const marketPrice = (await contract.getMarketPrice()) as bigint;
-      return Number(marketPrice) / 100; // Convert from wei (2 decimals)
-    } catch (error) {
-      this.logger.error('Error getting market price:', error);
-      throw error;
-    }
+    return this.tradingMarketService.getMarketPrice();
   }
 
+  /**
+   * Get total ETK supply in market - delegates to TradingMarketService
+   */
   async getTotalETKSupplyInMarket(): Promise<number> {
-    try {
-      const contract = new ethers.Contract(
-        this.config.contracts.market,
-        this.marketABI,
-        this.provider,
-      );
-
-      const etkSupply = (await contract.getTotalETKSupplyInMarket()) as bigint;
-      return Number(etkSupply) / Math.pow(10, 18); // Convert from wei to ETK
-    } catch (error) {
-      this.logger.error('Error getting ETK supply in market:', error);
-      throw error;
-    }
+    return this.tradingMarketService.getTotalETKSupplyInMarket();
   }
 
+  /**
+   * Get total IDRS supply in market - delegates to TradingMarketService
+   */
   async getTotalIDRSSupplyInMarket(): Promise<number> {
-    try {
-      const contract = new ethers.Contract(
-        this.config.contracts.market,
-        this.marketABI,
-        this.provider,
-      );
-
-      const idrsSupply =
-        (await contract.getTotalIDRSSupplyInMarket()) as bigint;
-      return Number(idrsSupply) / Math.pow(10, 18); // Convert from wei to IDRS
-    } catch (error) {
-      this.logger.error('Error getting IDRS supply in market:', error);
-      throw error;
-    }
+    return this.tradingMarketService.getTotalIDRSSupplyInMarket();
   }
 
+  /**
+   * Cancel an order - delegates to TradingMarketService
+   */
   async cancelOrder(
     walletAddress: string,
     orderId: string,
     isBuyOrder: boolean,
   ): Promise<string> {
-    try {
-      const wallet = await this.getWalletSigner(walletAddress);
-      const contract = new ethers.Contract(
-        this.config.contracts.market,
-        this.marketABI,
-        wallet,
-      );
-
-      const tx = (await contract.cancelOrder(
-        orderId,
-        isBuyOrder,
-      )) as ethers.ContractTransactionResponse;
-
-      return tx.hash;
-    } catch (error) {
-      this.logger.error('Error cancelling order:', error);
-      throw error;
-    }
+    return this.tradingMarketService.cancelOrder(
+      walletAddress,
+      orderId,
+      isBuyOrder,
+    );
   }
 
-  // New methods for order synchronization
+  /**
+   * Get order details - delegates to TradingMarketService
+   */
   async getOrderDetails(
     orderId: string,
     isBuyOrder: boolean,
@@ -1982,148 +1863,18 @@ export class BlockchainService {
     timestamp: number;
     exists: boolean;
   } | null> {
-    try {
-      const contract = new ethers.Contract(
-        this.config.contracts.market,
-        this.marketABI,
-        this.provider,
-      );
-
-      const orderData = (
-        isBuyOrder
-          ? await contract.buyOrders(orderId)
-          : await contract.sellOrders(orderId)
-      ) as [bigint, string, bigint, bigint, bigint];
-
-      // Order structure: (id, user, amount, price, timestamp)
-      const [id, user, amount, price, timestamp] = orderData;
-
-      // If id is 0, the order doesn't exist (was filled or cancelled)
-      if (Number(id) === 0) {
-        return {
-          id: orderId,
-          user: '',
-          amount: 0,
-          price: 0,
-          timestamp: 0,
-          exists: false,
-        };
-      }
-
-      return {
-        id: id.toString(),
-        user: user,
-        amount: Number(amount) / 100, // Convert from wei (2 decimals)
-        price: Number(price) / 100, // Convert from wei (2 decimals)
-        timestamp: Number(timestamp),
-        exists: true,
-      };
-    } catch (error) {
-      this.logger.error('Error getting order details:', error);
-      return null;
-    }
+    return this.tradingMarketService.getOrderDetails(orderId, isBuyOrder);
   }
 
-  private async updateOrderStatusInCache(
-    orderId: string,
-    isBuyOrder: boolean,
-    matchedAmount: number,
-    txHash: string | null,
-  ): Promise<void> {
-    try {
-      // Get current order details from blockchain
-      const orderDetails = await this.getOrderDetails(orderId, isBuyOrder);
-
-      if (!orderDetails) {
-        this.logger.error(`Failed to get order details for order ${orderId}`);
-        return;
-      }
-
-      // Get current order from cache
-      const cachedOrder = await this.tradeOrdersCacheService.findOne(orderId);
-
-      if (!cachedOrder) {
-        this.logger.warn(`Order ${orderId} not found in cache`);
-        return;
-      }
-
-      let newStatus: string;
-      let newAmount = cachedOrder.amountEtk;
-
-      if (!orderDetails.exists) {
-        // Order was fully filled (deleted from blockchain)
-        newStatus = 'FILLED';
-        newAmount = 0;
-      } else if (orderDetails.amount < cachedOrder.amountEtk) {
-        // Order was partially filled
-        newStatus = 'PARTIALLY_FILLED';
-        newAmount = orderDetails.amount;
-      } else {
-        // Order still open (shouldn't happen in transaction completed event)
-        newStatus = 'OPEN';
-      }
-
-      // Update order in cache
-      await this.tradeOrdersCacheService.update(orderId, {
-        orderId: cachedOrder.orderId,
-        prosumerId: cachedOrder.prosumerId,
-        walletAddress: cachedOrder.walletAddress,
-        orderType: cachedOrder.orderType,
-        pair: cachedOrder.pair,
-        amountEtk: newAmount,
-        priceIdrsPerEtk: cachedOrder.priceIdrsPerEtk,
-        totalIdrsValue: newAmount * cachedOrder.priceIdrsPerEtk,
-        statusOnChain: newStatus,
-        createdAtOnChain:
-          cachedOrder.createdAtOnChain instanceof Date
-            ? cachedOrder.createdAtOnChain.toISOString()
-            : cachedOrder.createdAtOnChain,
-        updatedAtCache: new Date().toISOString(),
-        blockchainTxHashPlaced: cachedOrder.blockchainTxHashPlaced,
-        blockchainTxHashFilled: txHash || cachedOrder.blockchainTxHashFilled,
-      });
-
-      this.logger.log(
-        `Updated order ${orderId} status to ${newStatus}, remaining amount: ${newAmount} ETK`,
-      );
-    } catch (error) {
-      this.logger.error(
-        `Error updating order status in cache for ${orderId}:`,
-        error,
-      );
-    }
-  }
-
+  /**
+   * Get market liquidity - delegates to TradingMarketService
+   */
   async getMarketLiquidity(): Promise<{
     etkSupply: number;
     idrsSupply: number;
     buyOrderCount: number;
     sellOrderCount: number;
   }> {
-    try {
-      const contract = new ethers.Contract(
-        this.config.contracts.market,
-        this.marketABI,
-        this.provider,
-      );
-
-      const [etkSupply, idrsSupply, buyOrderCount, sellOrderCount] =
-        (await contract.getMarketLiquidity()) as [
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-        ];
-
-      return {
-        etkSupply: Number(etkSupply) / 100, // Convert from wei (2 decimals)
-        idrsSupply: Number(idrsSupply) / 100, // Convert from wei (2 decimals)
-        buyOrderCount: Number(buyOrderCount),
-        sellOrderCount: Number(sellOrderCount),
-      };
-    } catch (error) {
-      this.logger.error('Error getting market liquidity:', error);
-      throw error;
-    }
+    return this.tradingMarketService.getMarketLiquidity();
   }
 }

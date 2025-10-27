@@ -22,8 +22,10 @@ import {
 import { EnergySettlementService } from '../services/energy-settlement.service';
 import { EnergySettlementsService } from '../models/EnergySettlements/EnergySettlements.service';
 import { EnergyAnalyticsService } from '../services/energy-analytics.service';
+import { TelemetryAggregationService } from '../services/telemetry-aggregation.service';
 import { JwtAuthGuard } from '../auth/guards/auth.guards';
 import { AuthService } from '../auth/auth.service';
+import { AuthenticatedUser } from '../common/interfaces';
 import {
   EnergyReadingDto,
   EnergyStatsDto,
@@ -31,12 +33,6 @@ import {
   SettlementRecordDto,
 } from '../common/dto/energy.dto';
 // import { SettlementTrigger } from '../common/enums';
-
-interface AuthenticatedUser {
-  user: {
-    prosumerId: string;
-  };
-}
 
 @ApiTags('Energy')
 @ApiBearerAuth('JWT-auth')
@@ -49,34 +45,9 @@ export class EnergyController {
     private energySettlementService: EnergySettlementService,
     private energySettlementsService: EnergySettlementsService,
     private energyAnalyticsService: EnergyAnalyticsService,
+    private telemetryAggregationService: TelemetryAggregationService,
     private authService: AuthService,
   ) {}
-
-  // @Post('settlement/manual/:meterId')
-  // async manualSettlement(@Param('meterId') meterId: string, @Request() req) {
-  //   const prosumerId = req.user.prosumerId;
-  //   const txHash = await this.energySettlementService.manualSettlement(
-  //     meterId,
-  //     prosumerId,
-  //   );
-  //   return {
-  //     success: true,
-  //     transactionHash: txHash,
-  //     message: 'Manual settlement initiated',
-  //   };
-  // }
-
-  // @Post('settlement/process-all')
-  // async processAllSettlements(@Request() req) {
-  //   // Only allow admin users to trigger settlement for all meters
-  //   await this.energySettlementService.processAllMetersSettlement(
-  //     SettlementTrigger.MANUAL,
-  //   );
-  //   return {
-  //     success: true,
-  //     message: 'Settlement processing initiated for all meters',
-  //   };
-  // }
 
   @Get('settlement/history')
   @ApiOperation({
@@ -423,7 +394,7 @@ export class EnergyController {
 
       // Get hourly energy history
       const historyData =
-        await this.energySettlementService.getHourlyEnergyHistory(
+        await this.telemetryAggregationService.getHourlyHistory(
           prosumerId,
           hoursCount,
           meterId,
