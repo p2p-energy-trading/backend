@@ -24,6 +24,8 @@ import { WalletsService } from '../models/Wallets/Wallets.service';
 import { IdrsConversionsService } from '../models/IdrsConversions/IdrsConversions.service';
 import { CryptoService } from '../common/crypto.service';
 import { JwtAuthGuard } from '../auth/guards/auth.guards';
+import { ApiSuccessResponse } from '../common/interfaces';
+import { ResponseFormatter } from '../common/response-formatter';
 import {
   ConversionType,
   WalletImportMethod,
@@ -204,16 +206,15 @@ export class WalletController {
       lastUsedAt: new Date().toISOString(),
     });
 
-    return {
-      success: true,
-      data: {
+    return ResponseFormatter.success(
+      {
         walletAddress: wallet.walletAddress,
         walletName: wallet.walletName,
         importMethod: wallet.importMethod,
         createdAt: wallet.createdAt,
       },
-      message: 'Wallet created successfully',
-    };
+      'Wallet created successfully',
+    );
   }
 
   @Get('list')
@@ -231,9 +232,8 @@ export class WalletController {
 
     const wallets = await this.walletsService.findAll({ prosumerId });
 
-    return {
-      success: true,
-      data: wallets.map((wallet) => ({
+    return ResponseFormatter.successWithCount(
+      wallets.map((wallet) => ({
         walletAddress: wallet.walletAddress,
         walletName: wallet.walletName,
         importMethod: wallet.importMethod,
@@ -241,7 +241,8 @@ export class WalletController {
         createdAt: wallet.createdAt,
         lastUsedAt: wallet.lastUsedAt,
       })),
-    };
+      'Wallets retrieved successfully',
+    );
   }
 
   @Get(':walletAddress')
@@ -279,9 +280,8 @@ export class WalletController {
 
     const wallet = await this.walletsService.findOne(walletAddress);
 
-    return {
-      success: true,
-      data: {
+    return ResponseFormatter.success(
+      {
         walletAddress: wallet.walletAddress,
         walletName: wallet.walletName,
         importMethod: wallet.importMethod,
@@ -289,7 +289,8 @@ export class WalletController {
         createdAt: wallet.createdAt,
         lastUsedAt: wallet.lastUsedAt,
       },
-    };
+      'Wallet details retrieved successfully',
+    );
   }
 
   @Post('idrs-conversion')
@@ -445,15 +446,14 @@ export class WalletController {
         confirmedAt: conversion.confirmedAt,
       };
 
-      return {
-        success: true,
-        data: {
+      return ResponseFormatter.success(
+        {
           ...res,
           // blockchainTxHash,
           // balanceAfter,
         },
-        message: `${body.conversionType} conversion completed successfully`,
-      };
+        `${body.conversionType} conversion completed successfully`,
+      );
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -535,13 +535,13 @@ export class WalletController {
     const conversions =
       await this.idrsConversionsService.findByWalletAddress(walletAddress);
 
-    return {
-      success: true,
-      data: conversions.sort(
+    return ResponseFormatter.successWithCount(
+      conversions.sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       ),
-    };
+      'Conversions retrieved successfully',
+    );
   }
 
   @Post(':walletAddress/activate')
@@ -589,10 +589,10 @@ export class WalletController {
       lastUsedAt: new Date().toISOString(),
     });
 
-    return {
-      success: true,
-      message: 'Wallet activated successfully',
-    };
+    return ResponseFormatter.success(
+      { walletAddress, isActive: true },
+      'Wallet activated successfully',
+    );
   }
 
   // Change Settlement Primary Wallet
@@ -635,10 +635,10 @@ export class WalletController {
       walletAddress,
     );
 
-    return {
-      success: true,
-      message: 'Primary wallet changed successfully',
-    };
+    return ResponseFormatter.success(
+      { walletAddress, isPrimary: true },
+      'Primary wallet changed successfully',
+    );
   }
 
   @Post(':walletAddress/deactivate')
@@ -686,10 +686,10 @@ export class WalletController {
         currentWallet.lastUsedAt?.toISOString() || new Date().toISOString(),
     });
 
-    return {
-      success: true,
-      message: 'Wallet deactivated successfully',
-    };
+    return ResponseFormatter.success(
+      { walletAddress, isActive: false },
+      'Wallet deactivated successfully',
+    );
   }
 
   @Get(':walletAddress/balances')
@@ -726,24 +726,23 @@ export class WalletController {
         ),
       ]);
 
-      return {
-        success: true,
-        message: `Balances fetched successfully for wallet ${walletAddress}`,
-        ETK: etkBalance,
-        IDRS: idrsBalance,
-      };
+      return ResponseFormatter.success(
+        {
+          ETK: etkBalance,
+          IDRS: idrsBalance,
+        },
+        `Balances fetched successfully for wallet ${walletAddress}`,
+      );
     } catch (error) {
       this.logger.warn(
         `Failed to fetch balances for wallet ${walletAddress}: ${
           error instanceof Error ? error.message : String(error)
         }`,
       );
-      return {
-        success: false,
-        message: `Failed to fetch balances for wallet ${walletAddress}`,
-        ETK: 0,
-        IDRS: 0,
-      };
+      return ResponseFormatter.error(
+        `Failed to fetch balances for wallet ${walletAddress}`,
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -865,10 +864,9 @@ export class WalletController {
         })
         .slice(0, maxLimit);
 
-      return {
-        success: true,
-        data: sortedTransactions,
-        metadata: {
+      return ResponseFormatter.successWithMetadata(
+        sortedTransactions,
+        {
           scope: validScope,
           prosumerId: validScope === 'own' ? prosumerId : 'multiple',
           currencyPrimary: 'IDRS',
@@ -876,8 +874,8 @@ export class WalletController {
           limit: maxLimit,
           count: sortedTransactions.length,
         },
-        message: `IDRS transaction history fetched successfully (${validScope} scope)`,
-      };
+        `IDRS transaction history fetched successfully (${validScope} scope)`,
+      );
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
@@ -887,7 +885,10 @@ export class WalletController {
           error instanceof Error ? error.message : String(error)
         }`,
       );
-      throw new BadRequestException('Failed to fetch IDRS transaction history');
+      return ResponseFormatter.error(
+        'Failed to fetch IDRS transaction history',
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -1033,10 +1034,9 @@ export class WalletController {
         })
         .slice(0, maxLimit);
 
-      return {
-        success: true,
-        data: sortedTransactions,
-        metadata: {
+      return ResponseFormatter.successWithMetadata(
+        sortedTransactions,
+        {
           scope: validScope,
           prosumerId: validScope === 'own' ? prosumerId : 'multiple',
           tokenType: tokenType || 'all',
@@ -1044,8 +1044,8 @@ export class WalletController {
           count: sortedTransactions.length,
           transactionTypes: ['TOKEN_MINT', 'TOKEN_BURN'],
         },
-        message: `Token minting/burning history fetched successfully (${validScope} scope)`,
-      };
+        `Token minting/burning history fetched successfully (${validScope} scope)`,
+      );
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
@@ -1055,8 +1055,9 @@ export class WalletController {
           error instanceof Error ? error.message : String(error)
         }`,
       );
-      throw new BadRequestException(
+      return ResponseFormatter.error(
         'Failed to fetch token minting/burning history',
+        error instanceof Error ? error.message : String(error),
       );
     }
   }

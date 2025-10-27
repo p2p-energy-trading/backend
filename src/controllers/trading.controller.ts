@@ -28,6 +28,8 @@ import { MarketTradesService } from '../models/MarketTrades/MarketTrades.service
 import { JwtAuthGuard } from '../auth/guards/auth.guards';
 import { ProsumersService } from 'src/models/Prosumers/Prosumers.service';
 import { PriceCacheService } from '../services/price-cache.service';
+import { ApiSuccessResponse, ApiPaginatedResponse } from '../common/interfaces';
+import { ResponseFormatter } from '../common/response-formatter';
 import {
   PlaceOrderDto,
   PlaceOrderResponseDto,
@@ -176,11 +178,10 @@ export class TradingController {
       );
     }
 
-    return {
-      success: true,
-      transactionHash: txHash,
-      message: `${body.orderType} order placed`,
-    };
+    return ResponseFormatter.success(
+      { transactionHash: txHash },
+      `${body.orderType} order placed successfully`,
+    );
   }
 
   @Get('orders')
@@ -286,24 +287,26 @@ export class TradingController {
         })
         .slice(0, maxLimit);
 
-      return {
-        success: true,
-        data: sortedOrders,
-        metadata: {
+      return ResponseFormatter.successWithMetadata(
+        sortedOrders,
+        {
           scope: validScope,
           prosumerId: validScope === 'own' ? prosumerId : 'multiple',
           status: status || 'all',
           limit: maxLimit,
           count: sortedOrders.length,
         },
-        message: `Orders retrieved successfully (${validScope} scope)`,
-      };
+        `Orders retrieved successfully (${validScope} scope)`,
+      );
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
       }
       this.logger.error('Error getting orders:', error);
-      throw new BadRequestException('Failed to retrieve orders');
+      return ResponseFormatter.error(
+        'Failed to retrieve orders',
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -350,13 +353,13 @@ export class TradingController {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       .sort((a: any, b: any) => a.priceIdrsPerEtk - b.priceIdrsPerEtk); // Lowest price first for sell orders
 
-    return {
-      success: true,
-      data: {
+    return ResponseFormatter.success(
+      {
         buyOrders: buyOrders.slice(0, 20), // Top 20 buy orders
         sellOrders: sellOrders.slice(0, 20), // Top 20 sell orders
       },
-    };
+      'Order book retrieved successfully',
+    );
   }
 
   @Get('orderbook')
@@ -460,9 +463,8 @@ export class TradingController {
     const spread = bestAsk > 0 && bestBid > 0 ? bestAsk - bestBid : 0;
     const spreadPercentage = bestBid > 0 ? (spread / bestBid) * 100 : 0;
 
-    return {
-      success: true,
-      data: {
+    return ResponseFormatter.success(
+      {
         summary: {
           totalBuyOrders: buyOrders.length,
           totalSellOrders: sellOrders.length,
@@ -482,7 +484,8 @@ export class TradingController {
         buyOrders: buyOrders.slice(0, 20), // Top 20 buy price levels
         sellOrders: sellOrders.slice(0, 20), // Top 20 sell price levels
       },
-    };
+      'Aggregated order book retrieved successfully',
+    );
   }
 
   @Get('trades')
@@ -584,23 +587,25 @@ export class TradingController {
         })
         .slice(0, maxLimit);
 
-      return {
-        success: true,
-        data: uniqueTrades,
-        metadata: {
+      return ResponseFormatter.successWithMetadata(
+        uniqueTrades,
+        {
           scope: validScope,
           prosumerId: validScope === 'own' ? prosumerId : 'multiple',
           limit: maxLimit,
           count: uniqueTrades.length,
         },
-        message: `Trades retrieved successfully (${validScope} scope)`,
-      };
+        `Trades retrieved successfully (${validScope} scope)`,
+      );
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
       }
       this.logger.error('Error getting trades:', error);
-      throw new BadRequestException('Failed to retrieve trades');
+      return ResponseFormatter.error(
+        'Failed to retrieve trades',
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -672,9 +677,8 @@ export class TradingController {
 
     const marketLiquidity = await this.blockchainService.getMarketLiquidity();
 
-    return {
-      success: true,
-      data: {
+    return ResponseFormatter.success(
+      {
         lastPrice: lastTrade ? Number(lastTrade.priceIdrsPerEtk) : 0,
         currentMarketPrice,
         volume24h,
@@ -682,7 +686,8 @@ export class TradingController {
         tradesCount24h: trades24h.length,
         marketLiquidity,
       },
-    };
+      'Market statistics retrieved successfully',
+    );
   }
 
   @Post('cancel-order')
@@ -743,17 +748,19 @@ export class TradingController {
         body.isBuyOrder,
       );
 
-      return {
-        success: true,
-        transactionHash: txHash,
-        message: `Order ${body.orderId} cancellation submitted`,
-      };
+      return ResponseFormatter.success(
+        { transactionHash: txHash },
+        `Order ${body.orderId} cancellation submitted`,
+      );
     } catch (error) {
       this.logger.error('Error cancelling order:', error);
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw new BadRequestException('Failed to cancel order');
+      return ResponseFormatter.error(
+        'Failed to cancel order',
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -798,11 +805,10 @@ export class TradingController {
 
     const balances = await this.getWalletBalances(walletAddress);
 
-    return {
-      success: true,
-      data: balances,
-      message: 'Wallet balances retrieved successfully',
-    };
+    return ResponseFormatter.success(
+      balances,
+      'Wallet balances retrieved successfully',
+    );
   }
 
   @Get('market/etk-supply')
@@ -824,12 +830,16 @@ export class TradingController {
     try {
       const etkSupply =
         await this.blockchainService.getTotalETKSupplyInMarket();
-      return {
-        etkSupply,
-      };
+      return ResponseFormatter.success(
+        { etkSupply },
+        'ETK supply retrieved successfully',
+      );
     } catch (error) {
       this.logger.error('Error getting ETK supply in market:', error);
-      throw new BadRequestException('Failed to get ETK supply in market');
+      return ResponseFormatter.error(
+        'Failed to get ETK supply in market',
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -852,12 +862,16 @@ export class TradingController {
     try {
       const idrsSupply =
         await this.blockchainService.getTotalIDRSSupplyInMarket();
-      return {
-        idrsSupply,
-      };
+      return ResponseFormatter.success(
+        { idrsSupply },
+        'IDRS supply retrieved successfully',
+      );
     } catch (error) {
       this.logger.error('Error getting IDRS supply in market:', error);
-      throw new BadRequestException('Failed to get IDRS supply in market');
+      return ResponseFormatter.error(
+        'Failed to get IDRS supply in market',
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -880,10 +894,16 @@ export class TradingController {
   async getMarketLiquidity() {
     try {
       const liquidity = await this.blockchainService.getMarketLiquidity();
-      return liquidity;
+      return ResponseFormatter.success(
+        liquidity,
+        'Market liquidity retrieved successfully',
+      );
     } catch (error) {
       this.logger.error('Error getting market liquidity:', error);
-      throw new BadRequestException('Failed to get market liquidity');
+      return ResponseFormatter.error(
+        'Failed to get market liquidity',
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -977,20 +997,23 @@ export class TradingController {
         );
       }
 
-      return {
-        success: true,
-        data: priceHistory as any[],
-        metadata: {
+      return ResponseFormatter.successWithMetadata(
+        priceHistory as any[],
+        {
           interval,
           limit: maxLimit,
           from: startTime.toISOString(),
           to: endTime.toISOString(),
           count: Array.isArray(priceHistory) ? priceHistory.length : 0,
         },
-      };
+        'Price history retrieved successfully',
+      );
     } catch (error) {
       this.logger.error('Error getting price history:', error);
-      throw new BadRequestException('Failed to retrieve price history');
+      return ResponseFormatter.error(
+        'Failed to retrieve price history',
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -1047,9 +1070,8 @@ export class TradingController {
             100
           : 0;
 
-      return {
-        success: true,
-        data: {
+      return ResponseFormatter.success(
+        {
           price: currentPrice,
           timestamp: new Date().toISOString(),
           change24h: Math.round(priceChange24h * 100) / 100,
@@ -1065,10 +1087,14 @@ export class TradingController {
             side: 'unknown', // Will be populated when trade side is available
           })),
         },
-      };
+        'Real-time price data retrieved successfully',
+      );
     } catch (error) {
       this.logger.error('Error getting real-time price data:', error);
-      throw new BadRequestException('Failed to retrieve real-time price data');
+      return ResponseFormatter.error(
+        'Failed to retrieve real-time price data',
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -1145,19 +1171,22 @@ export class TradingController {
         );
       }
 
-      return {
-        success: true,
-        data: candles as any[],
-        metadata: {
+      return ResponseFormatter.successWithMetadata(
+        candles as any[],
+        {
           interval,
           limit: maxLimit,
           count: Array.isArray(candles) ? candles.length : 0,
           generatedAt: new Date().toISOString(),
         },
-      };
+        'Price candles retrieved successfully',
+      );
     } catch (error) {
       this.logger.error('Error getting price candles:', error);
-      throw new BadRequestException('Failed to retrieve price candles');
+      return ResponseFormatter.error(
+        'Failed to retrieve price candles',
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -1230,8 +1259,9 @@ export class TradingController {
         throw error;
       }
       this.logger.error('Error checking wallet balance:', error);
-      throw new BadRequestException(
+      return ResponseFormatter.error(
         'Failed to verify wallet balance. Please try again.',
+        error instanceof Error ? error.message : String(error),
       );
     }
   }
@@ -1342,9 +1372,9 @@ export class TradingController {
         analysisDays,
       );
 
-    return {
-      success: true,
-      data: performance,
-    };
+    return ResponseFormatter.success(
+      performance,
+      'Trading performance retrieved successfully',
+    );
   }
 }

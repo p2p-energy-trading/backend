@@ -13,7 +13,7 @@ import { TradingAnalyticsService } from './trading-analytics.service';
 import { RedisTelemetryService } from './redis-telemetry.service';
 import { TelemetryAggregate } from '../models/TelemetryAggregate/TelemetryAggregate.entity';
 
-export interface DashboardStats {
+export interface StatStats {
   energyStats: {
     todayGeneration: number;
     todayConsumption: number;
@@ -63,8 +63,8 @@ export interface DashboardStats {
 }
 
 @Injectable()
-export class DashboardService {
-  private readonly logger = new Logger(DashboardService.name);
+export class StatService {
+  private readonly logger = new Logger(StatService.name);
 
   constructor(
     @InjectRepository(TelemetryAggregate)
@@ -83,7 +83,7 @@ export class DashboardService {
     private energySettlementService: EnergySettlementService,
   ) {}
 
-  async getDashboardStats(prosumerId: string): Promise<DashboardStats> {
+  async getStats(prosumerId: string): Promise<StatStats> {
     try {
       // Get prosumer's devices and wallets
       const [devices, wallets] = await Promise.all([

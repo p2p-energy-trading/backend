@@ -14,37 +14,35 @@ import {
   ApiBearerAuth,
   ApiQuery,
 } from '@nestjs/swagger';
-import {
-  DashboardService,
-  DashboardStats,
-} from '../services/dashboard.service';
+import { StatService, StatStats } from '../services/stat.service';
 import { JwtAuthGuard } from '../auth/guards/auth.guards';
-import { AuthenticatedUser } from '../common/interfaces';
+import { AuthenticatedUser, ApiSuccessResponse } from '../common/interfaces';
+import { ResponseFormatter } from '../common/response-formatter';
 import {
   DashboardStatsDto,
   SettlementRecommendationDto,
   BlockchainSyncStatusDto,
 } from '../common/dto/dashboard.dto';
 
-@ApiTags('Dashboard')
+@ApiTags('Statistics')
 @ApiBearerAuth('JWT-auth')
-@Controller('dashboard')
+@Controller('stat')
 @UseGuards(JwtAuthGuard)
-export class DashboardController {
-  private readonly logger = new Logger(DashboardController.name);
+export class StatController {
+  private readonly logger = new Logger(StatController.name);
 
-  constructor(private dashboardService: DashboardService) {}
+  constructor(private statService: StatService) {}
 
   @Get('stats')
   @Header('Cache-Control', 'public, max-age=60') // Cache for 1 minute
   @ApiOperation({
-    summary: 'Get dashboard statistics',
+    summary: 'Get statistics',
     description:
-      'Retrieve comprehensive dashboard statistics including balances, energy, trading, and devices',
+      'Retrieve comprehensive statistics including balances, energy, trading, and devices',
   })
   @ApiResponse({
     status: 200,
-    description: 'Dashboard statistics retrieved successfully',
+    description: 'Statistics retrieved successfully',
     type: DashboardStatsDto,
   })
   @ApiResponse({
@@ -55,16 +53,16 @@ export class DashboardController {
     status: 500,
     description: 'Internal server error - Failed to retrieve statistics',
   })
-  async getDashboardStats(
+  async getStats(
     @Request() req: AuthenticatedUser,
-  ): Promise<{ success: boolean; data: DashboardStats }> {
+  ): Promise<ApiSuccessResponse<StatStats>> {
     const prosumerId = req.user.prosumerId;
-    const stats = await this.dashboardService.getDashboardStats(prosumerId);
+    const stats = await this.statService.getStats(prosumerId);
 
-    return {
-      success: true,
-      data: stats,
-    };
+    return ResponseFormatter.success(
+      stats,
+      'Statistics retrieved successfully',
+    );
   }
 
   @Get('settlement-recommendations')
@@ -90,12 +88,12 @@ export class DashboardController {
     const prosumerId = req.user.prosumerId;
 
     const recommendations =
-      await this.dashboardService.getSettlementRecommendations(prosumerId);
+      await this.statService.getSettlementRecommendations(prosumerId);
 
-    return {
-      success: true,
-      data: recommendations,
-    };
+    return ResponseFormatter.successWithCount(
+      recommendations,
+      'Settlement recommendations retrieved successfully',
+    );
   }
 
   @Get('blockchain-sync-status')
@@ -121,12 +119,12 @@ export class DashboardController {
     const prosumerId = req.user.prosumerId;
 
     const syncStatus =
-      await this.dashboardService.getBlockchainSyncStatus(prosumerId);
+      await this.statService.getBlockchainSyncStatus(prosumerId);
 
-    return {
-      success: true,
-      data: syncStatus,
-    };
+    return ResponseFormatter.success(
+      syncStatus,
+      'Blockchain sync status retrieved successfully',
+    );
   }
 
   @Get('system-overview')
@@ -197,11 +195,11 @@ export class DashboardController {
     description: 'Internal server error - Failed to retrieve system overview',
   })
   async getSystemOverview(@Request() req: AuthenticatedUser) {
-    const prosumerId = req.user.prosumerId;
-
     try {
+      const prosumerId = req.user.prosumerId;
+
       // Get comprehensive system overview
-      const stats = await this.dashboardService.getDashboardStats(prosumerId);
+      const stats = await this.statService.getStats(prosumerId);
 
       const systemOverview = {
         energy: {
@@ -249,16 +247,19 @@ export class DashboardController {
         },
       };
 
-      return {
-        success: true,
-        data: systemOverview,
-      };
+      return ResponseFormatter.success(
+        systemOverview,
+        'System overview retrieved successfully',
+      );
     } catch (error) {
-      return {
-        success: false,
-        message: 'Failed to retrieve system overview',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      };
+      this.logger.error(
+        `Failed to get system overview: ${error.message}`,
+        error.stack,
+      );
+      return ResponseFormatter.error(
+        'Failed to retrieve system overview',
+        error.message,
+      );
     }
   }
 }

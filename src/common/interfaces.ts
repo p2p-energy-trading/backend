@@ -5,7 +5,74 @@ export interface AuthenticatedUser {
   };
 }
 
+// ==========================================
+// API Response Interfaces (Standardized)
+// ==========================================
+
+/**
+ * Standard API Success Response
+ * @template T - Type of data being returned
+ */
+export interface ApiSuccessResponse<T = any> {
+  success: true;
+  data: T;
+  message?: string;
+  metadata?: ApiResponseMetadata;
+}
+
+/**
+ * Standard API Error Response
+ */
+export interface ApiErrorResponse {
+  success: false;
+  message: string;
+  error?: string | object;
+  statusCode?: number;
+}
+
+/**
+ * Standard API Paginated Response
+ * @template T - Type of items in the data array
+ */
+export interface ApiPaginatedResponse<T = any> {
+  success: true;
+  data: T[];
+  metadata: ApiPaginationMetadata;
+  message?: string;
+}
+
+/**
+ * Metadata for API responses
+ */
+export interface ApiResponseMetadata {
+  timestamp?: string;
+  count?: number;
+  [key: string]: any; // Allow additional metadata
+}
+
+/**
+ * Pagination metadata for list endpoints
+ */
+export interface ApiPaginationMetadata extends ApiResponseMetadata {
+  total: number;
+  page?: number;
+  limit?: number;
+  hasNext?: boolean;
+  hasPrevious?: boolean;
+}
+
+/**
+ * Union type for all API responses
+ */
+export type ApiResponse<T = any> =
+  | ApiSuccessResponse<T>
+  | ApiErrorResponse
+  | ApiPaginatedResponse<T>;
+
+// ==========================================
 // Configuration Interfaces
+// ==========================================
+
 export interface BlockchainConfig {
   rpcUrl: string;
   chainId: number;

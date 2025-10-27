@@ -18,7 +18,8 @@ import {
 import { BlockchainService } from '../services/blockchain.service';
 import { WalletsService } from '../models/Wallets/Wallets.service';
 import { JwtAuthGuard } from '../auth/guards/auth.guards';
-import { AuthenticatedUser } from '../common/interfaces';
+import { AuthenticatedUser, ApiSuccessResponse } from '../common/interfaces';
+import { ResponseFormatter } from '../common/response-formatter';
 
 interface ConvertIDRSRequest {
   walletAddress: string;
@@ -165,17 +166,16 @@ export class BlockchainController {
           `On-ramp successful: ${amount} IDRS minted to ${walletAddress}`,
         );
 
-        return {
-          success: true,
-          message: `On-ramp successful: ${amount} IDRS minted`,
-          data: {
+        return ResponseFormatter.success(
+          {
             direction: 'on-ramp',
             amount,
             walletAddress,
             transactionHash: txHash,
             timestamp: new Date().toISOString(),
           },
-        };
+          `On-ramp successful: ${amount} IDRS minted`,
+        );
       } else {
         // IDRS → IDR (burn IDRS tokens)
         // First check if wallet has enough IDRS balance
@@ -199,24 +199,24 @@ export class BlockchainController {
           `Off-ramp successful: ${amount} IDRS burned from ${walletAddress}`,
         );
 
-        return {
-          success: true,
-          message: `Off-ramp successful: ${amount} IDRS burned`,
-          data: {
+        return ResponseFormatter.success(
+          {
             direction: 'off-ramp',
             amount,
             walletAddress,
             transactionHash: txHash,
             timestamp: new Date().toISOString(),
           },
-        };
+          `Off-ramp successful: ${amount} IDRS burned`,
+        );
       }
     } catch (error) {
       this.logger.error(
         `IDRS conversion failed: ${error instanceof Error ? error.message : String(error)}`,
       );
-      throw new BadRequestException(
-        `Conversion failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      return ResponseFormatter.error(
+        'Conversion failed',
+        error instanceof Error ? error.message : 'Unknown error',
       );
     }
   }
@@ -257,14 +257,14 @@ export class BlockchainController {
   })
   @ApiBearerAuth()
   async getNetworkInfo(@Request() req: AuthenticatedUser) {
-    return {
-      success: true,
-      data: {
+    return ResponseFormatter.success(
+      {
         rpcUrl: process.env.ETHEREUM_RPC_URL || 'http://localhost:8545',
         networkName: 'Private Ethereum Network',
         connected: true,
       },
-    };
+      'Network information retrieved successfully',
+    );
   }
 
   /**
@@ -313,14 +313,14 @@ export class BlockchainController {
   })
   @ApiBearerAuth()
   async getContractAddresses(@Request() req: AuthenticatedUser) {
-    return {
-      success: true,
-      data: {
+    return ResponseFormatter.success(
+      {
         etkToken: process.env.CONTRACT_ETK_TOKEN || null,
         idrsToken: process.env.CONTRACT_IDRS_TOKEN || null,
         market: process.env.CONTRACT_MARKET || null,
         energyConverter: process.env.CONTRACT_ENERGY_CONVERTER || null,
       },
-    };
+      'Contract addresses retrieved successfully',
+    );
   }
 }

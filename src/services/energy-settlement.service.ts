@@ -11,7 +11,7 @@ import { SettlementTrigger, TransactionStatus } from '../common/enums';
 import { DeviceCommandPayload } from '../common/interfaces';
 import { WalletsService } from 'src/models/Wallets/Wallets.service';
 import { ProsumersService } from 'src/models/Prosumers/Prosumers.service';
-import { DashboardService } from './dashboard.service';
+import { StatService } from './stat.service';
 import { EnergyAnalyticsService } from './energy-analytics.service';
 import { RedisTelemetryService } from './redis-telemetry.service';
 
@@ -64,8 +64,8 @@ export class EnergySettlementService {
     private transactionLogsService: TransactionLogsService,
     private prosumersService: ProsumersService,
     private readonly WalletsService: WalletsService, // Assuming this is imported correctly
-    @Inject(forwardRef(() => DashboardService))
-    private dashboardService: DashboardService,
+    @Inject(forwardRef(() => StatService))
+    private statService: StatService,
     @Inject(forwardRef(() => EnergyAnalyticsService))
     private energyAnalyticsService: EnergyAnalyticsService,
   ) {}

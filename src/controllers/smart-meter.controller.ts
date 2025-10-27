@@ -33,7 +33,8 @@ import { TelemetryArchivalService } from '../services/telemetry-archival.service
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
 import { TelemetryAggregate } from '../models/TelemetryAggregate/TelemetryAggregate.entity';
-import { DeviceCommandPayload } from '../common/interfaces';
+import { DeviceCommandPayload, ApiSuccessResponse } from '../common/interfaces';
+import { ResponseFormatter } from '../common/response-formatter';
 import {
   CreateSmartMeterDto,
   SmartMeterResponseDto,
@@ -183,10 +184,8 @@ export class SmartMeterController {
         `Smart meter ${body.meterId} created and linked to prosumer ${prosumerId}`,
       );
 
-      return {
-        success: true,
-        message: 'Smart meter created and linked successfully',
-        data: {
+      return ResponseFormatter.success(
+        {
           meterId: newSmartMeter.meterId,
           prosumerId: newSmartMeter.prosumerId,
           location: newSmartMeter.location,
@@ -197,7 +196,8 @@ export class SmartMeterController {
           mqttTopicSettlement: newSmartMeter.mqttTopicSettlement,
           createdAt: newSmartMeter.createdAt,
         },
-      };
+        'Smart meter created and linked successfully',
+      );
     } catch (error) {
       this.logger.error('Error creating smart meter:', error);
 
@@ -205,10 +205,9 @@ export class SmartMeterController {
         throw error;
       }
 
-      throw new BadRequestException(
-        `Failed to create smart meter: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+      return ResponseFormatter.error(
+        'Failed to create smart meter',
+        error instanceof Error ? error.message : String(error),
       );
     }
   }
@@ -244,10 +243,8 @@ export class SmartMeterController {
       const smartMeters =
         await this.smartMetersService.findByProsumerId(prosumerId);
 
-      return {
-        success: true,
-        message: 'Smart meters retrieved successfully',
-        data: smartMeters.map((meter) => ({
+      return ResponseFormatter.successWithMetadata(
+        smartMeters.map((meter) => ({
           meterId: meter.meterId,
           location: meter.location,
           status: meter.status,
@@ -258,14 +255,14 @@ export class SmartMeterController {
           mqttTopicRealtime: meter.mqttTopicRealtime,
           mqttTopicSettlement: meter.mqttTopicSettlement,
         })),
-        count: smartMeters.length,
-      };
+        { count: smartMeters.length },
+        'Smart meters retrieved successfully',
+      );
     } catch (error) {
       this.logger.error('Error retrieving smart meters:', error);
-      throw new BadRequestException(
-        `Failed to retrieve smart meters: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+      return ResponseFormatter.error(
+        'Failed to retrieve smart meters',
+        error instanceof Error ? error.message : String(error),
       );
     }
   }
@@ -315,10 +312,8 @@ export class SmartMeterController {
         );
       }
 
-      return {
-        success: true,
-        message: 'Smart meter retrieved successfully',
-        data: {
+      return ResponseFormatter.success(
+        {
           meterId: smartMeter.meterId,
           prosumerId: smartMeter.prosumerId,
           location: smartMeter.location,
@@ -334,7 +329,8 @@ export class SmartMeterController {
           mqttTopicSettlement: smartMeter.mqttTopicSettlement,
           settlementIntervalMinutes: smartMeter.settlementIntervalMinutes,
         },
-      };
+        'Smart meter retrieved successfully',
+      );
     } catch (error) {
       this.logger.error(`Error retrieving smart meter ${meterId}:`, error);
 
@@ -342,10 +338,9 @@ export class SmartMeterController {
         throw error;
       }
 
-      throw new BadRequestException(
-        `Failed to retrieve smart meter: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+      return ResponseFormatter.error(
+        'Failed to retrieve smart meter',
+        error instanceof Error ? error.message : String(error),
       );
     }
   }
@@ -393,7 +388,10 @@ export class SmartMeterController {
       this.logger.error(
         `Failed to send command to device ${meterId} for prosumer ${prosumerId}: ${error instanceof Error ? error.message : String(error)}`,
       );
-      throw new BadRequestException('Device not found or unauthorized');
+      return ResponseFormatter.error(
+        'Device not found or unauthorized',
+        error instanceof Error ? error.message : String(error),
+      );
     }
 
     const correlationId = await this.mqttService.sendCommand(
@@ -402,11 +400,10 @@ export class SmartMeterController {
       prosumerId,
     );
 
-    return {
-      success: true,
-      correlationId,
-      message: 'Command sent to device',
-    };
+    return ResponseFormatter.success(
+      { correlationId },
+      'Command sent to device',
+    );
   }
 
   @Post('grid-control')
@@ -505,7 +502,10 @@ export class SmartMeterController {
       this.logger.error(
         `Failed to fetch status for device ${meterId} for prosumer ${prosumerId}: ${error instanceof Error ? error.message : String(error)}`,
       );
-      throw new BadRequestException('Device not found or unauthorized');
+      return ResponseFormatter.error(
+        'Device not found or unauthorized',
+        error instanceof Error ? error.message : String(error),
+      );
     }
 
     // Get latest status and data from Redis
@@ -542,9 +542,8 @@ export class SmartMeterController {
       isOnline = timeSinceLastUpdate < 30 * 1000; // 30 second threshold
     }
 
-    return {
-      success: true,
-      data: {
+    return ResponseFormatter.success(
+      {
         meterId,
         lastHeartbeat: latestTimestamp
           ? {
@@ -578,7 +577,8 @@ export class SmartMeterController {
         isOnline,
         heartbeatThreshold: '30 seconds',
       },
-    };
+      'Device status retrieved successfully',
+    );
   }
 
   // ============================================================================
@@ -609,13 +609,16 @@ export class SmartMeterController {
       const health =
         await this.smartMeterHealthService.getDeviceHealth(prosumerId);
 
-      return {
-        success: true,
-        data: health,
-      };
+      return ResponseFormatter.success(
+        health,
+        'Device health status retrieved successfully',
+      );
     } catch (error) {
       this.logger.error('Error getting device health:', error);
-      throw new BadRequestException('Failed to retrieve device health status');
+      return ResponseFormatter.error(
+        'Failed to retrieve device health status',
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -666,16 +669,19 @@ export class SmartMeterController {
         throw new BadRequestException('Meter not found or no data available');
       }
 
-      return {
-        success: true,
-        data: health,
-      };
+      return ResponseFormatter.success(
+        health,
+        'Meter health details retrieved successfully',
+      );
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
       }
       this.logger.error(`Error getting meter health for ${meterId}:`, error);
-      throw new BadRequestException('Failed to retrieve meter health details');
+      return ResponseFormatter.error(
+        'Failed to retrieve meter health details',
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -699,13 +705,16 @@ export class SmartMeterController {
       const devices =
         await this.smartMeterHealthService.getDeviceList(prosumerId);
 
-      return {
-        success: true,
-        data: devices,
-      };
+      return ResponseFormatter.successWithCount(
+        devices,
+        'Device list retrieved successfully',
+      );
     } catch (error) {
       this.logger.error('Error listing devices:', error);
-      throw new BadRequestException('Failed to retrieve device list');
+      return ResponseFormatter.error(
+        'Failed to retrieve device list',
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -748,16 +757,19 @@ export class SmartMeterController {
       const connectivity =
         await this.smartMeterHealthService.checkDeviceConnectivity(meterId);
 
-      return {
-        success: true,
-        data: connectivity,
-      };
+      return ResponseFormatter.success(
+        connectivity,
+        'Device connectivity checked successfully',
+      );
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
       }
       this.logger.error(`Error checking connectivity for ${meterId}:`, error);
-      throw new BadRequestException('Failed to check device connectivity');
+      return ResponseFormatter.error(
+        'Failed to check device connectivity',
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -781,10 +793,10 @@ export class SmartMeterController {
       throw new HttpException('Meter data not found', HttpStatus.NOT_FOUND);
     }
 
-    return {
-      success: true,
+    return ResponseFormatter.success(
       data,
-    };
+      'Latest meter data retrieved successfully',
+    );
   }
 
   @Get('telemetry/latest/status/:meterId')
@@ -803,10 +815,10 @@ export class SmartMeterController {
       throw new HttpException('Meter status not found', HttpStatus.NOT_FOUND);
     }
 
-    return {
-      success: true,
-      data: status,
-    };
+    return ResponseFormatter.success(
+      status,
+      'Latest meter status retrieved successfully',
+    );
   }
 
   @Get('telemetry/latest/all')
@@ -837,10 +849,10 @@ export class SmartMeterController {
       };
     }
 
-    return {
-      success: true,
-      data: Object.values(combined),
-    };
+    return ResponseFormatter.successWithCount(
+      Object.values(combined),
+      'All latest data retrieved successfully',
+    );
   }
 
   @Get('telemetry/history/:meterId')
@@ -890,11 +902,11 @@ export class SmartMeterController {
       take: limitNum,
     });
 
-    return {
-      success: true,
-      data: history.reverse(), // Return in chronological order
-      count: history.length,
-    };
+    return ResponseFormatter.successWithMetadata(
+      history.reverse(), // Return in chronological order
+      { count: history.length },
+      'Historical data retrieved successfully',
+    );
   }
 
   @Get('telemetry/history/all')
@@ -957,10 +969,10 @@ export class SmartMeterController {
       }),
     );
 
-    return {
-      success: true,
-      data: allHistory,
-    };
+    return ResponseFormatter.successWithCount(
+      allHistory,
+      'Historical data for all meters retrieved successfully',
+    );
   }
 
   @Get('telemetry/stats/archive')
@@ -972,10 +984,10 @@ export class SmartMeterController {
   async getArchiveStats() {
     const stats = await this.telemetryArchivalService.getArchiveStats();
 
-    return {
-      success: true,
-      data: stats,
-    };
+    return ResponseFormatter.success(
+      stats,
+      'Archive stats retrieved successfully',
+    );
   }
 
   @Get('telemetry/health')
@@ -984,13 +996,13 @@ export class SmartMeterController {
   async telemetryHealthCheck() {
     const redisHealthy = await this.redisTelemetryService.ping();
 
-    return {
-      success: true,
-      data: {
+    return ResponseFormatter.success(
+      {
         redis: redisHealthy ? 'healthy' : 'unhealthy',
         timestamp: new Date().toISOString(),
       },
-    };
+      'Telemetry system health check completed',
+    );
   }
 
   // ============================================================================
@@ -1055,14 +1067,13 @@ export class SmartMeterController {
         `Smart meter ${meterId} removed by prosumer ${prosumerId}`,
       );
 
-      return {
-        success: true,
-        message: 'Smart meter removed successfully',
-        data: {
+      return ResponseFormatter.success(
+        {
           meterId,
           removedAt: new Date().toISOString(),
         },
-      };
+        'Smart meter removed successfully',
+      );
     } catch (error) {
       this.logger.error(`Error removing smart meter ${meterId}:`, error);
 
@@ -1070,10 +1081,9 @@ export class SmartMeterController {
         throw error;
       }
 
-      throw new BadRequestException(
-        `Failed to remove smart meter: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+      return ResponseFormatter.error(
+        'Failed to remove smart meter',
+        error instanceof Error ? error.message : String(error),
       );
     }
   }

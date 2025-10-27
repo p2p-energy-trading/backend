@@ -7,7 +7,7 @@ import { EnergySettlementService } from './energy-settlement.service';
 import { EnergyAnalyticsService } from './energy-analytics.service';
 import { SmartMeterHealthService } from './smart-meter-health.service';
 import { TradingAnalyticsService } from './trading-analytics.service';
-import { DashboardService } from './dashboard.service';
+import { StatService } from './stat.service';
 import { PriceCacheService } from './price-cache.service';
 import { RedisTelemetryService } from './redis-telemetry.service';
 import { RedisOrdersService } from './redis-orders.service';
@@ -55,7 +55,7 @@ import { TelemetryAggregate } from '../models/TelemetryAggregate/TelemetryAggreg
     EnergyAnalyticsService,
     SmartMeterHealthService,
     TradingAnalyticsService,
-    DashboardService,
+    StatService,
     PriceCacheService,
     RedisTelemetryService,
     RedisOrdersService,
@@ -72,7 +72,7 @@ import { TelemetryAggregate } from '../models/TelemetryAggregate/TelemetryAggreg
     EnergyAnalyticsService,
     SmartMeterHealthService,
     TradingAnalyticsService,
-    DashboardService,
+    StatService,
     PriceCacheService,
     RedisTelemetryService,
     RedisOrdersService,

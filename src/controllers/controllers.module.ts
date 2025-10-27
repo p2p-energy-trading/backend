@@ -5,7 +5,7 @@ import { EnergyController } from './energy.controller';
 import { TradingController } from './trading.controller';
 import { BlockchainController } from './blockchain.controller';
 import { WalletController } from './wallet.controller';
-import { DashboardController } from './dashboard.controller';
+import { StatController } from './stat.controller';
 import { HealthController } from './health.controller';
 import { SmartMeterController } from './smart-meter.controller';
 // Removed: TelemetryController (merged into SmartMeterController)
@@ -52,7 +52,7 @@ import { TelemetryAggregate } from '../models/TelemetryAggregate/TelemetryAggreg
     TradingController,
     BlockchainController,
     WalletController,
-    DashboardController,
+    StatController,
     HealthController,
     SmartMeterController, // Now includes Device + Telemetry + SmartMeter endpoints
     // Removed: TelemetryController (merged into SmartMeterController)

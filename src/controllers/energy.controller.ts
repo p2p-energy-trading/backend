@@ -25,7 +25,8 @@ import { EnergyAnalyticsService } from '../services/energy-analytics.service';
 import { TelemetryAggregationService } from '../services/telemetry-aggregation.service';
 import { JwtAuthGuard } from '../auth/guards/auth.guards';
 import { AuthService } from '../auth/auth.service';
-import { AuthenticatedUser } from '../common/interfaces';
+import { AuthenticatedUser, ApiSuccessResponse } from '../common/interfaces';
+import { ResponseFormatter } from '../common/response-formatter';
 import {
   EnergyReadingDto,
   EnergyStatsDto,
@@ -127,22 +128,25 @@ export class EnergyController {
           validScope,
         );
 
-      return {
-        success: true,
-        data: settlements,
-        metadata: {
+      return ResponseFormatter.successWithMetadata(
+        settlements,
+        {
           scope: validScope,
           meterId: meterId || 'all',
-          totalReturned: settlements.length,
+          count: settlements.length,
           limit: limit ? parseInt(limit) : 50,
         },
-      };
+        'Settlement history retrieved successfully',
+      );
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
       }
       this.logger.error('Error getting settlement history:', error);
-      throw new BadRequestException('Failed to retrieve settlement history');
+      return ResponseFormatter.error(
+        'Failed to retrieve settlement history',
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -213,10 +217,10 @@ export class EnergyController {
         throw new NotFoundException('Settlement not found');
       }
 
-      return {
-        success: true,
-        data: settlement,
-      };
+      return ResponseFormatter.success(
+        settlement,
+        'Settlement details retrieved successfully',
+      );
     } catch (error) {
       if (
         error instanceof BadRequestException ||
@@ -224,7 +228,11 @@ export class EnergyController {
       ) {
         throw error;
       }
-      throw new BadRequestException('Failed to retrieve settlement');
+      this.logger.error('Error getting settlement:', error);
+      return ResponseFormatter.error(
+        'Failed to retrieve settlement',
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -299,13 +307,13 @@ export class EnergyController {
         );
       }
 
-      return {
-        success: true,
-        data: {
+      return ResponseFormatter.success(
+        {
           meterId: targetMeterId,
           ...estimatorData,
         },
-      };
+        'Settlement estimate retrieved successfully',
+      );
     } catch (error) {
       if (
         error instanceof BadRequestException ||
@@ -313,7 +321,11 @@ export class EnergyController {
       ) {
         throw error;
       }
-      throw new BadRequestException('Failed to retrieve settlement estimator');
+      this.logger.error('Error getting settlement estimator:', error);
+      return ResponseFormatter.error(
+        'Failed to retrieve settlement estimator',
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -400,15 +412,15 @@ export class EnergyController {
           meterId,
         );
 
-      return {
-        success: true,
-        data: historyData,
-        metadata: {
+      return ResponseFormatter.successWithMetadata(
+        historyData,
+        {
           hours: hoursCount,
           meterId: meterId || 'all',
-          generatedAt: new Date().toISOString(),
+          count: historyData.length,
         },
-      };
+        'Hourly energy history retrieved successfully',
+      );
     } catch (error) {
       if (
         error instanceof BadRequestException ||
@@ -416,7 +428,11 @@ export class EnergyController {
       ) {
         throw error;
       }
-      throw new BadRequestException('Failed to retrieve hourly energy history');
+      this.logger.error('Error getting hourly energy history:', error);
+      return ResponseFormatter.error(
+        'Failed to retrieve hourly energy history',
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -480,13 +496,16 @@ export class EnergyController {
         dayCount,
       );
 
-      return {
-        success: true,
-        data: chartData,
-      };
+      return ResponseFormatter.successWithCount(
+        chartData,
+        'Energy chart data retrieved successfully',
+      );
     } catch (error) {
       this.logger.error('Error getting energy chart data:', error);
-      throw new BadRequestException('Failed to retrieve energy chart data');
+      return ResponseFormatter.error(
+        'Failed to retrieve energy chart data',
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -555,13 +574,16 @@ export class EnergyController {
       const data =
         await this.energyAnalyticsService.getRealTimeEnergyData(prosumerId);
 
-      return {
-        success: true,
+      return ResponseFormatter.success(
         data,
-      };
+        'Real-time energy data retrieved successfully',
+      );
     } catch (error) {
       this.logger.error('Error getting real-time energy data:', error);
-      throw new BadRequestException('Failed to retrieve real-time energy data');
+      return ResponseFormatter.error(
+        'Failed to retrieve real-time energy data',
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 
@@ -650,13 +672,16 @@ export class EnergyController {
         summaryPeriod,
       );
 
-      return {
-        success: true,
+      return ResponseFormatter.success(
         data,
-      };
+        'Energy summary retrieved successfully',
+      );
     } catch (error) {
       this.logger.error('Error getting energy summary:', error);
-      throw new BadRequestException('Failed to retrieve energy summary');
+      return ResponseFormatter.error(
+        'Failed to retrieve energy summary',
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 }

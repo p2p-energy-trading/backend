@@ -7,6 +7,8 @@ import {
   ReadinessResponseDto,
   LivenessResponseDto,
 } from '../common/dto/health.dto';
+import { ApiSuccessResponse } from '../common/interfaces';
+import { ResponseFormatter } from '../common/response-formatter';
 
 @ApiTags('System')
 @Controller('health')
@@ -32,10 +34,10 @@ export class HealthController {
   async getHealth() {
     const health = await this.healthCheckService.getSystemHealth();
 
-    return {
-      success: true,
-      data: health,
-    };
+    return ResponseFormatter.success(
+      health,
+      'System health status retrieved successfully',
+    );
   }
 
   @Get('ready')
@@ -61,7 +63,10 @@ export class HealthController {
       throw new Error('Service not ready');
     }
 
-    return { ready: true };
+    return ResponseFormatter.success(
+      { ready: true },
+      'Service is ready to accept traffic',
+    );
   }
 
   @Get('live')
@@ -77,6 +82,9 @@ export class HealthController {
     type: LivenessResponseDto,
   })
   getLiveness() {
-    return { alive: true };
+    return ResponseFormatter.success(
+      { alive: true },
+      'Service is alive and running',
+    );
   }
 }
