@@ -6,8 +6,8 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { EnergySettlements } from '../energySettlement/energySettlement.entity';
-import { Prosumers } from '../user/user.entity';
+import { EnergySettlement } from '../energySettlement/energySettlement.entity';
+import { User } from '../user/user.entity';
 
 // Removed imports for unused entities (replaced by Redis):
 // - DeviceCommands
@@ -15,8 +15,8 @@ import { Prosumers } from '../user/user.entity';
 // - EnergyReadingsDetailed
 // - MqttMessageLogs
 
-@Entity()
-export class SmartMeters {
+@Entity('smart_meter')
+export class SmartMeter {
   @PrimaryColumn({ type: 'varchar', name: 'meter_id' })
   meterId: string;
 
@@ -78,12 +78,12 @@ export class SmartMeters {
   // - mqttmessagelogsList
 
   @OneToMany(
-    () => EnergySettlements,
+    () => EnergySettlement,
     (EnergySettlements) => EnergySettlements.smartmeters,
   )
-  energysettlementsList: EnergySettlements[];
+  energysettlementsList: EnergySettlement[];
 
-  @ManyToOne(() => Prosumers)
+  @ManyToOne(() => User)
   @JoinColumn({ name: 'prosumer_id' })
-  prosumers: Prosumers;
+  prosumers: User;
 }

@@ -6,11 +6,11 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { TradeOrdersCache } from '../tradeOrderCache/tradeOrderCache.entity';
-import { Prosumers } from '../user/user.entity';
-import { EnergySettlements } from '../energySettlement/energySettlement.entity';
+import { User } from '../user/user.entity';
+import { EnergySettlement } from '../energySettlement/energySettlement.entity';
 
-@Entity()
-export class TransactionLogs {
+@Entity('transaction_log')
+export class TransactionLog {
   @PrimaryGeneratedColumn({ name: 'log_id' })
   logId: number;
 
@@ -51,11 +51,11 @@ export class TransactionLogs {
   @JoinColumn({ name: 'related_order_id' })
   tradeorderscache: TradeOrdersCache;
 
-  @ManyToOne(() => Prosumers)
+  @ManyToOne(() => User)
   @JoinColumn({ name: 'prosumer_id' })
-  prosumers: Prosumers;
+  prosumers: User;
 
-  @ManyToOne(() => EnergySettlements)
+  @ManyToOne(() => EnergySettlement)
   @JoinColumn({ name: 'related_settlement_id' })
-  energysettlements: EnergySettlements;
+  energysettlements: EnergySettlement;
 }

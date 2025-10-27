@@ -6,15 +6,15 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { IdrsConversions } from '../idrsConversion/idrsConversion.entity';
-import { MarketTrades } from '../marketTrade/marketTrade.entity';
+import { IdrsConversion } from '../idrsConversion/idrsConversion.entity';
+import { MarketTrade } from '../marketTrade/marketTrade.entity';
 import { TradeOrdersCache } from '../tradeOrderCache/tradeOrderCache.entity';
-import { Prosumers } from '../user/user.entity';
+import { User } from '../user/user.entity';
 
 // Removed: BlockchainApprovals (not used)
 
-@Entity()
-export class Wallets {
+@Entity('wallet')
+export class Wallet {
   @PrimaryColumn({ type: 'varchar', name: 'wallet_address' })
   walletAddress: string;
 
@@ -42,17 +42,14 @@ export class Wallets {
   // Removed OneToMany relation for unused entity:
   // - BlockchainApprovals (not used)
 
-  @OneToMany(
-    () => IdrsConversions,
-    (IdrsConversions) => IdrsConversions.wallets,
-  )
-  idrsconversionsList: IdrsConversions[];
+  @OneToMany(() => IdrsConversion, (IdrsConversions) => IdrsConversions.wallets)
+  idrsconversionsList: IdrsConversion[];
 
-  @OneToMany(() => MarketTrades, (MarketTrades) => MarketTrades.wallets)
-  markettradesList: MarketTrades[];
+  @OneToMany(() => MarketTrade, (MarketTrades) => MarketTrades.wallets)
+  markettradesList: MarketTrade[];
 
-  @OneToMany(() => MarketTrades, (MarketTrades) => MarketTrades.wallets)
-  markettradesList2: MarketTrades[];
+  @OneToMany(() => MarketTrade, (MarketTrades) => MarketTrades.wallets)
+  markettradesList2: MarketTrade[];
 
   @OneToMany(
     () => TradeOrdersCache,
@@ -60,7 +57,7 @@ export class Wallets {
   )
   tradeorderscacheList: TradeOrdersCache[];
 
-  @ManyToOne(() => Prosumers)
+  @ManyToOne(() => User)
   @JoinColumn({ name: 'prosumer_id' })
-  prosumers: Prosumers;
+  prosumers: User;
 }

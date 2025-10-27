@@ -1,5 +1,5 @@
 // entities/token-blacklist.entity.ts
-import { Prosumers } from '../user/user.entity';
+import { User } from '../user/user.entity';
 import {
   Entity,
   Column,
@@ -23,7 +23,7 @@ export enum BlacklistReason {
   EXPIRED = 'EXPIRED',
 }
 
-@Entity()
+@Entity('token_blacklist')
 @Index(['prosumerId'])
 @Index(['blacklistType'])
 @Index(['tokenHash'])
@@ -74,7 +74,7 @@ export class TokenBlacklist {
   @Column({ type: 'text', nullable: true })
   notes: string;
 
-  @ManyToOne(() => Prosumers, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'prosumer_id' })
-  prosumer: Prosumers;
+  prosumer: User;
 }

@@ -1,27 +1,27 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { TransactionLogs } from './transactionLog.entity';
+import { TransactionLog } from './transactionLog.entity';
 import { CreateTransactionLogsInput } from './dto/transactionLog.input';
 import { TransactionLogsArgs } from './dto/transactionLog.args';
 import { TradeOrdersCache } from '../tradeOrderCache/tradeOrderCache.entity';
-import { Prosumers } from '../user/user.entity';
-import { EnergySettlements } from '../energySettlement/energySettlement.entity';
+import { User } from '../user/user.entity';
+import { EnergySettlement } from '../energySettlement/energySettlement.entity';
 
 @Injectable()
 export class TransactionLogsService {
   constructor(
-    @InjectRepository(TransactionLogs)
-    private readonly repo: Repository<TransactionLogs>,
+    @InjectRepository(TransactionLog)
+    private readonly repo: Repository<TransactionLog>,
     @InjectRepository(TradeOrdersCache)
     private readonly TradeOrdersCacheRepo: Repository<TradeOrdersCache>,
-    @InjectRepository(Prosumers)
-    private readonly ProsumersRepo: Repository<Prosumers>,
-    @InjectRepository(EnergySettlements)
-    private readonly EnergySettlementsRepo: Repository<EnergySettlements>,
+    @InjectRepository(User)
+    private readonly ProsumersRepo: Repository<User>,
+    @InjectRepository(EnergySettlement)
+    private readonly EnergySettlementsRepo: Repository<EnergySettlement>,
   ) {}
 
-  async findAll(args?: TransactionLogsArgs): Promise<TransactionLogs[]> {
+  async findAll(args?: TransactionLogsArgs): Promise<TransactionLog[]> {
     // Simple filter: remove undefined keys
     const where = {};
     if (args && args.logId !== undefined) where['logId'] = args.logId;
@@ -51,7 +51,7 @@ export class TransactionLogsService {
     return this.repo.find({ where });
   }
 
-  async findOne(logId: number): Promise<TransactionLogs> {
+  async findOne(logId: number): Promise<TransactionLog> {
     const entity = await this.repo.findOne({ where: { logId } });
     if (!entity) {
       throw new Error(`TransactionLogs with logId ${'$'}{logId} not found`);
@@ -61,14 +61,14 @@ export class TransactionLogsService {
 
   async findByTxHash(
     blockchainTxHash: string,
-  ): Promise<TransactionLogs | undefined> {
+  ): Promise<TransactionLog | undefined> {
     const result = await this.repo.findOne({ where: { blockchainTxHash } });
     return result ?? undefined;
   }
 
-  async create(input: CreateTransactionLogsInput): Promise<TransactionLogs> {
+  async create(input: CreateTransactionLogsInput): Promise<TransactionLog> {
     // Convert input types to match entity types
-    const createData: Partial<TransactionLogs> = {
+    const createData: Partial<TransactionLog> = {
       prosumerId: input.prosumerId,
       relatedOrderId: input.relatedOrderId,
       relatedSettlementId: input.relatedSettlementId,
@@ -92,11 +92,11 @@ export class TransactionLogsService {
   async update(
     logId: number,
     input: CreateTransactionLogsInput,
-  ): Promise<TransactionLogs> {
+  ): Promise<TransactionLog> {
     const existing = await this.findOne(logId);
 
     // Convert input types to match entity types
-    const updateData: Partial<TransactionLogs> = {
+    const updateData: Partial<TransactionLog> = {
       prosumerId: input.prosumerId,
       relatedOrderId: input.relatedOrderId,
       relatedSettlementId: input.relatedSettlementId,

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { SmartMeters } from './smartMeter.entity';
+import { SmartMeter } from './smartMeter.entity';
 import { CreateSmartMetersInput } from './dto/SmartMeters.input';
 import { SmartMetersArgs } from './dto/SmartMeters.args';
 // Removed unused entities:
@@ -9,21 +9,21 @@ import { SmartMetersArgs } from './dto/SmartMeters.args';
 // - DeviceStatusSnapshots
 // - EnergyReadingsDetailed
 // - MqttMessageLogs
-import { EnergySettlements } from '../energySettlement/energySettlement.entity';
-import { Prosumers } from '../user/user.entity';
+import { EnergySettlement } from '../energySettlement/energySettlement.entity';
+import { User } from '../user/user.entity';
 
 @Injectable()
 export class SmartMetersService {
   constructor(
-    @InjectRepository(SmartMeters)
-    private readonly repo: Repository<SmartMeters>,
-    @InjectRepository(EnergySettlements)
-    private readonly EnergySettlementsRepo: Repository<EnergySettlements>,
-    @InjectRepository(Prosumers)
-    private readonly ProsumersRepo: Repository<Prosumers>,
+    @InjectRepository(SmartMeter)
+    private readonly repo: Repository<SmartMeter>,
+    @InjectRepository(EnergySettlement)
+    private readonly EnergySettlementsRepo: Repository<EnergySettlement>,
+    @InjectRepository(User)
+    private readonly ProsumersRepo: Repository<User>,
   ) {}
 
-  async findAll(args?: SmartMetersArgs): Promise<SmartMeters[]> {
+  async findAll(args?: SmartMetersArgs): Promise<SmartMeter[]> {
     // Simple filter: remove undefined keys
     const where = {};
     if (args && args.meterId !== undefined) where['meterId'] = args.meterId;
@@ -62,7 +62,7 @@ export class SmartMetersService {
     return this.repo.find({ where });
   }
 
-  async findOne(meterId: string): Promise<SmartMeters> {
+  async findOne(meterId: string): Promise<SmartMeter> {
     const entity = await this.repo.findOne({ where: { meterId } });
     if (!entity) {
       throw new Error(`SmartMeters with meterId ${'$'}{meterId} not found`);
@@ -70,11 +70,11 @@ export class SmartMetersService {
     return entity;
   }
 
-  async findByProsumerId(prosumerId: string): Promise<SmartMeters[]> {
+  async findByProsumerId(prosumerId: string): Promise<SmartMeter[]> {
     return this.repo.find({ where: { prosumerId } });
   }
 
-  async updateLastSeen(meterId: string): Promise<SmartMeters> {
+  async updateLastSeen(meterId: string): Promise<SmartMeter> {
     const meter = await this.findOne(meterId);
     meter.lastSeen = new Date();
     meter.lastHeartbeatAt = new Date();
@@ -82,9 +82,9 @@ export class SmartMetersService {
     return this.repo.save(meter);
   }
 
-  async create(input: CreateSmartMetersInput): Promise<SmartMeters> {
+  async create(input: CreateSmartMetersInput): Promise<SmartMeter> {
     // Convert input types to match entity types
-    const createData: Partial<SmartMeters> = {
+    const createData: Partial<SmartMeter> = {
       meterId: input.meterId,
       prosumerId: input.prosumerId,
       meterBlockchainAddress: input.meterBlockchainAddress,
@@ -117,11 +117,11 @@ export class SmartMetersService {
   async update(
     meterId: string,
     input: CreateSmartMetersInput,
-  ): Promise<SmartMeters> {
+  ): Promise<SmartMeter> {
     const existing = await this.findOne(meterId);
 
     // Convert input types to match entity types
-    const updateData: Partial<SmartMeters> = {
+    const updateData: Partial<SmartMeter> = {
       prosumerId: input.prosumerId,
       meterBlockchainAddress: input.meterBlockchainAddress,
       location: input.location,

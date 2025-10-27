@@ -5,11 +5,11 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Prosumers } from '../user/user.entity';
-import { Wallets } from '../wallet/wallet.entity';
+import { User } from '../user/user.entity';
+import { Wallet } from '../wallet/wallet.entity';
 
-@Entity()
-export class IdrsConversions {
+@Entity('idrs_conversion')
+export class IdrsConversion {
   @PrimaryGeneratedColumn({ name: 'conversion_id' })
   conversionId: number;
 
@@ -46,11 +46,11 @@ export class IdrsConversions {
   @Column({ type: 'timestamp', name: 'confirmed_at', nullable: true })
   confirmedAt: Date;
 
-  @ManyToOne(() => Prosumers)
+  @ManyToOne(() => User)
   @JoinColumn({ name: 'prosumer_id' })
-  prosumers: Prosumers;
+  prosumers: User;
 
-  @ManyToOne(() => Wallets)
+  @ManyToOne(() => Wallet)
   @JoinColumn({ name: 'wallet_address' })
-  wallets: Wallets;
+  wallets: Wallet;
 }

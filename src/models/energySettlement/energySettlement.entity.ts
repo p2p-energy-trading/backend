@@ -6,14 +6,14 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { SmartMeters } from '../smartMeter/smartMeter.entity';
-import { TransactionLogs } from '../transactionLog/transactionLog.entity';
+import { SmartMeter } from '../smartMeter/smartMeter.entity';
+import { TransactionLog } from '../transactionLog/transactionLog.entity';
 
 // Removed import for unused entity (replaced by Redis):
 // - MqttMessageLogs
 
-@Entity()
-export class EnergySettlements {
+@Entity('energy_settlement')
+export class EnergySettlement {
   @PrimaryGeneratedColumn({ name: 'settlement_id' })
   settlementId: number;
 
@@ -69,9 +69,9 @@ export class EnergySettlements {
   @Column({ type: 'varchar', name: 'mqtt_message_id', nullable: true })
   mqttMessageId: number;
 
-  @ManyToOne(() => SmartMeters)
+  @ManyToOne(() => SmartMeter)
   @JoinColumn({ name: 'meter_id' })
-  smartmeters: SmartMeters;
+  smartmeters: SmartMeter;
 
   // Removed ManyToOne relation for unused entity (replaced by Redis):
   // @ManyToOne(() => MqttMessageLogs)
@@ -79,8 +79,8 @@ export class EnergySettlements {
   // mqttmessagelogs: MqttMessageLogs;
 
   @OneToMany(
-    () => TransactionLogs,
+    () => TransactionLog,
     (TransactionLogs) => TransactionLogs.energysettlements,
   )
-  transactionlogsList: TransactionLogs[];
+  transactionlogsList: TransactionLog[];
 }

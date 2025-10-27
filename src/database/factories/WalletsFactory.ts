@@ -1,11 +1,11 @@
 import { setSeederFactory } from 'typeorm-extension';
-import { Wallets } from '../../models/wallet/wallet.entity';
+import { Wallet } from '../../models/wallet/wallet.entity';
 import { CryptoService } from '../../common/crypto.service';
 import { ethers } from 'ethers';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-export const WalletsFactory = setSeederFactory(Wallets, (faker) => {
+export const WalletsFactory = setSeederFactory(Wallet, (faker) => {
   const cryptoService = new CryptoService();
   const encryptionKey =
     process.env.WALLET_ENCRYPTION_KEY || 'default-wallet-key';
@@ -13,7 +13,7 @@ export const WalletsFactory = setSeederFactory(Wallets, (faker) => {
   // Generate random Ethereum wallet
   const newWallet = ethers.Wallet.createRandom();
 
-  const wallet = new Wallets();
+  const wallet = new Wallet();
   wallet.walletAddress = newWallet.address;
   wallet.walletName = `${faker.person.firstName()}'s Wallet`;
   wallet.encryptedPrivateKey = cryptoService.encrypt(

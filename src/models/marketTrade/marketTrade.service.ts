@@ -1,24 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { MarketTrades } from './marketTrade.entity';
+import { MarketTrade } from './marketTrade.entity';
 import { CreateMarketTradesInput } from './dto/marketTrade.input';
 import { MarketTradesArgs } from './dto/marketTrade.args';
-import { Prosumers } from '../user/user.entity';
-import { Wallets } from '../wallet/wallet.entity';
+import { User } from '../user/user.entity';
+import { Wallet } from '../wallet/wallet.entity';
 
 @Injectable()
 export class MarketTradesService {
   constructor(
-    @InjectRepository(MarketTrades)
-    private readonly repo: Repository<MarketTrades>,
-    @InjectRepository(Prosumers)
-    private readonly ProsumersRepo: Repository<Prosumers>,
-    @InjectRepository(Wallets)
-    private readonly WalletsRepo: Repository<Wallets>,
+    @InjectRepository(MarketTrade)
+    private readonly repo: Repository<MarketTrade>,
+    @InjectRepository(User)
+    private readonly ProsumersRepo: Repository<User>,
+    @InjectRepository(Wallet)
+    private readonly WalletsRepo: Repository<Wallet>,
   ) {}
 
-  async findAll(args?: MarketTradesArgs): Promise<MarketTrades[]> {
+  async findAll(args?: MarketTradesArgs): Promise<MarketTrade[]> {
     // Simple filter: remove undefined keys
     const where = {};
     if (args && args.tradeId !== undefined) where['tradeId'] = args.tradeId;
@@ -52,7 +52,7 @@ export class MarketTradesService {
     return this.repo.find({ where });
   }
 
-  async findOne(tradeId: number): Promise<MarketTrades> {
+  async findOne(tradeId: number): Promise<MarketTrade> {
     const relations = ['prosumers', 'wallets', 'prosumers2', 'wallets2'];
     const entity = await this.repo.findOne({ where: { tradeId }, relations });
     if (!entity) {
@@ -61,9 +61,9 @@ export class MarketTradesService {
     return entity;
   }
 
-  async create(input: CreateMarketTradesInput): Promise<MarketTrades> {
+  async create(input: CreateMarketTradesInput): Promise<MarketTrade> {
     // Convert input types to match entity types
-    const createData: Partial<MarketTrades> = {
+    const createData: Partial<MarketTrade> = {
       buyerOrderId: input.buyerOrderId,
       sellerOrderId: input.sellerOrderId,
       buyerProsumerId: input.buyerProsumerId,
@@ -89,11 +89,11 @@ export class MarketTradesService {
   async update(
     tradeId: number,
     input: CreateMarketTradesInput,
-  ): Promise<MarketTrades> {
+  ): Promise<MarketTrade> {
     const existing = await this.findOne(tradeId);
 
     // Convert input types to match entity types
-    const updateData: Partial<MarketTrades> = {
+    const updateData: Partial<MarketTrade> = {
       buyerOrderId: input.buyerOrderId,
       sellerOrderId: input.sellerOrderId,
       buyerProsumerId: input.buyerProsumerId,
@@ -122,7 +122,7 @@ export class MarketTradesService {
     return (result.affected ?? 0) > 0;
   }
 
-  async findRecentTrades(limit: number = 100): Promise<MarketTrades[]> {
+  async findRecentTrades(limit: number = 100): Promise<MarketTrade[]> {
     try {
       return await this.repo.find({
         order: {

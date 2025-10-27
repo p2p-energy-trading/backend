@@ -1,26 +1,26 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { EnergySettlements } from './energySettlement.entity';
+import { EnergySettlement } from './energySettlement.entity';
 import { CreateEnergySettlementsInput } from './dto/energySettlement.input';
 import { EnergySettlementsArgs } from './dto/energySettlement.args';
-import { SmartMeters } from '../smartMeter/smartMeter.entity';
+import { SmartMeter } from '../smartMeter/smartMeter.entity';
 // Removed: MqttMessageLogs (table dropped)
-import { TransactionLogs } from '../transactionLog/transactionLog.entity';
+import { TransactionLog } from '../transactionLog/transactionLog.entity';
 
 @Injectable()
 export class EnergySettlementsService {
   constructor(
-    @InjectRepository(EnergySettlements)
-    private readonly repo: Repository<EnergySettlements>,
-    @InjectRepository(SmartMeters)
-    private readonly SmartMetersRepo: Repository<SmartMeters>,
+    @InjectRepository(EnergySettlement)
+    private readonly repo: Repository<EnergySettlement>,
+    @InjectRepository(SmartMeter)
+    private readonly SmartMetersRepo: Repository<SmartMeter>,
     // Removed: MqttMessageLogsRepo
-    @InjectRepository(TransactionLogs)
-    private readonly TransactionLogsRepo: Repository<TransactionLogs>,
+    @InjectRepository(TransactionLog)
+    private readonly TransactionLogsRepo: Repository<TransactionLog>,
   ) {}
 
-  async findAll(args?: EnergySettlementsArgs): Promise<EnergySettlements[]> {
+  async findAll(args?: EnergySettlementsArgs): Promise<EnergySettlement[]> {
     // Simple filter: remove undefined keys
     const where = {};
     if (args && args.settlementId !== undefined)
@@ -59,7 +59,7 @@ export class EnergySettlementsService {
     return this.repo.find({ where });
   }
 
-  async findOne(settlementId: number): Promise<EnergySettlements> {
+  async findOne(settlementId: number): Promise<EnergySettlement> {
     const entity = await this.repo.findOne({
       where: { settlementId },
     });
@@ -71,18 +71,16 @@ export class EnergySettlementsService {
     return entity;
   }
 
-  async findByTxHash(txHash: string): Promise<EnergySettlements | null> {
+  async findByTxHash(txHash: string): Promise<EnergySettlement | null> {
     const entity = await this.repo.findOne({
       where: { blockchainTxHash: txHash },
     });
     return entity || null;
   }
 
-  async create(
-    input: CreateEnergySettlementsInput,
-  ): Promise<EnergySettlements> {
+  async create(input: CreateEnergySettlementsInput): Promise<EnergySettlement> {
     // Convert input types to match entity types
-    const createData: Partial<EnergySettlements> = {
+    const createData: Partial<EnergySettlement> = {
       meterId: input.meterId,
       periodStartTime: input.periodStartTime
         ? new Date(input.periodStartTime)
@@ -117,11 +115,11 @@ export class EnergySettlementsService {
   async update(
     settlementId: number,
     input: CreateEnergySettlementsInput,
-  ): Promise<EnergySettlements> {
+  ): Promise<EnergySettlement> {
     const existing = await this.findOne(settlementId);
 
     // Convert input types to match entity types
-    const updateData: Partial<EnergySettlements> = {
+    const updateData: Partial<EnergySettlement> = {
       meterId: input.meterId,
       netKwhFromGrid: input.netKwhFromGrid ?? undefined,
       etkAmountCredited: input.etkAmountCredited ?? undefined,

@@ -11,25 +11,25 @@ import { ThrottlerModule } from '@nestjs/throttler';
 // - EnergyReadingsDetailed
 // - MqttMessageLogs
 import { EnergySettlementsModule } from './models/energySettlement/energySettlement.module';
-import { EnergySettlements } from './models/energySettlement/energySettlement.entity';
+import { EnergySettlement } from './models/energySettlement/energySettlement.entity';
 import { IdrsConversionsModule } from './models/idrsConversion/idrsConversion.module';
-import { IdrsConversions } from './models/idrsConversion/idrsConversion.entity';
+import { IdrsConversion } from './models/idrsConversion/idrsConversion.entity';
 import { MarketTradesModule } from './models/marketTrade/marketTrade.module';
-import { MarketTrades } from './models/marketTrade/marketTrade.entity';
+import { MarketTrade } from './models/marketTrade/marketTrade.entity';
 import { ProsumersModule } from './models/user/user.module';
-import { Prosumers } from './models/user/user.entity';
+import { User } from './models/user/user.entity';
 import { SmartMetersModule } from './models/smartMeter/smartMeter.module';
-import { SmartMeters } from './models/smartMeter/smartMeter.entity';
+import { SmartMeter } from './models/smartMeter/smartMeter.entity';
 import { SystemConfigModule } from './models/systemConfig/systemConfig.module';
 import { SystemConfig } from './models/systemConfig/systemConfig.entity';
 import { TradeOrdersCacheModule } from './models/tradeOrderCache/tradeOrderCache.module';
 import { TradeOrdersCache } from './models/tradeOrderCache/tradeOrderCache.entity';
 import { TransactionLogsModule } from './models/transactionLog/transactionLog.module';
-import { TransactionLogs } from './models/transactionLog/transactionLog.entity';
+import { TransactionLog } from './models/transactionLog/transactionLog.entity';
 import { WalletsModule } from './models/wallet/wallet.module';
-import { Wallets } from './models/wallet/wallet.entity';
-import { TokenBlacklistModule } from './models/tokenBlacklist/TokenBlacklist.module';
-import { TokenBlacklist } from './models/tokenBlacklist/TokenBlacklist.entity';
+import { Wallet } from './models/wallet/wallet.entity';
+import { TokenBlacklistModule } from './models/tokenBlacklist/tokenBlacklist.module';
+import { TokenBlacklist } from './models/tokenBlacklist/tokenBlacklist.entity';
 
 // Import new modules
 import { AuthModule } from './auth/auth.module';
@@ -60,15 +60,15 @@ import { TelemetryAggregate } from './models/telemetryAggregate/telemetryAggrega
       schema: process.env.DB_SCHEMA || 'public',
       entities: [
         // Removed: BlockchainApprovals (not used), DeviceCommands, DeviceStatusSnapshots, EnergyReadingsDetailed, MqttMessageLogs, TelemetryData (replaced by Redis)
-        EnergySettlements,
-        IdrsConversions,
-        MarketTrades,
-        Prosumers,
-        SmartMeters,
+        EnergySettlement,
+        IdrsConversion,
+        MarketTrade,
+        User,
+        SmartMeter,
         SystemConfig,
         TradeOrdersCache,
-        TransactionLogs,
-        Wallets,
+        TransactionLog,
+        Wallet,
         TokenBlacklist,
         TelemetryAggregate,
       ],

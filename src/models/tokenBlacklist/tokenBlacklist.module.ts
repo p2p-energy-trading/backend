@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { BlacklistService } from './TokenBlacklist.service';
-import { TokenBlacklist } from './TokenBlacklist.entity';
+import { BlacklistService } from './tokenBlacklist.service';
+import { TokenBlacklist } from './tokenBlacklist.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([TokenBlacklist])],

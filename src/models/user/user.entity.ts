@@ -1,17 +1,17 @@
 import { Entity, Column, PrimaryColumn, OneToMany, OneToOne } from 'typeorm';
-import { IdrsConversions } from '../idrsConversion/idrsConversion.entity';
-import { MarketTrades } from '../marketTrade/marketTrade.entity';
-import { SmartMeters } from '../smartMeter/smartMeter.entity';
+import { IdrsConversion } from '../idrsConversion/idrsConversion.entity';
+import { MarketTrade } from '../marketTrade/marketTrade.entity';
+import { SmartMeter } from '../smartMeter/smartMeter.entity';
 import { TradeOrdersCache } from '../tradeOrderCache/tradeOrderCache.entity';
-import { TransactionLogs } from '../transactionLog/transactionLog.entity';
-import { Wallets } from '../wallet/wallet.entity';
+import { TransactionLog } from '../transactionLog/transactionLog.entity';
+import { Wallet } from '../wallet/wallet.entity';
 
 // Removed imports for unused entities:
 // - BlockchainApprovals (not used)
 // - DeviceCommands (replaced by Redis)
 
-@Entity()
-export class Prosumers {
+@Entity('prosumer')
+export class User {
   @PrimaryColumn({ type: 'varchar', name: 'prosumer_id' })
   prosumerId: string;
 
@@ -38,19 +38,19 @@ export class Prosumers {
   // - DeviceCommands (replaced by Redis)
 
   @OneToMany(
-    () => IdrsConversions,
+    () => IdrsConversion,
     (IdrsConversions) => IdrsConversions.prosumers,
   )
-  idrsconversionsList: IdrsConversions[];
+  idrsconversionsList: IdrsConversion[];
 
-  @OneToMany(() => MarketTrades, (MarketTrades) => MarketTrades.prosumers)
-  markettradesList: MarketTrades[];
+  @OneToMany(() => MarketTrade, (MarketTrades) => MarketTrades.prosumers)
+  markettradesList: MarketTrade[];
 
-  @OneToMany(() => MarketTrades, (MarketTrades) => MarketTrades.prosumers)
-  markettradesList2: MarketTrades[];
+  @OneToMany(() => MarketTrade, (MarketTrades) => MarketTrades.prosumers)
+  markettradesList2: MarketTrade[];
 
-  @OneToMany(() => SmartMeters, (SmartMeters) => SmartMeters.prosumers)
-  smartmetersList: SmartMeters[];
+  @OneToMany(() => SmartMeter, (SmartMeters) => SmartMeters.prosumers)
+  smartmetersList: SmartMeter[];
 
   @OneToMany(
     () => TradeOrdersCache,
@@ -59,11 +59,11 @@ export class Prosumers {
   tradeorderscacheList: TradeOrdersCache[];
 
   @OneToMany(
-    () => TransactionLogs,
+    () => TransactionLog,
     (TransactionLogs) => TransactionLogs.prosumers,
   )
-  transactionlogsList: TransactionLogs[];
+  transactionlogsList: TransactionLog[];
 
-  @OneToMany(() => Wallets, (Wallets) => Wallets.prosumers)
-  walletsList: Wallets[];
+  @OneToMany(() => Wallet, (Wallets) => Wallets.prosumers)
+  walletsList: Wallet[];
 }

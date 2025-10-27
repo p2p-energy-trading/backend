@@ -3,7 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { ProsumersService } from '../../models/user/user.service';
-import { BlacklistService } from '../../models/tokenBlacklist/TokenBlacklist.service';
+import { BlacklistService } from '../../models/tokenBlacklist/tokenBlacklist.service';
 import { Request } from 'express';
 
 interface JwtPayload {

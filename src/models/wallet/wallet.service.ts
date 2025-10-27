@@ -1,31 +1,31 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Wallets } from './wallet.entity';
+import { Wallet } from './wallet.entity';
 import { CreateWalletsInput } from './dto/wallet.input';
 import { WalletsArgs } from './dto/wallet.args';
 // Removed: BlockchainApprovals (not used)
-import { IdrsConversions } from '../idrsConversion/idrsConversion.entity';
-import { MarketTrades } from '../marketTrade/marketTrade.entity';
+import { IdrsConversion } from '../idrsConversion/idrsConversion.entity';
+import { MarketTrade } from '../marketTrade/marketTrade.entity';
 import { TradeOrdersCache } from '../tradeOrderCache/tradeOrderCache.entity';
-import { Prosumers } from '../user/user.entity';
+import { User } from '../user/user.entity';
 
 @Injectable()
 export class WalletsService {
   constructor(
-    @InjectRepository(Wallets)
-    private readonly repo: Repository<Wallets>,
-    @InjectRepository(IdrsConversions)
-    private readonly IdrsConversionsRepo: Repository<IdrsConversions>,
-    @InjectRepository(MarketTrades)
-    private readonly MarketTradesRepo: Repository<MarketTrades>,
+    @InjectRepository(Wallet)
+    private readonly repo: Repository<Wallet>,
+    @InjectRepository(IdrsConversion)
+    private readonly IdrsConversionsRepo: Repository<IdrsConversion>,
+    @InjectRepository(MarketTrade)
+    private readonly MarketTradesRepo: Repository<MarketTrade>,
     @InjectRepository(TradeOrdersCache)
     private readonly TradeOrdersCacheRepo: Repository<TradeOrdersCache>,
-    @InjectRepository(Prosumers)
-    private readonly ProsumersRepo: Repository<Prosumers>,
+    @InjectRepository(User)
+    private readonly ProsumersRepo: Repository<User>,
   ) {}
 
-  async findAll(args?: WalletsArgs): Promise<Wallets[]> {
+  async findAll(args?: WalletsArgs): Promise<Wallet[]> {
     // Simple filter: remove undefined keys
     const where = {};
     if (args && args.walletAddress !== undefined)
@@ -47,7 +47,7 @@ export class WalletsService {
     return this.repo.find({ where });
   }
 
-  async findOne(walletAddress: string): Promise<Wallets> {
+  async findOne(walletAddress: string): Promise<Wallet> {
     const entity = await this.repo.findOne({
       where: { walletAddress },
     });
@@ -59,7 +59,7 @@ export class WalletsService {
     return entity;
   }
 
-  async findByProsumerId(prosumerId: string): Promise<Wallets[]> {
+  async findByProsumerId(prosumerId: string): Promise<Wallet[]> {
     const entities = await this.repo.find({
       where: { prosumerId },
     });
@@ -69,9 +69,9 @@ export class WalletsService {
     return entities;
   }
 
-  async create(input: CreateWalletsInput): Promise<Wallets> {
+  async create(input: CreateWalletsInput): Promise<Wallet> {
     // Convert input types to match entity types
-    const createData: Partial<Wallets> = {
+    const createData: Partial<Wallet> = {
       walletAddress: input.walletAddress,
       prosumerId: input.prosumerId,
       walletName: input.walletName,
@@ -90,11 +90,11 @@ export class WalletsService {
   async update(
     walletAddress: string,
     input: CreateWalletsInput,
-  ): Promise<Wallets> {
+  ): Promise<Wallet> {
     const existing = await this.findOne(walletAddress);
 
     // Convert input types to match entity types
-    const updateData: Partial<Wallets> = {
+    const updateData: Partial<Wallet> = {
       walletAddress: input.walletAddress,
       prosumerId: input.prosumerId,
       walletName: input.walletName,

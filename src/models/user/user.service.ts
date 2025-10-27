@@ -1,37 +1,37 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Prosumers } from './user.entity';
+import { User } from './user.entity';
 import { CreateProsumersInput } from './dto/Prosumers.input';
 import { ProsumersArgs } from './dto/Prosumers.args';
 // Removed: BlockchainApprovals (not used), DeviceCommands (table dropped)
-import { IdrsConversions } from '../idrsConversion/idrsConversion.entity';
-import { MarketTrades } from '../marketTrade/marketTrade.entity';
-import { SmartMeters } from '../smartMeter/smartMeter.entity';
+import { IdrsConversion } from '../idrsConversion/idrsConversion.entity';
+import { MarketTrade } from '../marketTrade/marketTrade.entity';
+import { SmartMeter } from '../smartMeter/smartMeter.entity';
 import { TradeOrdersCache } from '../tradeOrderCache/tradeOrderCache.entity';
-import { TransactionLogs } from '../transactionLog/transactionLog.entity';
-import { Wallets } from '../wallet/wallet.entity';
+import { TransactionLog } from '../transactionLog/transactionLog.entity';
+import { Wallet } from '../wallet/wallet.entity';
 
 @Injectable()
 export class ProsumersService {
   constructor(
-    @InjectRepository(Prosumers)
-    private readonly repo: Repository<Prosumers>,
-    @InjectRepository(IdrsConversions)
-    private readonly IdrsConversionsRepo: Repository<IdrsConversions>,
-    @InjectRepository(MarketTrades)
-    private readonly MarketTradesRepo: Repository<MarketTrades>,
-    @InjectRepository(SmartMeters)
-    private readonly SmartMetersRepo: Repository<SmartMeters>,
+    @InjectRepository(User)
+    private readonly repo: Repository<User>,
+    @InjectRepository(IdrsConversion)
+    private readonly IdrsConversionsRepo: Repository<IdrsConversion>,
+    @InjectRepository(MarketTrade)
+    private readonly MarketTradesRepo: Repository<MarketTrade>,
+    @InjectRepository(SmartMeter)
+    private readonly SmartMetersRepo: Repository<SmartMeter>,
     @InjectRepository(TradeOrdersCache)
     private readonly TradeOrdersCacheRepo: Repository<TradeOrdersCache>,
-    @InjectRepository(TransactionLogs)
-    private readonly TransactionLogsRepo: Repository<TransactionLogs>,
-    @InjectRepository(Wallets)
-    private readonly WalletsRepo: Repository<Wallets>,
+    @InjectRepository(TransactionLog)
+    private readonly TransactionLogsRepo: Repository<TransactionLog>,
+    @InjectRepository(Wallet)
+    private readonly WalletsRepo: Repository<Wallet>,
   ) {}
 
-  async findAll(args?: ProsumersArgs): Promise<Prosumers[]> {
+  async findAll(args?: ProsumersArgs): Promise<User[]> {
     // Simple filter: remove undefined keys
     const where = {};
     if (args && args.prosumerId !== undefined)
@@ -48,7 +48,7 @@ export class ProsumersService {
     return this.repo.find({ where });
   }
 
-  async findByMeterId(meterId: string): Promise<Prosumers[]> {
+  async findByMeterId(meterId: string): Promise<User[]> {
     const smartMeters = await this.SmartMetersRepo.find({
       where: { meterId },
       relations: ['prosumers'],
@@ -61,7 +61,7 @@ export class ProsumersService {
     return smartMeters.map((meter) => meter.prosumers);
   }
 
-  async findByWalletAddress(walletAddress: string): Promise<Prosumers[]> {
+  async findByWalletAddress(walletAddress: string): Promise<User[]> {
     const wallets = await this.WalletsRepo.find({
       where: { walletAddress },
       relations: ['prosumers'],
@@ -74,7 +74,7 @@ export class ProsumersService {
     return wallets.map((wallet) => wallet.prosumers);
   }
 
-  async findOne(prosumerId: string): Promise<Prosumers> {
+  async findOne(prosumerId: string): Promise<User> {
     const entity = await this.repo.findOne({
       where: { prosumerId },
     });
@@ -84,9 +84,9 @@ export class ProsumersService {
     return entity;
   }
 
-  async create(input: CreateProsumersInput): Promise<Prosumers> {
+  async create(input: CreateProsumersInput): Promise<User> {
     // Convert input types to match entity types
-    const createData: Partial<Prosumers> = {
+    const createData: Partial<User> = {
       prosumerId: input.prosumerId,
       email: input.email,
       passwordHash: input.passwordHash,
@@ -103,7 +103,7 @@ export class ProsumersService {
   async updatePrimaryWalletAddress(
     prosumerId: string,
     primaryWalletAddress: string,
-  ): Promise<Prosumers> {
+  ): Promise<User> {
     const existing = await this.findOne(prosumerId);
     existing.primaryWalletAddress = primaryWalletAddress;
 
@@ -111,7 +111,7 @@ export class ProsumersService {
     return this.findOne(prosumerId);
   }
 
-  async getPrimaryWallet(prosumerId: string): Promise<Wallets | null> {
+  async getPrimaryWallet(prosumerId: string): Promise<Wallet | null> {
     const prosumer = await this.findOne(prosumerId);
     const primaryWalletAddress = prosumer.primaryWalletAddress;
     if (!primaryWalletAddress) {
@@ -122,14 +122,11 @@ export class ProsumersService {
     });
   }
 
-  async update(
-    prosumerId: string,
-    input: CreateProsumersInput,
-  ): Promise<Prosumers> {
+  async update(prosumerId: string, input: CreateProsumersInput): Promise<User> {
     const existing = await this.findOne(prosumerId);
 
     // Convert input types to match entity types
-    const updateData: Partial<Prosumers> = {
+    const updateData: Partial<User> = {
       email: input.email,
       passwordHash: input.passwordHash,
       name: input.name,

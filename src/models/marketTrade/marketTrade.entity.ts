@@ -5,11 +5,11 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Prosumers } from '../user/user.entity';
-import { Wallets } from '../wallet/wallet.entity';
+import { User } from '../user/user.entity';
+import { Wallet } from '../wallet/wallet.entity';
 
-@Entity()
-export class MarketTrades {
+@Entity('market_trade')
+export class MarketTrade {
   @PrimaryGeneratedColumn({ name: 'trade_id' })
   tradeId: number;
 
@@ -52,19 +52,19 @@ export class MarketTrades {
   @Column({ type: 'timestamp', name: 'created_at' })
   createdAt: Date;
 
-  @ManyToOne(() => Prosumers)
+  @ManyToOne(() => User)
   @JoinColumn({ name: 'buyer_prosumer_id' })
-  prosumers: Prosumers;
+  prosumers: User;
 
-  @ManyToOne(() => Wallets)
+  @ManyToOne(() => Wallet)
   @JoinColumn({ name: 'buyer_wallet_address' })
-  wallets: Wallets;
+  wallets: Wallet;
 
-  @ManyToOne(() => Prosumers)
+  @ManyToOne(() => User)
   @JoinColumn({ name: 'seller_prosumer_id' })
-  prosumers2: Prosumers;
+  prosumers2: User;
 
-  @ManyToOne(() => Wallets)
+  @ManyToOne(() => Wallet)
   @JoinColumn({ name: 'seller_wallet_address' })
-  wallets2: Wallets;
+  wallets2: Wallet;
 }

@@ -1,17 +1,17 @@
 import { Seeder, SeederFactoryManager } from 'typeorm-extension';
 import { DataSource } from 'typeorm';
-import { Prosumers } from '../../models/user/user.entity';
-import { Wallets } from '../../models/wallet/wallet.entity';
-import { SmartMeters } from '../../models/smartMeter/smartMeter.entity';
+import { User } from '../../models/user/user.entity';
+import { Wallet } from '../../models/wallet/wallet.entity';
+import { SmartMeter } from '../../models/smartMeter/smartMeter.entity';
 
 export class FirstSeeder implements Seeder {
   public async run(
     dataSource: DataSource,
     factoryManager: SeederFactoryManager,
   ): Promise<void> {
-    const prosumerFactory = factoryManager.get(Prosumers);
-    const walletFactory = factoryManager.get(Wallets);
-    const smartMeterFactory = factoryManager.get(SmartMeters);
+    const prosumerFactory = factoryManager.get(User);
+    const walletFactory = factoryManager.get(Wallet);
+    const smartMeterFactory = factoryManager.get(SmartMeter);
 
     console.log('🪴 Seeding dummy prosumers with wallets and meters...');
 
@@ -31,7 +31,7 @@ export class FirstSeeder implements Seeder {
 
       // Update prosumer's primary wallet
       prosumer.primaryWalletAddress = wallet.walletAddress;
-      await dataSource.getRepository(Prosumers).save(prosumer);
+      await dataSource.getRepository(User).save(prosumer);
 
       // Create Smart Meter using factory
       const smartMeter = await smartMeterFactory.make({

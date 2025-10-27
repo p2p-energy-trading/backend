@@ -1,8 +1,8 @@
 import { setSeederFactory } from 'typeorm-extension';
-import { SmartMeters } from '../../models/smartMeter/smartMeter.entity';
+import { SmartMeter } from '../../models/smartMeter/smartMeter.entity';
 
-export const SmartMetersFactory = setSeederFactory(SmartMeters, (faker) => {
-  const smartMeter = new SmartMeters();
+export const SmartMetersFactory = setSeederFactory(SmartMeter, (faker) => {
+  const smartMeter = new SmartMeter();
 
   // Generate random meter ID
   smartMeter.meterId = `METER${faker.number.int({ min: 1000, max: 9999 })}`;

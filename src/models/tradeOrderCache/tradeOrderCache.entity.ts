@@ -6,11 +6,11 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Prosumers } from '../user/user.entity';
-import { Wallets } from '../wallet/wallet.entity';
-import { TransactionLogs } from '../transactionLog/transactionLog.entity';
+import { User } from '../user/user.entity';
+import { Wallet } from '../wallet/wallet.entity';
+import { TransactionLog } from '../transactionLog/transactionLog.entity';
 
-@Entity()
+@Entity('trade_order_cache')
 export class TradeOrdersCache {
   @PrimaryColumn({ type: 'varchar', name: 'order_id' })
   orderId: string;
@@ -66,17 +66,17 @@ export class TradeOrdersCache {
   })
   blockchainTxHashCancelled: string;
 
-  @ManyToOne(() => Prosumers)
+  @ManyToOne(() => User)
   @JoinColumn({ name: 'prosumer_id' })
-  prosumers: Prosumers;
+  prosumers: User;
 
-  @ManyToOne(() => Wallets)
+  @ManyToOne(() => Wallet)
   @JoinColumn({ name: 'wallet_address' })
-  wallets: Wallets;
+  wallets: Wallet;
 
   @OneToMany(
-    () => TransactionLogs,
+    () => TransactionLog,
     (TransactionLogs) => TransactionLogs.tradeorderscache,
   )
-  transactionlogsList: TransactionLogs[];
+  transactionlogsList: TransactionLog[];
 }

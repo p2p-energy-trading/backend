@@ -8,18 +8,18 @@ import { FirstSeeder } from './database/seeders/FirstSeeder';
 import { ProsumersFactory } from './database/factories/ProsumersFactory';
 import { WalletsFactory } from './database/factories/WalletsFactory';
 import { SmartMetersFactory } from './database/factories/SmartMetersFactory';
-import { Prosumers } from './models/user/user.entity';
+import { User } from './models/user/user.entity';
 // Removed: BlockchainApprovals (not used)
-import { EnergySettlements } from './models/energySettlement/energySettlement.entity';
-import { IdrsConversions } from './models/idrsConversion/idrsConversion.entity';
-import { MarketTrades } from './models/marketTrade/marketTrade.entity';
-import { SmartMeters } from './models/smartMeter/smartMeter.entity';
+import { EnergySettlement } from './models/energySettlement/energySettlement.entity';
+import { IdrsConversion } from './models/idrsConversion/idrsConversion.entity';
+import { MarketTrade } from './models/marketTrade/marketTrade.entity';
+import { SmartMeter } from './models/smartMeter/smartMeter.entity';
 import { SystemConfig } from './models/systemConfig/systemConfig.entity';
 // Removed: TelemetryData (replaced by Redis)
-import { TokenBlacklist } from './models/tokenBlacklist/TokenBlacklist.entity';
+import { TokenBlacklist } from './models/tokenBlacklist/tokenBlacklist.entity';
 import { TradeOrdersCache } from './models/tradeOrderCache/tradeOrderCache.entity';
-import { TransactionLogs } from './models/transactionLog/transactionLog.entity';
-import { Wallets } from './models/wallet/wallet.entity';
+import { TransactionLog } from './models/transactionLog/transactionLog.entity';
+import { Wallet } from './models/wallet/wallet.entity';
 import { TelemetryAggregate } from './models/telemetryAggregate/telemetryAggregate.entity';
 
 // Base TypeORM DataSource configuration
@@ -32,23 +32,23 @@ const dataSourceOptions: DataSourceOptions = {
   database: process.env.DB_NAME,
   synchronize: false,
   entities: [
-    Prosumers,
+    User,
     // Removed entities (not used or replaced by Redis):
     // - BlockchainApprovals (not used)
     // - DeviceCommands (replaced by Redis)
     // - DeviceStatusSnapshots (replaced by Redis)
     // - EnergyReadingsDetailed (replaced by Redis)
     // - MqttMessageLogs (replaced by Redis)
-    EnergySettlements,
-    IdrsConversions,
-    MarketTrades,
-    SmartMeters,
+    EnergySettlement,
+    IdrsConversion,
+    MarketTrade,
+    SmartMeter,
     SystemConfig,
     // Removed: TelemetryData (replaced by Redis)
     TokenBlacklist,
     TradeOrdersCache,
-    TransactionLogs,
-    Wallets,
+    TransactionLog,
+    Wallet,
     TelemetryAggregate,
   ],
   migrations: ['src/database/migrations/*.ts'],

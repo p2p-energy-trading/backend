@@ -13,8 +13,8 @@ import { CryptoService } from '../common/crypto.service';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
 import { TransactionLogsService } from '../models/transactionLog/transactionLog.service';
 import { TransactionType, WalletImportMethod } from '../common/enums';
-import { BlacklistService } from 'src/models/tokenBlacklist/TokenBlacklist.service';
-import { BlacklistReason } from 'src/models/tokenBlacklist/TokenBlacklist.entity';
+import { BlacklistService } from 'src/models/tokenBlacklist/tokenBlacklist.service';
+import { BlacklistReason } from 'src/models/tokenBlacklist/tokenBlacklist.entity';
 import { Request } from 'express';
 import { SmartMetersService } from '../models/smartMeter/smartMeter.service';
 

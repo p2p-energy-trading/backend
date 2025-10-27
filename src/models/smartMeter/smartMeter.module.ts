@@ -1,20 +1,20 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SmartMetersService } from './smartMeter.service';
-import { SmartMeters } from './smartMeter.entity';
+import { SmartMeter } from './smartMeter.entity';
 // Removed unused entities:
 // - DeviceCommands
 // - DeviceStatusSnapshots
 // - EnergyReadingsDetailed
 // - MqttMessageLogs
-import { EnergySettlements } from '../energySettlement/energySettlement.entity';
+import { EnergySettlement } from '../energySettlement/energySettlement.entity';
 import { EnergySettlementsModule } from '../energySettlement/energySettlement.module';
-import { Prosumers } from '../user/user.entity';
+import { User } from '../user/user.entity';
 import { ProsumersModule } from '../user/user.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([SmartMeters, EnergySettlements, Prosumers]),
+    TypeOrmModule.forFeature([SmartMeter, EnergySettlement, User]),
     forwardRef(() => EnergySettlementsModule),
     forwardRef(() => ProsumersModule),
   ],

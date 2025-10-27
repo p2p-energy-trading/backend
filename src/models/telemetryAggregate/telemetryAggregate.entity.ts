@@ -10,7 +10,7 @@ import {
  * Hourly aggregated telemetry data for efficient storage and querying
  * Retention: 1 year, then archived to CSV in blob storage
  */
-@Entity('telemetry_aggregates')
+@Entity('telemetry_aggregate')
 @Index(['meterId', 'hourStart']) // For efficient time-range queries
 @Index(['hourStart']) // For archival queries
 export class TelemetryAggregate {

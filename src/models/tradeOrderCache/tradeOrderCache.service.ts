@@ -4,21 +4,21 @@ import { Repository, In } from 'typeorm';
 import { TradeOrdersCache } from './tradeOrderCache.entity';
 import { CreateTradeOrdersCacheInput } from './dto/tradeOrderCache.input';
 import { TradeOrdersCacheArgs } from './dto/tradeOrderCache.args';
-import { Prosumers } from '../user/user.entity';
-import { Wallets } from '../wallet/wallet.entity';
-import { TransactionLogs } from '../transactionLog/transactionLog.entity';
+import { User } from '../user/user.entity';
+import { Wallet } from '../wallet/wallet.entity';
+import { TransactionLog } from '../transactionLog/transactionLog.entity';
 
 @Injectable()
 export class TradeOrdersCacheService {
   constructor(
     @InjectRepository(TradeOrdersCache)
     private readonly repo: Repository<TradeOrdersCache>,
-    @InjectRepository(Prosumers)
-    private readonly ProsumersRepo: Repository<Prosumers>,
-    @InjectRepository(Wallets)
-    private readonly WalletsRepo: Repository<Wallets>,
-    @InjectRepository(TransactionLogs)
-    private readonly TransactionLogsRepo: Repository<TransactionLogs>,
+    @InjectRepository(User)
+    private readonly ProsumersRepo: Repository<User>,
+    @InjectRepository(Wallet)
+    private readonly WalletsRepo: Repository<Wallet>,
+    @InjectRepository(TransactionLog)
+    private readonly TransactionLogsRepo: Repository<TransactionLog>,
   ) {}
 
   async findAll(args?: TradeOrdersCacheArgs): Promise<TradeOrdersCache[]> {

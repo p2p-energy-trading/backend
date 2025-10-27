@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
 import { createHash } from 'crypto';
-import { TokenBlacklist } from './TokenBlacklist.entity';
+import { TokenBlacklist } from './tokenBlacklist.entity';
 
 export enum BlacklistType {
   TOKEN = 'TOKEN',

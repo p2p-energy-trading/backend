@@ -1,24 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { IdrsConversions } from './idrsConversion.entity';
+import { IdrsConversion } from './idrsConversion.entity';
 import { CreateIdrsConversionsInput } from './dto/idrsConversion.input';
 import { IdrsConversionsArgs } from './dto/idrsConversion.args';
-import { Prosumers } from '../user/user.entity';
-import { Wallets } from '../wallet/wallet.entity';
+import { User } from '../user/user.entity';
+import { Wallet } from '../wallet/wallet.entity';
 
 @Injectable()
 export class IdrsConversionsService {
   constructor(
-    @InjectRepository(IdrsConversions)
-    private readonly repo: Repository<IdrsConversions>,
-    @InjectRepository(Prosumers)
-    private readonly ProsumersRepo: Repository<Prosumers>,
-    @InjectRepository(Wallets)
-    private readonly WalletsRepo: Repository<Wallets>,
+    @InjectRepository(IdrsConversion)
+    private readonly repo: Repository<IdrsConversion>,
+    @InjectRepository(User)
+    private readonly ProsumersRepo: Repository<User>,
+    @InjectRepository(Wallet)
+    private readonly WalletsRepo: Repository<Wallet>,
   ) {}
 
-  async findAll(args?: IdrsConversionsArgs): Promise<IdrsConversions[]> {
+  async findAll(args?: IdrsConversionsArgs): Promise<IdrsConversion[]> {
     // Simple filter: remove undefined keys
     const where = {};
     if (args && args.conversionId !== undefined)
@@ -48,7 +48,7 @@ export class IdrsConversionsService {
     return this.repo.find({ where });
   }
 
-  async findOne(conversionId: number): Promise<IdrsConversions> {
+  async findOne(conversionId: number): Promise<IdrsConversion> {
     const relations = ['prosumers', 'wallets'];
     const entity = await this.repo.findOne({
       where: { conversionId },
@@ -62,7 +62,7 @@ export class IdrsConversionsService {
     return entity;
   }
 
-  async findByWalletAddress(walletAddress: string): Promise<IdrsConversions[]> {
+  async findByWalletAddress(walletAddress: string): Promise<IdrsConversion[]> {
     const entities = await this.repo.find({
       where: { walletAddress },
       relations: ['prosumers', 'wallets'],
@@ -75,9 +75,9 @@ export class IdrsConversionsService {
     return entities;
   }
 
-  async create(input: CreateIdrsConversionsInput): Promise<IdrsConversions> {
+  async create(input: CreateIdrsConversionsInput): Promise<IdrsConversion> {
     // Convert input types to match entity types
-    const createData: Partial<IdrsConversions> = {
+    const createData: Partial<IdrsConversion> = {
       prosumerId: input.prosumerId,
       walletAddress: input.walletAddress,
       conversionType: input.conversionType,
@@ -99,11 +99,11 @@ export class IdrsConversionsService {
   async update(
     conversionId: number,
     input: CreateIdrsConversionsInput,
-  ): Promise<IdrsConversions> {
+  ): Promise<IdrsConversion> {
     const existing = await this.findOne(conversionId);
 
     // Convert input types to match entity types
-    const updateData: Partial<IdrsConversions> = {
+    const updateData: Partial<IdrsConversion> = {
       prosumerId: input.prosumerId,
       walletAddress: input.walletAddress,
       conversionType: input.conversionType,

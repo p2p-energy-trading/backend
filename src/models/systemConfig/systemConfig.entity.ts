@@ -1,6 +1,6 @@
 import { Entity, Column, PrimaryColumn } from 'typeorm';
 
-@Entity()
+@Entity('system_config')
 export class SystemConfig {
   @PrimaryColumn({ type: 'varchar', name: 'config_key' })
   configKey: string;
