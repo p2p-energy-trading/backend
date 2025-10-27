@@ -5,10 +5,10 @@ import { Wallets } from '../Wallets/Wallets.entity';
 import { CreateWalletsInput } from './dto/Wallets.input';
 import { WalletsArgs } from './dto/Wallets.args';
 // Removed: BlockchainApprovals (not used)
-import { IdrsConversions } from '../idrsConversion/IdrsConversions.entity';
-import { MarketTrades } from '../marketTrade/MarketTrades.entity';
-import { TradeOrdersCache } from '../TradeOrdersCache/TradeOrdersCache.entity';
-import { Prosumers } from '../prosumer/Prosumers.entity';
+import { IdrsConversions } from '../idrsConversion/idrsConversion.entity';
+import { MarketTrades } from '../marketTrade/marketTrade.entity';
+import { TradeOrdersCache } from '../tradeOrdersCache/TradeOrdersCache.entity';
+import { Prosumers } from '../prosumer/user.entity';
 
 @Injectable()
 export class WalletsService {

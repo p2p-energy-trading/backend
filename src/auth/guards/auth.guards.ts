@@ -4,7 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { BlacklistService } from '../../models/TokenBlacklist/TokenBlacklist.service';
+import { BlacklistService } from '../../models/tokenBlacklist/TokenBlacklist.service';
 import { Request } from 'express';
 
 interface UserPayload {

@@ -1,5 +1,5 @@
 import { setSeederFactory } from 'typeorm-extension';
-import { SmartMeters } from '../../models/SmartMeters/SmartMeters.entity';
+import { SmartMeters } from '../../models/smartMeter/SmartMeters.entity';
 
 export const SmartMetersFactory = setSeederFactory(SmartMeters, (faker) => {
   const smartMeter = new SmartMeters();

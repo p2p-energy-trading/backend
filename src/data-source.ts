@@ -8,19 +8,19 @@ import { FirstSeeder } from './database/seeders/FirstSeeder';
 import { ProsumersFactory } from './database/factories/ProsumersFactory';
 import { WalletsFactory } from './database/factories/WalletsFactory';
 import { SmartMetersFactory } from './database/factories/SmartMetersFactory';
-import { Prosumers } from './models/prosumer/Prosumers.entity';
+import { Prosumers } from './models/prosumer/user.entity';
 // Removed: BlockchainApprovals (not used)
-import { EnergySettlements } from './models/energySettlement/EnergySettlements.entity';
-import { IdrsConversions } from './models/idrsConversion/IdrsConversions.entity';
-import { MarketTrades } from './models/marketTrade/MarketTrades.entity';
-import { SmartMeters } from './models/SmartMeters/SmartMeters.entity';
-import { SystemConfig } from './models/SystemConfig/SystemConfig.entity';
+import { EnergySettlements } from './models/energySettlement/energySettlement.entity';
+import { IdrsConversions } from './models/idrsConversion/idrsConversion.entity';
+import { MarketTrades } from './models/marketTrade/marketTrade.entity';
+import { SmartMeters } from './models/smartMeter/SmartMeters.entity';
+import { SystemConfig } from './models/systemConfig/SystemConfig.entity';
 // Removed: TelemetryData (replaced by Redis)
-import { TokenBlacklist } from './models/TokenBlacklist/TokenBlacklist.entity';
-import { TradeOrdersCache } from './models/TradeOrdersCache/TradeOrdersCache.entity';
-import { TransactionLogs } from './models/TransactionLogs/TransactionLogs.entity';
-import { Wallets } from './models/Wallets/Wallets.entity';
-import { TelemetryAggregate } from './models/TelemetryAggregate/TelemetryAggregate.entity';
+import { TokenBlacklist } from './models/tokenBlacklist/TokenBlacklist.entity';
+import { TradeOrdersCache } from './models/tradeOrdersCache/TradeOrdersCache.entity';
+import { TransactionLogs } from './models/transactionLog/TransactionLogs.entity';
+import { Wallets } from './models/wallet/Wallets.entity';
+import { TelemetryAggregate } from './models/telemetryAggregate/TelemetryAggregate.entity';
 
 // Base TypeORM DataSource configuration
 const dataSourceOptions: DataSourceOptions = {

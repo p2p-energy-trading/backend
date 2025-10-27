@@ -1,32 +1,32 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { MqttService } from './Telemetry/mqtt.service';
-import { BlockchainService } from './Blockchain/blockchain.service';
-import { TradingMarketService } from './Trading/trading-market.service';
-import { EnergySettlementService } from './Energy/energy-settlement.service';
-import { EnergyAnalyticsService } from './Energy/energy-analytics.service';
-import { SmartMeterHealthService } from './SmartMeter/smart-meter-health.service';
-import { TradingAnalyticsService } from './Trading/trading-analytics.service';
-import { StatService } from './Stat/stat.service';
-import { PriceCacheService } from './Trading/price-cache.service';
-import { RedisTelemetryService } from './Telemetry/redis-telemetry.service';
-import { RedisOrdersService } from './Trading/redis-orders.service';
-import { TradeOrdersCacheRedisService } from './Trading/trade-orders-cache-redis.service';
-import { TelemetryAggregationService } from './Telemetry/telemetry-aggregation.service';
-import { TelemetryArchivalService } from './Telemetry/telemetry-archival.service';
-import { HealthCheckService } from './Health/health-check.service';
-import { WalletsModule } from '../models/Wallets/Wallets.module';
-import { TransactionLogsModule } from '../models/TransactionLogs/TransactionLogs.module';
-import { TradeOrdersCacheModule } from '../models/TradeOrdersCache/TradeOrdersCache.module';
-import { MarketTradesModule } from '../models/marketTrade/MarketTrades.module';
+import { MqttService } from './telemetry/mqtt.service';
+import { BlockchainService } from './blockchain/blockchain.service';
+import { TradingMarketService } from './trading/trading-market.service';
+import { EnergySettlementService } from './energy/energy-settlement.service';
+import { EnergyAnalyticsService } from './energy/energy-analytics.service';
+import { SmartMeterHealthService } from './smartMeter/smart-meter-health.service';
+import { TradingAnalyticsService } from './trading/trading-analytics.service';
+import { StatService } from './stat/stat.service';
+import { PriceCacheService } from './trading/price-cache.service';
+import { RedisTelemetryService } from './telemetry/redis-telemetry.service';
+import { RedisOrdersService } from './trading/redis-orders.service';
+import { TradeOrdersCacheRedisService } from './trading/trade-orders-cache-redis.service';
+import { TelemetryAggregationService } from './telemetry/telemetry-aggregation.service';
+import { TelemetryArchivalService } from './telemetry/telemetry-archival.service';
+import { HealthCheckService } from './health/health-check.service';
+import { WalletsModule } from '../models/wallet/Wallets.module';
+import { TransactionLogsModule } from '../models/transactionLog/TransactionLogs.module';
+import { TradeOrdersCacheModule } from '../models/tradeOrdersCache/TradeOrdersCache.module';
+import { MarketTradesModule } from '../models/marketTrade/marketTrade.module';
 
 // Removed: BlockchainApprovals (not used)
-import { EnergySettlementsModule } from '../models/energySettlement/EnergySettlements.module';
-import { SmartMetersModule } from '../models/SmartMeters/SmartMeters.module';
+import { EnergySettlementsModule } from '../models/energySettlement/energySettlement.module';
+import { SmartMetersModule } from '../models/smartMeter/SmartMeters.module';
 import { CommonModule } from '../common/common.module';
 import { WebSocketModule } from '../websocket/websocket.module';
-import { ProsumersModule } from 'src/models/prosumer/Prosumers.module';
-import { TelemetryAggregate } from '../models/TelemetryAggregate/TelemetryAggregate.entity';
+import { ProsumersModule } from 'src/models/prosumer/user.module';
+import { TelemetryAggregate } from '../models/telemetryAggregate/TelemetryAggregate.entity';
 
 @Module({
   imports: [

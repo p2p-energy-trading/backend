@@ -2,8 +2,8 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { ProsumersService } from '../../models/prosumer/Prosumers.service';
-import { BlacklistService } from '../../models/TokenBlacklist/TokenBlacklist.service';
+import { ProsumersService } from '../../models/prosumer/user.service';
+import { BlacklistService } from '../../models/tokenBlacklist/TokenBlacklist.service';
 import { Request } from 'express';
 
 interface JwtPayload {

@@ -1,32 +1,32 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { EnergyController } from './Energy/energy.controller';
+import { EnergyController } from './energy/energy.controller';
 // Removed: DeviceController (merged into SmartMeterController)
-import { TradingController } from './Trading/trading.controller';
-import { BlockchainController } from './Blockchain/blockchain.controller';
-import { WalletController } from './Wallet/wallet.controller';
-import { StatController } from './Stat/stat.controller';
-import { HealthController } from './Health/health.controller';
-import { SmartMeterController } from './SmartMeter/smart-meter.controller';
+import { TradingController } from './trading/trading.controller';
+import { BlockchainController } from './blockchain/blockchain.controller';
+import { WalletController } from './wallet/wallet.controller';
+import { StatController } from './stat/stat.controller';
+import { HealthController } from './health/health.controller';
+import { SmartMeterController } from './smartMeter/smart-meter.controller';
 // Removed: TelemetryController (merged into SmartMeterController)
 import { ServicesModule } from '../services/services.module';
 import { AuthModule } from '../auth/auth.module';
-import { WalletsModule } from '../models/Wallets/Wallets.module';
-import { IdrsConversionsModule } from '../models/idrsConversion/IdrsConversions.module';
-import { SmartMetersModule } from '../models/SmartMeters/SmartMeters.module';
+import { WalletsModule } from '../models/wallet/Wallets.module';
+import { IdrsConversionsModule } from '../models/idrsConversion/idrsConversion.module';
+import { SmartMetersModule } from '../models/smartMeter/SmartMeters.module';
 // Removed unused modules:
 // - DeviceCommandsModule
 // - DeviceStatusSnapshotsModule
 // - EnergyReadingsDetailedModule
-import { TradeOrdersCacheModule } from '../models/TradeOrdersCache/TradeOrdersCache.module';
-import { MarketTradesModule } from '../models/marketTrade/MarketTrades.module';
+import { TradeOrdersCacheModule } from '../models/tradeOrdersCache/TradeOrdersCache.module';
+import { MarketTradesModule } from '../models/marketTrade/marketTrade.module';
 import { CommonModule } from '../common/common.module';
-import { ProsumersModule } from 'src/models/prosumer/Prosumers.module';
-import { TokenBlacklistModule } from 'src/models/TokenBlacklist/TokenBlacklist.module';
-import { TransactionLogsModule } from 'src/models/TransactionLogs/TransactionLogs.module';
-import { EnergySettlementsModule } from 'src/models/energySettlement/EnergySettlements.module';
+import { ProsumersModule } from 'src/models/prosumer/user.module';
+import { TokenBlacklistModule } from 'src/models/tokenBlacklist/TokenBlacklist.module';
+import { TransactionLogsModule } from 'src/models/transactionLog/TransactionLogs.module';
+import { EnergySettlementsModule } from 'src/models/energySettlement/energySettlement.module';
 // Removed: EnergyReadingsDetailedModule
-import { TelemetryAggregate } from '../models/TelemetryAggregate/TelemetryAggregate.entity';
+import { TelemetryAggregate } from '../models/telemetryAggregate/TelemetryAggregate.entity';
 
 @Module({
   imports: [

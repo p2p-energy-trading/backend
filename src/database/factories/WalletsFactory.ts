@@ -1,5 +1,5 @@
 import { setSeederFactory } from 'typeorm-extension';
-import { Wallets } from '../../models/Wallets/Wallets.entity';
+import { Wallets } from '../../models/wallet/Wallets.entity';
 import { CryptoService } from '../../common/crypto.service';
 import { ethers } from 'ethers';
 import * as dotenv from 'dotenv';
