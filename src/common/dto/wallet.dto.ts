@@ -7,17 +7,7 @@ import {
   IsNumber,
   Min,
 } from 'class-validator';
-
-export enum ImportMethod {
-  GENERATED = 'GENERATED',
-  IMPORTED_PRIVATE_KEY = 'IMPORTED_PRIVATE_KEY',
-  IMPORTED_MNEMONIC = 'IMPORTED_MNEMONIC',
-}
-
-export enum ConversionTypeEnum {
-  ON_RAMP = 'ON_RAMP',
-  OFF_RAMP = 'OFF_RAMP',
-}
+import { WalletImportMethod, ConversionType } from '../enums';
 
 export class CreateWalletDto {
   @ApiProperty({
@@ -30,11 +20,11 @@ export class CreateWalletDto {
 
   @ApiProperty({
     description: 'Method to create/import wallet',
-    enum: ImportMethod,
+    enum: WalletImportMethod,
     example: 'GENERATED',
   })
-  @IsEnum(ImportMethod)
-  importMethod: ImportMethod;
+  @IsEnum(WalletImportMethod)
+  importMethod: WalletImportMethod;
 
   @ApiProperty({
     description:
@@ -109,11 +99,11 @@ export class IdrsConversionDto {
   @ApiProperty({
     description:
       'Type of conversion: ON_RAMP (IDR to IDRS) or OFF_RAMP (IDRS to IDR)',
-    enum: ConversionTypeEnum,
+    enum: ConversionType,
     example: 'ON_RAMP',
   })
-  @IsEnum(ConversionTypeEnum)
-  conversionType: ConversionTypeEnum;
+  @IsEnum(ConversionType)
+  conversionType: ConversionType;
 
   @ApiProperty({
     description: 'Amount to convert',

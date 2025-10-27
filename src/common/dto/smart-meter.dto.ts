@@ -155,3 +155,68 @@ export class UpdateSettlementIntervalDto {
   @Min(1)
   intervalMinutes: number;
 }
+
+/**
+ * DTO for device control commands
+ */
+export class DeviceControlDto {
+  @ApiProperty({
+    description: 'Smart meter device ID',
+    example: 'SM001',
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'Meter ID is required' })
+  meterId: string;
+
+  @ApiProperty({
+    description: 'MQTT command object to send to device',
+    example: { relay: { state: 'on' } },
+  })
+  @IsObject()
+  @IsNotEmpty({ message: 'Command is required' })
+  command: any;
+}
+
+/**
+ * DTO for grid control commands
+ */
+export class GridControlDto {
+  @ApiProperty({
+    description: 'Smart meter device ID',
+    example: 'SM001',
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'Meter ID is required' })
+  meterId: string;
+
+  @ApiProperty({
+    description: 'Grid operation mode',
+    enum: ['import', 'export', 'off'],
+    example: 'export',
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'Mode is required' })
+  mode: 'import' | 'export' | 'off';
+}
+
+/**
+ * DTO for energy reset commands
+ */
+export class EnergyResetDto {
+  @ApiProperty({
+    description: 'Smart meter device ID',
+    example: 'SM001',
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'Meter ID is required' })
+  meterId: string;
+
+  @ApiProperty({
+    description: 'Reset type',
+    enum: ['all', 'battery', 'solar', 'load', 'grid'],
+    example: 'all',
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'Reset type is required' })
+  resetType: 'all' | 'battery' | 'solar' | 'load' | 'grid';
+}

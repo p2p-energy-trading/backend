@@ -20,12 +20,10 @@ import { WalletsService } from '../models/Wallets/Wallets.service';
 import { JwtAuthGuard } from '../auth/guards/auth.guards';
 import { AuthenticatedUser, ApiSuccessResponse } from '../common/interfaces';
 import { ResponseFormatter } from '../common/response-formatter';
-
-interface ConvertIDRSRequest {
-  walletAddress: string;
-  amount: number;
-  direction: 'on-ramp' | 'off-ramp';
-}
+import {
+  ConvertIDRSDto,
+  ConvertIDRSResponseDto,
+} from '../common/dto/blockchain.dto';
 
 /**
  * Blockchain Controller
@@ -53,63 +51,13 @@ export class BlockchainController {
       'Simulated on-ramp (IDR → IDRS) or off-ramp (IDRS → IDR) conversion for testing purposes. This is a simulation and does not involve real fiat currency.',
   })
   @ApiBody({
+    type: ConvertIDRSDto,
     description: 'IDRS conversion request',
-    schema: {
-      type: 'object',
-      required: ['walletAddress', 'amount', 'direction'],
-      properties: {
-        walletAddress: {
-          type: 'string',
-          description: 'Wallet address to receive/send IDRS',
-          example: '0x1234567890123456789012345678901234567890',
-        },
-        amount: {
-          type: 'number',
-          description:
-            'Amount to convert (in IDR for on-ramp, IDRS for off-ramp)',
-          example: 100000,
-          minimum: 0,
-        },
-        direction: {
-          type: 'string',
-          enum: ['on-ramp', 'off-ramp'],
-          description:
-            'Conversion direction: on-ramp (IDR → IDRS), off-ramp (IDRS → IDR)',
-          example: 'on-ramp',
-        },
-      },
-    },
   })
   @ApiResponse({
     status: 200,
     description: 'Conversion successful',
-    schema: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean', example: true },
-        message: {
-          type: 'string',
-          example: 'On-ramp successful: 100000 IDRS minted',
-        },
-        data: {
-          type: 'object',
-          properties: {
-            direction: { type: 'string', example: 'on-ramp' },
-            amount: { type: 'number', example: 100000 },
-            walletAddress: {
-              type: 'string',
-              example: '0x1234567890123456789012345678901234567890',
-            },
-            transactionHash: {
-              type: 'string',
-              example:
-                '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
-            },
-            timestamp: { type: 'string', example: '2024-01-01T12:00:00.000Z' },
-          },
-        },
-      },
-    },
+    type: ConvertIDRSResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -122,25 +70,10 @@ export class BlockchainController {
   @ApiBearerAuth()
   async convertIDRS(
     @Request() req: AuthenticatedUser,
-    @Body() body: ConvertIDRSRequest,
+    @Body() body: ConvertIDRSDto,
   ) {
     const { walletAddress, amount, direction } = body;
     const prosumerId = req.user.prosumerId;
-
-    // Validate inputs
-    if (!walletAddress || !amount || !direction) {
-      throw new BadRequestException('Missing required fields');
-    }
-
-    if (amount <= 0) {
-      throw new BadRequestException('Amount must be greater than 0');
-    }
-
-    if (!['on-ramp', 'off-ramp'].includes(direction)) {
-      throw new BadRequestException(
-        'Direction must be either "on-ramp" or "off-ramp"',
-      );
-    }
 
     // Verify wallet ownership
     const wallets = await this.walletsService.findAll({ prosumerId });

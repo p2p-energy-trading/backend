@@ -44,26 +44,13 @@ import {
 } from '../common/dto/wallet.dto';
 // import { create } from 'domain';
 
-interface CreateWalletRequest {
-  walletName: string;
-  importMethod: 'GENERATED' | 'IMPORTED_PRIVATE_KEY' | 'IMPORTED_MNEMONIC';
-  privateKey?: string;
-  mnemonic?: string;
-}
-
-interface IdrsConversionRequest {
-  walletAddress: string;
-  conversionType: 'ON_RAMP' | 'OFF_RAMP';
-  amount: number;
-}
-
 interface User extends Request {
   user: {
     prosumerId: string;
   };
 }
 
-@ApiTags('Wallet')
+@ApiTags('Wallets')
 @ApiBearerAuth('JWT-auth')
 @Controller('wallet')
 @UseGuards(JwtAuthGuard)
@@ -160,7 +147,7 @@ export class WalletController {
     status: 409,
     description: 'Conflict - Wallet already exists',
   })
-  async createWallet(@Body() body: CreateWalletRequest, @Request() req: User) {
+  async createWallet(@Body() body: CreateWalletDto, @Request() req: User) {
     const prosumerId = req.user.prosumerId;
 
     let walletAddress: string;
@@ -200,7 +187,7 @@ export class WalletController {
       prosumerId: prosumerId,
       walletName: body.walletName,
       encryptedPrivateKey,
-      importMethod: body.importMethod as WalletImportMethod,
+      importMethod: body.importMethod,
       isActive: true,
       createdAt: new Date().toISOString(),
       lastUsedAt: new Date().toISOString(),
@@ -313,7 +300,7 @@ export class WalletController {
     status: 401,
     description: 'Unauthorized - Wallet does not belong to user',
   })
-  async convertIdrs(@Body() body: IdrsConversionRequest, @Request() req: User) {
+  async convertIdrs(@Body() body: IdrsConversionDto, @Request() req: User) {
     const prosumerId = req.user.prosumerId;
 
     try {
@@ -412,7 +399,7 @@ export class WalletController {
       const conversion = await this.idrsConversionsService.create({
         prosumerId,
         walletAddress: body.walletAddress,
-        conversionType: body.conversionType as ConversionType,
+        conversionType: body.conversionType,
         idrAmount:
           body.conversionType === 'ON_RAMP' ? body.amount : conversionAmount,
         idrsAmount:
@@ -486,7 +473,7 @@ export class WalletController {
       await this.idrsConversionsService.create({
         prosumerId,
         walletAddress: body.walletAddress,
-        conversionType: body.conversionType as ConversionType,
+        conversionType: body.conversionType,
         idrAmount: body.conversionType === 'ON_RAMP' ? body.amount : 0,
         idrsAmount: body.conversionType === 'ON_RAMP' ? 0 : body.amount,
         exchangeRate: 1.0,

@@ -57,20 +57,6 @@ interface User extends Request {
   };
 }
 
-interface CreateSmartMeterRequest {
-  meterId: string;
-  location?: string;
-  meterBlockchainAddress?: string;
-  deviceModel?: string;
-  deviceVersion?: string;
-  capabilities?: any;
-}
-
-interface DeviceControlRequest {
-  meterId: string;
-  command: DeviceCommandPayload;
-}
-
 /**
  * Smart Meter Controller
  * Consolidated controller for all smart meter operations including:
@@ -126,16 +112,11 @@ export class SmartMeterController {
     description: 'Internal server error - Failed to create meter',
   })
   async createSmartMeter(
-    @Body() body: CreateSmartMeterRequest,
+    @Body() body: CreateSmartMeterDto,
     @Request() req: User,
   ) {
     try {
       const prosumerId = req.user.prosumerId;
-
-      // Validate required fields
-      if (!body.meterId) {
-        throw new BadRequestException('Meter ID is required');
-      }
 
       // Check if meter already exists
       try {
@@ -369,7 +350,7 @@ export class SmartMeterController {
     description: 'Unauthorized - You do not own this device',
   })
   async sendDeviceCommand(
-    @Body() body: DeviceControlRequest,
+    @Body() body: DeviceControlDto,
     @Request() req: User,
   ) {
     const { meterId, command } = body;
@@ -421,10 +402,7 @@ export class SmartMeterController {
     status: 400,
     description: 'Bad request or unauthorized',
   })
-  async controlGrid(
-    @Body() body: { meterId: string; mode: 'import' | 'export' | 'off' },
-    @Request() req: User,
-  ) {
+  async controlGrid(@Body() body: GridControlDto, @Request() req: User) {
     const command: DeviceCommandPayload = {
       grid: body.mode,
     };

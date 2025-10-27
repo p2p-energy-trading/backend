@@ -45,13 +45,6 @@ interface User extends Request {
   };
 }
 
-interface PlaceOrderRequest {
-  walletAddress: string;
-  orderType: 'BID' | 'ASK';
-  quantity: number;
-  price: number;
-}
-
 @ApiTags('Trading')
 @ApiBearerAuth('JWT-auth')
 @Controller('trading')
@@ -154,7 +147,7 @@ export class TradingController {
     status: 401,
     description: 'Unauthorized - Invalid or missing JWT token',
   })
-  async placeOrder(@Body() body: PlaceOrderRequest, @Request() req: User) {
+  async placeOrder(@Body() body: PlaceOrderDto, @Request() req: User) {
     const prosumerId = req.user.prosumerId;
 
     // Verify wallet ownership
@@ -1212,7 +1205,7 @@ export class TradingController {
     }
   }
 
-  private async checkSufficientBalance(orderRequest: PlaceOrderRequest) {
+  private async checkSufficientBalance(orderRequest: PlaceOrderDto) {
     try {
       // Get wallet balances using helper method
       const balances = await this.getWalletBalances(orderRequest.walletAddress);
