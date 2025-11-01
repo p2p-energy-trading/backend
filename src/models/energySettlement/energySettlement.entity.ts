@@ -26,8 +26,8 @@ export class EnergySettlement {
   @Column({ type: 'timestamp', name: 'period_end_time' })
   periodEndTime: Date;
 
-  @Column({ type: 'decimal', name: 'net_kwh_from_grid' })
-  netKwhFromGrid: number;
+  @Column({ type: 'decimal', name: 'net_wh_from_grid' })
+  netWhFromGrid: number;
 
   @Column({ type: 'decimal', name: 'etk_amount_credited', nullable: true })
   etkAmountCredited: number;
@@ -47,11 +47,11 @@ export class EnergySettlement {
   @Column({ type: 'varchar', name: 'settlement_trigger' })
   settlementTrigger: string;
 
-  @Column({ type: 'decimal', name: 'raw_export_kwh', nullable: true })
-  rawExportKwh: number;
+  @Column({ type: 'decimal', name: 'raw_export_wh', nullable: true })
+  rawExportWh: number;
 
-  @Column({ type: 'decimal', name: 'raw_import_kwh', nullable: true })
-  rawImportKwh: number;
+  @Column({ type: 'decimal', name: 'raw_import_wh', nullable: true })
+  rawImportWh: number;
 
   @Column({ type: 'varchar', name: 'validation_status', nullable: true })
   validationStatus: string;

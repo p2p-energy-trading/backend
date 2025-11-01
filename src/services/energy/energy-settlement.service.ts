@@ -281,7 +281,6 @@ export class EnergySettlementService {
 
       // Calculate net energy (export - import)
       const netEnergyWh = latestReadings.netEnergyWh;
-      const netEnergyKwh = netEnergyWh / 1000; // Convert Wh to kWh for logging
 
       // Validate netEnergyWh
       if (!isFinite(netEnergyWh) || isNaN(netEnergyWh)) {
@@ -371,7 +370,7 @@ export class EnergySettlementService {
         }
       }
 
-      // Get conversion ratio from blockchain
+      // Get conversion ratio from blockchain (Wh to ETK)
       const etkAmount =
         await this.blockchainService.getCalculateEtkAmount(netEnergyWh);
 
@@ -381,9 +380,9 @@ export class EnergySettlementService {
         periodStartTime: latestReadings.periodStartTime,
         periodEndTime: latestReadings.lastReadingTime,
         settlementTrigger: trigger,
-        rawExportKwh: latestReadings.exportEnergyWh / 1000,
-        rawImportKwh: latestReadings.importEnergyWh / 1000,
-        netKwhFromGrid: netEnergyKwh,
+        rawExportWh: latestReadings.exportEnergyWh,
+        rawImportWh: latestReadings.importEnergyWh,
+        netWhFromGrid: netEnergyWh,
         etkAmountCredited: etkAmount,
         status: 'PENDING',
         createdAtBackend: new Date().toISOString(),
@@ -417,7 +416,7 @@ export class EnergySettlementService {
         );
 
         this.logger.log(
-          `Settlement processed for meter ${meterId}: ${netEnergyKwh} kWh (${netEnergyWh} Wh), TX: ${txHash}`,
+          `Settlement processed for meter ${meterId}: ${netEnergyWh} Wh, ETK: ${etkAmount}, TX: ${txHash}`,
         );
       } catch (blockchainError) {
         this.logger.error(
@@ -436,7 +435,7 @@ export class EnergySettlementService {
             settlement.periodEndTime instanceof Date
               ? settlement.periodEndTime.toISOString()
               : settlement.periodEndTime,
-          netKwhFromGrid: settlement.netKwhFromGrid,
+          netWhFromGrid: settlement.netWhFromGrid,
           status: 'FAILED',
           settlementTrigger: settlement.settlementTrigger,
           createdAtBackend:
@@ -459,7 +458,7 @@ export class EnergySettlementService {
           settlement.periodEndTime instanceof Date
             ? settlement.periodEndTime.toISOString()
             : settlement.periodEndTime,
-        netKwhFromGrid: settlement.netKwhFromGrid,
+        netWhFromGrid: settlement.netWhFromGrid,
         status: 'PENDING',
         settlementTrigger: settlement.settlementTrigger,
         createdAtBackend:
@@ -646,7 +645,7 @@ export class EnergySettlementService {
           settlement.periodEndTime instanceof Date
             ? settlement.periodEndTime.toISOString()
             : settlement.periodEndTime,
-        netKwhFromGrid: settlement.netKwhFromGrid,
+        netWhFromGrid: settlement.netWhFromGrid,
         status: status.toString(),
         settlementTrigger: settlement.settlementTrigger,
         createdAtBackend:
@@ -1053,7 +1052,7 @@ export class EnergySettlementService {
     meterId: string | null;
     periodStartTime: string | Date | null;
     periodEndTime: string | Date | null;
-    netKwhFromGrid: number | null;
+    netWhFromGrid: number | null;
     etkAmountCredited: number | null;
     status: string | null;
     createdAtBackend: string | Date | null;
@@ -1063,7 +1062,7 @@ export class EnergySettlementService {
       meterId?: string;
       periodStartTime?: string | Date;
       periodEndTime?: string | Date;
-      netKwhFromGrid?: number;
+      netWhFromGrid?: number;
       etkAmountCredited?: number;
       status?: string;
       createdAtBackend?: string | Date;
@@ -1074,7 +1073,7 @@ export class EnergySettlementService {
       meterId: settlementData.meterId || null, // No anonymization
       periodStartTime: settlementData.periodStartTime || null,
       periodEndTime: settlementData.periodEndTime || null,
-      netKwhFromGrid: settlementData.netKwhFromGrid || null,
+      netWhFromGrid: settlementData.netWhFromGrid || null,
       etkAmountCredited: settlementData.etkAmountCredited || null,
       status: settlementData.status || null,
       createdAtBackend: settlementData.createdAtBackend || null,

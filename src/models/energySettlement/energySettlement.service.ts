@@ -30,8 +30,8 @@ export class EnergySettlementsService {
       where['periodStartTime'] = args.periodStartTime;
     if (args && args.periodEndTime !== undefined)
       where['periodEndTime'] = args.periodEndTime;
-    if (args && args.netKwhFromGrid !== undefined)
-      where['netKwhFromGrid'] = args.netKwhFromGrid;
+    if (args && args.netWhFromGrid !== undefined)
+      where['netWhFromGrid'] = args.netWhFromGrid;
     if (args && args.etkAmountCredited !== undefined)
       where['etkAmountCredited'] = args.etkAmountCredited;
     if (args && args.blockchainTxHash !== undefined)
@@ -43,10 +43,10 @@ export class EnergySettlementsService {
       where['confirmedAtOnChain'] = args.confirmedAtOnChain;
     if (args && args.settlementTrigger !== undefined)
       where['settlementTrigger'] = args.settlementTrigger;
-    if (args && args.rawExportKwh !== undefined)
-      where['rawExportKwh'] = args.rawExportKwh;
-    if (args && args.rawImportKwh !== undefined)
-      where['rawImportKwh'] = args.rawImportKwh;
+    if (args && args.rawExportWh !== undefined)
+      where['rawExportWh'] = args.rawExportWh;
+    if (args && args.rawImportWh !== undefined)
+      where['rawImportWh'] = args.rawImportWh;
     if (args && args.validationStatus !== undefined)
       where['validationStatus'] = args.validationStatus;
     if (args && args.settlementDataSource !== undefined)
@@ -88,7 +88,7 @@ export class EnergySettlementsService {
       periodEndTime: input.periodEndTime
         ? new Date(input.periodEndTime)
         : undefined,
-      netKwhFromGrid: input.netKwhFromGrid ?? undefined,
+      netWhFromGrid: input.netWhFromGrid ?? undefined,
       etkAmountCredited: input.etkAmountCredited ?? undefined,
       blockchainTxHash: input.blockchainTxHash ?? undefined,
       status: input.status,
@@ -99,8 +99,8 @@ export class EnergySettlementsService {
         ? new Date(input.confirmedAtOnChain)
         : undefined,
       settlementTrigger: input.settlementTrigger ?? undefined,
-      rawExportKwh: input.rawExportKwh ?? undefined,
-      rawImportKwh: input.rawImportKwh ?? undefined,
+      rawExportWh: input.rawExportWh ?? undefined,
+      rawImportWh: input.rawImportWh ?? undefined,
       validationStatus: input.validationStatus ?? undefined,
       settlementDataSource: input.settlementDataSource ?? undefined,
       detailedEnergyBreakdown: input.detailedEnergyBreakdown ?? {},
@@ -121,13 +121,13 @@ export class EnergySettlementsService {
     // Convert input types to match entity types
     const updateData: Partial<EnergySettlement> = {
       meterId: input.meterId,
-      netKwhFromGrid: input.netKwhFromGrid ?? undefined,
+      netWhFromGrid: input.netWhFromGrid ?? undefined,
       etkAmountCredited: input.etkAmountCredited ?? undefined,
       blockchainTxHash: input.blockchainTxHash ?? undefined,
       status: input.status,
       settlementTrigger: input.settlementTrigger ?? undefined,
-      rawExportKwh: input.rawExportKwh ?? undefined,
-      rawImportKwh: input.rawImportKwh ?? undefined,
+      rawExportWh: input.rawExportWh ?? undefined,
+      rawImportWh: input.rawImportWh ?? undefined,
       validationStatus: input.validationStatus ?? undefined,
       settlementDataSource: input.settlementDataSource ?? undefined,
       detailedEnergyBreakdown: input.detailedEnergyBreakdown ?? {},

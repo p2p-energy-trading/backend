@@ -13,7 +13,7 @@ export class CreateEnergySettlementsInput {
   periodEndTime: string;
 
   @Field(() => Float)
-  netKwhFromGrid: number;
+  netWhFromGrid: number;
 
   @Field(() => Float, { nullable: true })
   etkAmountCredited?: number | undefined;
@@ -34,10 +34,10 @@ export class CreateEnergySettlementsInput {
   settlementTrigger: string;
 
   @Field(() => Float, { nullable: true })
-  rawExportKwh?: number | undefined;
+  rawExportWh?: number | undefined;
 
   @Field(() => Float, { nullable: true })
-  rawImportKwh?: number | undefined;
+  rawImportWh?: number | undefined;
 
   @Field(() => String, { nullable: true })
   validationStatus?: string | undefined;

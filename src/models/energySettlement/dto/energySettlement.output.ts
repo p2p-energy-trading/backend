@@ -19,7 +19,7 @@ export class EnergySettlements {
   periodEndTime: string;
 
   @Field(() => Float)
-  netKwhFromGrid: number;
+  netWhFromGrid: number;
 
   @Field(() => Float, { nullable: true })
   etkAmountCredited?: number | null;
@@ -40,10 +40,10 @@ export class EnergySettlements {
   settlementTrigger: string;
 
   @Field(() => Float, { nullable: true })
-  rawExportKwh?: number | null;
+  rawExportWh?: number | null;
 
   @Field(() => Float, { nullable: true })
-  rawImportKwh?: number | null;
+  rawImportWh?: number | null;
 
   @Field(() => String, { nullable: true })
   validationStatus?: string | null;
@@ -52,7 +52,7 @@ export class EnergySettlements {
   settlementDataSource?: string | null;
 
   @Field(() => GraphQLJSON, { nullable: true })
-  detailedEnergyBreakdown?: any | null;
+  detailedEnergyBreakdown?: any;
 
   @Field(() => String, { nullable: true })
   mqttMessageId?: string | null;
