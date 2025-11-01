@@ -4,10 +4,9 @@ import { Repository } from 'typeorm';
 import { Wallet } from './wallet.entity';
 import { CreateWalletsInput } from './dto/wallet.input';
 import { WalletsArgs } from './dto/wallet.args';
-// Removed: BlockchainApprovals (not used)
+// Removed: BlockchainApprovals (not used), TradeOrdersCache (replaced by Redis)
 import { IdrsConversion } from '../idrsConversion/idrsConversion.entity';
 import { MarketTrade } from '../marketTrade/marketTrade.entity';
-import { TradeOrdersCache } from '../tradeOrderCache/tradeOrderCache.entity';
 import { User } from '../user/user.entity';
 
 @Injectable()
@@ -19,8 +18,7 @@ export class WalletsService {
     private readonly IdrsConversionsRepo: Repository<IdrsConversion>,
     @InjectRepository(MarketTrade)
     private readonly MarketTradesRepo: Repository<MarketTrade>,
-    @InjectRepository(TradeOrdersCache)
-    private readonly TradeOrdersCacheRepo: Repository<TradeOrdersCache>,
+    // Removed: TradeOrdersCacheRepo (replaced by Redis)
     @InjectRepository(User)
     private readonly ProsumersRepo: Repository<User>,
   ) {}

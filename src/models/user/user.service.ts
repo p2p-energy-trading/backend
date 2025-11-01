@@ -4,11 +4,10 @@ import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import { CreateProsumersInput } from './dto/Prosumers.input';
 import { ProsumersArgs } from './dto/Prosumers.args';
-// Removed: BlockchainApprovals (not used), DeviceCommands (table dropped)
+// Removed: BlockchainApprovals (not used), DeviceCommands (table dropped), TradeOrdersCache (replaced by Redis)
 import { IdrsConversion } from '../idrsConversion/idrsConversion.entity';
 import { MarketTrade } from '../marketTrade/marketTrade.entity';
 import { SmartMeter } from '../smartMeter/smartMeter.entity';
-import { TradeOrdersCache } from '../tradeOrderCache/tradeOrderCache.entity';
 import { TransactionLog } from '../transactionLog/transactionLog.entity';
 import { Wallet } from '../wallet/wallet.entity';
 
@@ -23,8 +22,7 @@ export class ProsumersService {
     private readonly MarketTradesRepo: Repository<MarketTrade>,
     @InjectRepository(SmartMeter)
     private readonly SmartMetersRepo: Repository<SmartMeter>,
-    @InjectRepository(TradeOrdersCache)
-    private readonly TradeOrdersCacheRepo: Repository<TradeOrdersCache>,
+    // Removed: TradeOrdersCacheRepo (replaced by Redis)
     @InjectRepository(TransactionLog)
     private readonly TransactionLogsRepo: Repository<TransactionLog>,
     @InjectRepository(Wallet)

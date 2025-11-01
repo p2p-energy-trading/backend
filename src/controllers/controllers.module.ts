@@ -18,7 +18,7 @@ import { SmartMetersModule } from '../models/smartMeter/smartMeter.module';
 // - DeviceCommandsModule
 // - DeviceStatusSnapshotsModule
 // - EnergyReadingsDetailedModule
-import { TradeOrdersCacheModule } from '../models/tradeOrderCache/tradeOrderCache.module';
+// - TradeOrdersCacheModule (replaced by Redis)
 import { MarketTradesModule } from '../models/marketTrade/marketTrade.module';
 import { CommonModule } from '../common/common.module';
 import { ProsumersModule } from 'src/models/user/user.module';
@@ -36,8 +36,7 @@ import { TelemetryAggregate } from '../models/telemetryAggregate/telemetryAggreg
     WalletsModule,
     IdrsConversionsModule,
     SmartMetersModule,
-    // Removed: DeviceCommandsModule, DeviceStatusSnapshotsModule, EnergyReadingsDetailedModule
-    TradeOrdersCacheModule,
+    // Removed: DeviceCommandsModule, DeviceStatusSnapshotsModule, EnergyReadingsDetailedModule, TradeOrdersCacheModule (replaced by Redis)
     MarketTradesModule,
     CommonModule,
     ProsumersModule,

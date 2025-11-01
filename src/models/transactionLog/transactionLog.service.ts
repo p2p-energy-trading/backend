@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { TransactionLog } from './transactionLog.entity';
 import { CreateTransactionLogsInput } from './dto/transactionLog.input';
 import { TransactionLogsArgs } from './dto/transactionLog.args';
-import { TradeOrdersCache } from '../tradeOrderCache/tradeOrderCache.entity';
+// Removed: TradeOrdersCache (replaced by Redis)
 import { User } from '../user/user.entity';
 import { EnergySettlement } from '../energySettlement/energySettlement.entity';
 
@@ -13,8 +13,7 @@ export class TransactionLogsService {
   constructor(
     @InjectRepository(TransactionLog)
     private readonly repo: Repository<TransactionLog>,
-    @InjectRepository(TradeOrdersCache)
-    private readonly TradeOrdersCacheRepo: Repository<TradeOrdersCache>,
+    // Removed: TradeOrdersCacheRepo (replaced by Redis)
     @InjectRepository(User)
     private readonly ProsumersRepo: Repository<User>,
     @InjectRepository(EnergySettlement)

@@ -10,6 +10,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 // - DeviceStatusSnapshots
 // - EnergyReadingsDetailed
 // - MqttMessageLogs
+// - TradeOrdersCache (replaced by Redis via TradeOrdersCacheRedisService)
 import { EnergySettlementsModule } from './models/energySettlement/energySettlement.module';
 import { EnergySettlement } from './models/energySettlement/energySettlement.entity';
 import { IdrsConversionsModule } from './models/idrsConversion/idrsConversion.module';
@@ -22,8 +23,6 @@ import { SmartMetersModule } from './models/smartMeter/smartMeter.module';
 import { SmartMeter } from './models/smartMeter/smartMeter.entity';
 import { SystemConfigModule } from './models/systemConfig/systemConfig.module';
 import { SystemConfig } from './models/systemConfig/systemConfig.entity';
-import { TradeOrdersCacheModule } from './models/tradeOrderCache/tradeOrderCache.module';
-import { TradeOrdersCache } from './models/tradeOrderCache/tradeOrderCache.entity';
 import { TransactionLogsModule } from './models/transactionLog/transactionLog.module';
 import { TransactionLog } from './models/transactionLog/transactionLog.entity';
 import { WalletsModule } from './models/wallet/wallet.module';
@@ -59,14 +58,13 @@ import { TelemetryAggregate } from './models/telemetryAggregate/telemetryAggrega
       database: process.env.DB_NAME || 'dev2',
       schema: process.env.DB_SCHEMA || 'public',
       entities: [
-        // Removed: BlockchainApprovals (not used), DeviceCommands, DeviceStatusSnapshots, EnergyReadingsDetailed, MqttMessageLogs, TelemetryData (replaced by Redis)
+        // Removed: BlockchainApprovals (not used), DeviceCommands, DeviceStatusSnapshots, EnergyReadingsDetailed, MqttMessageLogs, TelemetryData (replaced by Redis), TradeOrdersCache (replaced by Redis)
         EnergySettlement,
         IdrsConversion,
         MarketTrade,
         User,
         SmartMeter,
         SystemConfig,
-        TradeOrdersCache,
         TransactionLog,
         Wallet,
         TokenBlacklist,
@@ -74,14 +72,13 @@ import { TelemetryAggregate } from './models/telemetryAggregate/telemetryAggrega
       ],
       // synchronize: true,
     }),
-    // Removed: BlockchainApprovalsModule, DeviceCommandsModule, DeviceStatusSnapshotsModule, EnergyReadingsDetailedModule, MqttMessageLogsModule
+    // Removed: BlockchainApprovalsModule, DeviceCommandsModule, DeviceStatusSnapshotsModule, EnergyReadingsDetailedModule, MqttMessageLogsModule, TradeOrdersCacheModule (replaced by Redis)
     EnergySettlementsModule,
     IdrsConversionsModule,
     MarketTradesModule,
     ProsumersModule,
     SmartMetersModule,
     SystemConfigModule,
-    TradeOrdersCacheModule,
     TransactionLogsModule,
     WalletsModule,
     AuthModule,

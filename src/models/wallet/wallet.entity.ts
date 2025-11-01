@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { IdrsConversion } from '../idrsConversion/idrsConversion.entity';
 import { MarketTrade } from '../marketTrade/marketTrade.entity';
-import { TradeOrdersCache } from '../tradeOrderCache/tradeOrderCache.entity';
+// Removed: TradeOrdersCache (replaced by Redis)
 import { User } from '../user/user.entity';
 
 // Removed: BlockchainApprovals (not used)
@@ -51,11 +51,7 @@ export class Wallet {
   @OneToMany(() => MarketTrade, (MarketTrades) => MarketTrades.wallets)
   markettradesList2: MarketTrade[];
 
-  @OneToMany(
-    () => TradeOrdersCache,
-    (TradeOrdersCache) => TradeOrdersCache.wallets,
-  )
-  tradeorderscacheList: TradeOrdersCache[];
+  // Removed: tradeorderscacheList (replaced by Redis)
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'prosumer_id' })

@@ -17,7 +17,7 @@ import { SmartMeter } from './models/smartMeter/smartMeter.entity';
 import { SystemConfig } from './models/systemConfig/systemConfig.entity';
 // Removed: TelemetryData (replaced by Redis)
 import { TokenBlacklist } from './models/tokenBlacklist/tokenBlacklist.entity';
-import { TradeOrdersCache } from './models/tradeOrderCache/tradeOrderCache.entity';
+// Removed: TradeOrdersCache (replaced by Redis)
 import { TransactionLog } from './models/transactionLog/transactionLog.entity';
 import { Wallet } from './models/wallet/wallet.entity';
 import { TelemetryAggregate } from './models/telemetryAggregate/telemetryAggregate.entity';
@@ -46,7 +46,7 @@ const dataSourceOptions: DataSourceOptions = {
     SystemConfig,
     // Removed: TelemetryData (replaced by Redis)
     TokenBlacklist,
-    TradeOrdersCache,
+    // Removed: TradeOrdersCache (replaced by Redis)
     TransactionLog,
     Wallet,
     TelemetryAggregate,

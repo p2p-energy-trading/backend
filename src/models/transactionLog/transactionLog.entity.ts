@@ -5,7 +5,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { TradeOrdersCache } from '../tradeOrderCache/tradeOrderCache.entity';
+// Removed: TradeOrdersCache (replaced by Redis)
 import { User } from '../user/user.entity';
 import { EnergySettlement } from '../energySettlement/energySettlement.entity';
 
@@ -47,9 +47,8 @@ export class TransactionLog {
   @Column({ type: 'timestamp', name: 'transaction_timestamp' })
   transactionTimestamp: Date;
 
-  @ManyToOne(() => TradeOrdersCache)
-  @JoinColumn({ name: 'related_order_id' })
-  tradeorderscache: TradeOrdersCache;
+  // Removed: ManyToOne relation to TradeOrdersCache (replaced by Redis)
+  // related_order_id remains as a simple column for reference
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'prosumer_id' })

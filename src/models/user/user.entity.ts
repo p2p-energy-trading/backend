@@ -1,8 +1,8 @@
-import { Entity, Column, PrimaryColumn, OneToMany, OneToOne } from 'typeorm';
+import { Entity, Column, PrimaryColumn, OneToMany } from 'typeorm';
 import { IdrsConversion } from '../idrsConversion/idrsConversion.entity';
 import { MarketTrade } from '../marketTrade/marketTrade.entity';
 import { SmartMeter } from '../smartMeter/smartMeter.entity';
-import { TradeOrdersCache } from '../tradeOrderCache/tradeOrderCache.entity';
+// Removed: TradeOrdersCache (replaced by Redis)
 import { TransactionLog } from '../transactionLog/transactionLog.entity';
 import { Wallet } from '../wallet/wallet.entity';
 
@@ -52,11 +52,7 @@ export class User {
   @OneToMany(() => SmartMeter, (SmartMeters) => SmartMeters.prosumers)
   smartmetersList: SmartMeter[];
 
-  @OneToMany(
-    () => TradeOrdersCache,
-    (TradeOrdersCache) => TradeOrdersCache.prosumers,
-  )
-  tradeorderscacheList: TradeOrdersCache[];
+  // Removed: tradeorderscacheList (replaced by Redis)
 
   @OneToMany(
     () => TransactionLog,

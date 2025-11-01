@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MqttService } from './telemetry/mqtt.service';
 import { BlockchainService } from './blockchain/blockchain.service';
@@ -17,10 +17,9 @@ import { TelemetryArchivalService } from './telemetry/telemetry-archival.service
 import { HealthCheckService } from './health/health-check.service';
 import { WalletsModule } from '../models/wallet/wallet.module';
 import { TransactionLogsModule } from '../models/transactionLog/transactionLog.module';
-import { TradeOrdersCacheModule } from '../models/tradeOrderCache/tradeOrderCache.module';
 import { MarketTradesModule } from '../models/marketTrade/marketTrade.module';
 
-// Removed: BlockchainApprovals (not used)
+// Removed: BlockchainApprovals (not used), TradeOrdersCacheModule (replaced by Redis)
 import { EnergySettlementsModule } from '../models/energySettlement/energySettlement.module';
 import { SmartMetersModule } from '../models/smartMeter/smartMeter.module';
 import { CommonModule } from '../common/common.module';
@@ -38,9 +37,9 @@ import { TelemetryAggregate } from '../models/telemetryAggregate/telemetryAggreg
     // - EnergyReadingsDetailedModule
     // - DeviceStatusSnapshotsModule
     // - DeviceCommandsModule
+    // - TradeOrdersCacheModule (replaced by TradeOrdersCacheRedisService)
     WalletsModule,
     TransactionLogsModule,
-    TradeOrdersCacheModule,
     MarketTradesModule,
     // Removed: BlockchainApprovalsModule (not used)
     EnergySettlementsModule,

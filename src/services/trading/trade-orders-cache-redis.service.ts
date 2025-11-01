@@ -1,7 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { RedisOrdersService, OrderData } from './redis-orders.service';
-import { CreateTradeOrdersCacheInput } from '../../models/tradeOrderCache/dto/tradeOrderCache.input';
-import { TradeOrdersCacheArgs } from '../../models/tradeOrderCache/dto/tradeOrderCache.args';
+import {
+  CreateTradeOrdersCacheInput,
+  TradeOrdersCacheArgs,
+} from './dto/trade-orders-cache.types';
 
 /**
  * Redis-backed Trade Orders Cache Service
