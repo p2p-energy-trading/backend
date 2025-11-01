@@ -24,13 +24,8 @@ import { WalletsService } from '../../models/wallet/wallet.service';
 import { IdrsConversionsService } from '../../models/idrsConversion/idrsConversion.service';
 import { CryptoService } from '../../common/crypto.service';
 import { JwtAuthGuard } from '../../auth/guards/auth.guards';
-import { ApiSuccessResponse } from '../../common/interfaces';
 import { ResponseFormatter } from '../../common/response-formatter';
-import {
-  ConversionType,
-  WalletImportMethod,
-  TransactionType,
-} from '../../common/enums';
+import { TransactionType } from '../../common/enums';
 import { ProsumersService } from 'src/models/user/user.service';
 import { BlockchainService } from '../../services/blockchain/blockchain.service';
 import { TransactionLogsService } from '../../models/transactionLog/transactionLog.service';
@@ -152,19 +147,19 @@ export class WalletController {
 
     let walletAddress: string;
     let privateKey: string;
-    if (body.importMethod === 'GENERATED') {
+    if (String(body.importMethod) === 'GENERATED') {
       // Generate new wallet
       const wallet = ethers.Wallet.createRandom();
       walletAddress = wallet.address;
       privateKey = wallet.privateKey;
-    } else if (body.importMethod === 'IMPORTED_PRIVATE_KEY') {
+    } else if (String(body.importMethod) === 'IMPORTED_PRIVATE_KEY') {
       if (!body.privateKey) {
         throw new BadRequestException('Private key is required for import');
       }
       const wallet = new ethers.Wallet(body.privateKey);
       walletAddress = wallet.address;
       privateKey = body.privateKey;
-    } else if (body.importMethod === 'IMPORTED_MNEMONIC') {
+    } else if (String(body.importMethod) === 'IMPORTED_MNEMONIC') {
       if (!body.mnemonic) {
         throw new BadRequestException('Mnemonic is required for import');
       }
@@ -323,7 +318,7 @@ export class WalletController {
       let status = 'PENDING';
 
       // Perform blockchain transaction based on conversion type
-      if (body.conversionType === 'ON_RAMP') {
+      if (String(body.conversionType) === 'ON_RAMP') {
         // ON_RAMP: IDR → IDRS (Mint IDRS tokens)
         this.logger.log(
           `ON_RAMP: Minting ${conversionAmount} IDRS tokens for wallet ${body.walletAddress}`,
@@ -352,7 +347,7 @@ export class WalletController {
         });
 
         status = 'SUCCESS';
-      } else if (body.conversionType === 'OFF_RAMP') {
+      } else if (String(body.conversionType) === 'OFF_RAMP') {
         // OFF_RAMP: IDRS → IDR (Burn IDRS tokens)
         this.logger.log(
           `OFF_RAMP: Burning ${body.amount} IDRS tokens from wallet ${body.walletAddress}`,
@@ -401,9 +396,13 @@ export class WalletController {
         walletAddress: body.walletAddress,
         conversionType: body.conversionType,
         idrAmount:
-          body.conversionType === 'ON_RAMP' ? body.amount : conversionAmount,
+          String(body.conversionType) === 'ON_RAMP'
+            ? body.amount
+            : conversionAmount,
         idrsAmount:
-          body.conversionType === 'ON_RAMP' ? conversionAmount : body.amount,
+          String(body.conversionType) === 'ON_RAMP'
+            ? conversionAmount
+            : body.amount,
         exchangeRate,
         blockchainTxHash: blockchainTxHash || '',
         status,
@@ -455,7 +454,7 @@ export class WalletController {
       await this.transactionLogsService.create({
         prosumerId,
         transactionType:
-          body.conversionType === 'ON_RAMP'
+          String(body.conversionType) === 'ON_RAMP'
             ? TransactionType.TOKEN_MINT
             : TransactionType.TOKEN_BURN,
         description: JSON.stringify({
@@ -465,7 +464,8 @@ export class WalletController {
           error: errorMessage,
         }),
         amountPrimary: body.amount,
-        currencyPrimary: body.conversionType === 'ON_RAMP' ? 'IDR' : 'IDRS',
+        currencyPrimary:
+          String(body.conversionType) === 'ON_RAMP' ? 'IDR' : 'IDRS',
         transactionTimestamp: new Date().toISOString(),
       });
 
@@ -474,8 +474,8 @@ export class WalletController {
         prosumerId,
         walletAddress: body.walletAddress,
         conversionType: body.conversionType,
-        idrAmount: body.conversionType === 'ON_RAMP' ? body.amount : 0,
-        idrsAmount: body.conversionType === 'ON_RAMP' ? 0 : body.amount,
+        idrAmount: String(body.conversionType) === 'ON_RAMP' ? body.amount : 0,
+        idrsAmount: String(body.conversionType) === 'ON_RAMP' ? 0 : body.amount,
         exchangeRate: 1.0,
         status: 'FAILED',
         simulationNote: `Conversion failed: ${errorMessage}`,

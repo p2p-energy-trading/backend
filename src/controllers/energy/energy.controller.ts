@@ -25,11 +25,9 @@ import { EnergyAnalyticsService } from '../../services/energy/energy-analytics.s
 import { TelemetryAggregationService } from '../../services/telemetry/telemetry-aggregation.service';
 import { JwtAuthGuard } from '../../auth/guards/auth.guards';
 import { AuthService } from '../../auth/auth.service';
-import { AuthenticatedUser, ApiSuccessResponse } from '../../common/interfaces';
+import { AuthenticatedUser } from '../../common/interfaces';
 import { ResponseFormatter } from '../../common/response-formatter';
 import {
-  EnergyReadingDto,
-  EnergyStatsDto,
   SettlementEstimateDto,
   SettlementRecordDto,
 } from '../../common/dto/energy.dto';

@@ -160,7 +160,7 @@ export class TradingController {
     await this.checkSufficientBalance(body);
 
     let txHash: string;
-    if (body.orderType === 'BID') {
+    if (String(body.orderType) === 'BID') {
       txHash = await this.blockchainService.placeBuyOrder(
         body.walletAddress,
         body.quantity,
@@ -403,13 +403,12 @@ export class TradingController {
 
     // Group buy orders by price and sum quantities
     const buyOrdersMap = allOrders
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
       .filter((order: any) => order.orderType === 'BID')
       .reduce(
         (acc, order: any) => {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
           const price = Number(order.priceIdrsPerEtk);
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
           const quantity = Number(order.amountEtk);
           acc[price] = (acc[price] || 0) + quantity;
           return acc;

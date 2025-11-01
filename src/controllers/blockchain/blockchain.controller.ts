@@ -18,7 +18,7 @@ import {
 import { BlockchainService } from '../../services/blockchain/blockchain.service';
 import { WalletsService } from '../../models/wallet/wallet.service';
 import { JwtAuthGuard } from '../../auth/guards/auth.guards';
-import { AuthenticatedUser, ApiSuccessResponse } from '../../common/interfaces';
+import { AuthenticatedUser } from '../../common/interfaces';
 import { ResponseFormatter } from '../../common/response-formatter';
 import {
   ConvertIDRSDto,
@@ -88,7 +88,7 @@ export class BlockchainController {
     }
 
     try {
-      if (direction === 'on-ramp') {
+      if (String(direction) === 'on-ramp') {
         // IDR → IDRS (mint IDRS tokens)
         const txHash = await this.blockchainService.mintIDRSTokens(
           walletAddress,
@@ -189,7 +189,7 @@ export class BlockchainController {
     description: 'Unauthorized - Invalid or missing token',
   })
   @ApiBearerAuth()
-  async getNetworkInfo(@Request() req: AuthenticatedUser) {
+  getNetworkInfo() {
     return ResponseFormatter.success(
       {
         rpcUrl: process.env.ETHEREUM_RPC_URL || 'http://localhost:8545',
@@ -245,7 +245,7 @@ export class BlockchainController {
     description: 'Unauthorized - Invalid or missing token',
   })
   @ApiBearerAuth()
-  async getContractAddresses(@Request() req: AuthenticatedUser) {
+  getContractAddresses() {
     return ResponseFormatter.success(
       {
         etkToken: process.env.CONTRACT_ETK_TOKEN || null,

@@ -953,7 +953,7 @@ export class BlockchainService {
   async mintIDRSTokens(walletAddress: string, amount: number): Promise<string> {
     try {
       // const wallet = await this.getWalletSigner(walletAddress);
-      const ownerWallet = await this.getOwnerWalletSigner();
+      const ownerWallet = this.getOwnerWalletSigner();
 
       const contract = new ethers.Contract(
         this.config.contracts.idrsToken,
@@ -964,9 +964,7 @@ export class BlockchainService {
       // Convert to IDRS units (2 decimals: 1 IDRS = 100 units)
       const tokenAmount = Math.floor(amount * 100);
 
-      const tx1 = (await contract.mint(
-        tokenAmount,
-      )) as ethers.ContractTransactionResponse;
+      await contract.mint(tokenAmount);
 
       const tx2 = (await contract.transfer(
         walletAddress,
@@ -1002,7 +1000,7 @@ export class BlockchainService {
   async burnIDRSTokens(walletAddress: string, amount: number): Promise<string> {
     try {
       const wallet = await this.getWalletSigner(walletAddress);
-      const ownerWallet = await this.getOwnerWalletSigner();
+      const ownerWallet = this.getOwnerWalletSigner();
       const contract = new ethers.Contract(
         this.config.contracts.idrsToken,
         this.idrsTokenABI,
@@ -1023,9 +1021,7 @@ export class BlockchainService {
         ownerWallet,
       );
 
-      const tx2 = (await contract2.burn(
-        tokenAmount,
-      )) as ethers.ContractTransactionResponse;
+      await contract2.burn(tokenAmount);
 
       // Log transaction
       // await this.transactionLogsService.create({

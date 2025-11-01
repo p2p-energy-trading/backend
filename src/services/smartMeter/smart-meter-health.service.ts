@@ -51,7 +51,7 @@ export class SmartMeterHealthService {
       let deviceCount = 0;
       let lastHeartbeat: Date | null = null;
 
-      for (const { meterId, status } of deviceStatuses) {
+      for (const { status } of deviceStatuses) {
         if (status && status.data) {
           const statusTime = status.datetime
             ? new Date(status.datetime).getTime()

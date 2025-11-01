@@ -7,7 +7,6 @@ import {
   ReadinessResponseDto,
   LivenessResponseDto,
 } from '../../common/dto/health.dto';
-import { ApiSuccessResponse } from '../../common/interfaces';
 import { ResponseFormatter } from '../../common/response-formatter';
 
 @ApiTags('System')

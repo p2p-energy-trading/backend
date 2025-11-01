@@ -33,23 +33,16 @@ import { TelemetryArchivalService } from '../../services/telemetry/telemetry-arc
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
 import { TelemetryAggregate } from '../../models/telemetryAggregate/telemetryAggregate.entity';
-import {
-  DeviceCommandPayload,
-  ApiSuccessResponse,
-} from '../../common/interfaces';
+import { DeviceCommandPayload } from '../../common/interfaces';
 import { ResponseFormatter } from '../../common/response-formatter';
 import {
   CreateSmartMeterDto,
   SmartMeterResponseDto,
-  LinkSmartMeterDto,
-  UnlinkSmartMeterDto,
-  UpdateSettlementIntervalDto,
 } from '../../common/dto/smart-meter.dto';
 import {
   DeviceControlDto,
   GridControlDto,
   EnergyResetDto,
-  DeviceStatusDto,
   CommandResponseDto,
   DeviceStatusResponseDto,
 } from '../../common/dto/device.dto';

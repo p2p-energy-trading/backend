@@ -3,7 +3,6 @@ import {
   Get,
   UseGuards,
   Request,
-  Query,
   Logger,
   Header,
 } from '@nestjs/common';
@@ -12,7 +11,6 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
-  ApiQuery,
 } from '@nestjs/swagger';
 import { StatService, StatStats } from '../../services/stat/stat.service';
 import { JwtAuthGuard } from '../../auth/guards/auth.guards';

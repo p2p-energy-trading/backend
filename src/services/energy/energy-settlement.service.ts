@@ -119,9 +119,119 @@ export class EnergySettlementService {
 
         // Add to power log array
         this.addPowerLog(meterId, currentPowerKw);
+
+        // Check and auto-shutdown grid import if insufficient balance
+        await this.checkAndAutoShutdownGridImport(meterId, prosumer.prosumerId);
       }
     } catch (error) {
       this.logger.error('Error logging power data:', error);
+    }
+  }
+
+  /**
+   * Check if grid import should be auto-shutdown due to insufficient ETK balance
+   *
+   * This safety feature prevents settlement failures by automatically turning off grid import
+   * when the estimated ETK burn amount at settlement would exceed the user's current ETK balance.
+   *
+   * Process:
+   * 1. Check if meter is currently importing energy (status = 'IMPORTING')
+   * 2. Get user's current ETK balance from blockchain
+   * 3. Compare estimated burn amount (with 5% safety margin) with balance
+   * 4. If insufficient balance detected, send MQTT command to turn off grid
+   * 5. Device will stop importing, preventing failed settlement due to insufficient funds
+   *
+   * Safety Margin: 5% buffer added to estimated burn to account for:
+   * - Power fluctuations before settlement
+   * - Network delays in command execution
+   * - Time between check and actual settlement
+   *
+   * Configuration: Can be disabled via AUTO_GRID_SHUTDOWN_ENABLED env variable
+   *
+   * @param meterId - Smart meter ID to check
+   * @param prosumerId - Prosumer ID who owns the meter
+   */
+  private async checkAndAutoShutdownGridImport(
+    meterId: string,
+    prosumerId: string,
+  ): Promise<void> {
+    try {
+      // Check if auto-shutdown feature is enabled
+      const isAutoShutdownEnabled =
+        this.configService.get('AUTO_GRID_SHUTDOWN_ENABLED') !== 'false'; // Default enabled
+      if (!isAutoShutdownEnabled) {
+        return;
+      }
+
+      // Get settlement estimator data
+      const estimator = await this.getSettlementEstimator(meterId);
+      if (!estimator) {
+        return;
+      }
+
+      // Only check if device is currently importing
+      if (estimator.status !== 'IMPORTING') {
+        return;
+      }
+
+      // Get user's ETK balance from blockchain
+      const primaryWallet =
+        await this.prosumersService.getPrimaryWallet(prosumerId);
+      if (!primaryWallet?.walletAddress) {
+        this.logger.warn(
+          `No wallet found for prosumer ${prosumerId}, skipping auto-shutdown check`,
+        );
+        return;
+      }
+
+      // Get ETK token address from config
+      const etkTokenAddress =
+        this.configService.get('CONTRACT_ETK_TOKEN') ||
+        '0x0000000000000000000000000000000000000000';
+
+      const etkBalance = await this.blockchainService.getTokenBalance(
+        primaryWallet.walletAddress,
+        etkTokenAddress,
+      );
+
+      // Check if estimated ETK burn at settlement >= current balance
+      // Add a safety margin of 5% to prevent edge cases
+      const safetyMargin = 1.05; // 5% margin
+      const estimatedBurnWithMargin =
+        estimator.estimatedEtkAtSettlement * safetyMargin;
+
+      if (estimatedBurnWithMargin >= etkBalance) {
+        this.logger.warn(
+          `⚠️  INSUFFICIENT BALANCE PROTECTION TRIGGERED for meter ${meterId}:
+          - User Balance: ${etkBalance.toFixed(3)} ETK
+          - Estimated Burn: ${estimator.estimatedEtkAtSettlement.toFixed(3)} ETK
+          - With Safety Margin (5%): ${estimatedBurnWithMargin.toFixed(3)} ETK
+          - Current Import Power: ${estimator.currentPowerKw.toFixed(2)} kW
+          - Time Until Settlement: ${estimator.timeRemaining}
+          🛡️  Sending grid shutdown command to prevent settlement failure...`,
+        );
+
+        // Send MQTT command to turn off grid
+        const command: DeviceCommandPayload = {
+          grid: 'off',
+        };
+
+        await this.mqttService.sendCommand(meterId, command, prosumerId);
+
+        this.logger.log(
+          `✅ Grid shutdown command sent successfully to meter ${meterId}`,
+        );
+
+        // Optional: Log to database for audit trail
+        // Uncomment if you want to track auto-shutdown events
+        // await this.logAutoShutdownEvent(meterId, prosumerId, estimator.estimatedEtkAtSettlement, etkBalance);
+      }
+    } catch (error) {
+      this.logger.error(
+        `❌ Error in auto-shutdown protection check for meter ${meterId}:`,
+        error,
+      );
+      // Don't throw - this is a safety feature, shouldn't break the main flow
     }
   }
 
@@ -939,34 +1049,6 @@ export class EnergySettlementService {
 
   private clearPowerLog(meterId: string) {
     this.powerLogArrays.set(meterId, []);
-  }
-
-  /**
-   * DEPRECATED: This method is no longer used.
-   * Hourly energy calculations now use TelemetryAggregate table with TimescaleDB.
-   *
-   * @deprecated Use TelemetryAggregationService instead
-   */
-  private async calculateHourlyEnergyTotals(
-    meterIds: string[],
-    hourDate: Date,
-  ): Promise<{
-    solar: number;
-    consumption: number;
-    battery: number;
-    gridExport: number;
-    gridImport: number;
-    net: number;
-  }> {
-    // Return zeros as this method is no longer used
-    return {
-      solar: 0,
-      consumption: 0,
-      battery: 0,
-      gridExport: 0,
-      gridImport: 0,
-      net: 0,
-    };
   }
 
   /**
