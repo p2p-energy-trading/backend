@@ -216,7 +216,7 @@ export class EnergySettlementService {
           grid: 'off',
         };
 
-        await this.mqttService.sendCommand(meterId, command, prosumerId);
+        this.mqttService.sendCommand(meterId, command);
 
         this.logger.log(
           `✅ Grid shutdown command sent successfully to meter ${meterId}`,
@@ -470,10 +470,7 @@ export class EnergySettlementService {
       });
 
       // Send reset command to device to clear settlement counters
-      await this.sendSettlementResetCommand(
-        meterId,
-        prosumer?.prosumerId || '',
-      );
+      this.sendSettlementResetCommand(meterId);
 
       // Clear power log array after successful settlement
       this.clearPowerLog(meterId);
@@ -570,10 +567,7 @@ export class EnergySettlementService {
     }
   }
 
-  private async sendSettlementResetCommand(
-    meterId: string,
-    prosumerId: string,
-  ) {
+  private sendSettlementResetCommand(meterId: string) {
     try {
       const command: DeviceCommandPayload = {
         energy: {
@@ -581,7 +575,7 @@ export class EnergySettlementService {
         },
       };
 
-      await this.mqttService.sendCommand(meterId, command, prosumerId);
+      this.mqttService.sendCommand(meterId, command);
       this.logger.log(`Settlement reset command sent to meter ${meterId}`);
     } catch (error) {
       this.logger.error(

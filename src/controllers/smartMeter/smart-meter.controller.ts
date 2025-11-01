@@ -371,11 +371,7 @@ export class SmartMeterController {
       );
     }
 
-    const correlationId = await this.mqttService.sendCommand(
-      meterId,
-      command,
-      prosumerId,
-    );
+    const correlationId = this.mqttService.sendCommand(meterId, command);
 
     return ResponseFormatter.success(
       { correlationId },

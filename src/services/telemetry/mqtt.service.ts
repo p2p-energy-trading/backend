@@ -8,11 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import * as mqtt from 'mqtt';
 import { CryptoService } from '../../common/crypto.service';
-import {
-  MqttTopicType,
-  MqttDirection,
-  DeviceCommandType,
-} from '../../common/enums';
+import { MqttTopicType, DeviceCommandType } from '../../common/enums';
 import { DeviceCommandPayload } from '../../common/interfaces';
 import { SmartMetersService } from 'src/models/smartMeter/smartMeter.service';
 import {
@@ -229,11 +225,11 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     return 'default-meter';
   }
 
-  async sendCommand(
+  sendCommand(
     meterId: string,
     command: DeviceCommandPayload,
-    prosumerId?: string,
-  ): Promise<string> {
+    // prosumerId?: string,
+  ): string {
     try {
       const correlationId = this.cryptoService.generateCorrelationId();
       const commandWithCorrelation = {
@@ -259,7 +255,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       */
 
       // Send via MQTT
-      this.client.publish(topic, message, { qos: 1 }, (error) => {
+      this.client.publish(topic, message, { qos: 2 }, (error) => {
         if (error) {
           this.logger.error(`Failed to send command to ${meterId}:`, error);
         } else {
