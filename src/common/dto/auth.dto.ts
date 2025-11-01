@@ -58,12 +58,75 @@ export class LoginDto {
   password: string;
 }
 
-export class LoginResponseDto {
+/**
+ * Login Response Data (inside ResponseFormatter wrapper)
+ */
+export class LoginDataDto {
   @ApiProperty({
     description: 'JWT access token',
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
   })
-  accessToken: string;
+  access_token: string;
+
+  @ApiProperty({
+    description: 'Token type',
+    example: 'Bearer',
+  })
+  tokenType: string;
+
+  @ApiProperty({
+    description: 'Token expiration time in seconds',
+    example: 3600,
+  })
+  expiresIn: number;
+}
+
+/**
+ * Complete Login Response with ResponseFormatter wrapper
+ */
+export class LoginResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Login successful',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Login data with JWT token',
+    example: {
+      access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+      tokenType: 'Bearer',
+      expiresIn: 3600,
+    },
+  })
+  data: LoginDataDto;
+
+  @ApiProperty({
+    description: 'Response metadata',
+    example: {
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    timestamp: string;
+  };
+}
+
+/**
+ * Register Response Data (inside ResponseFormatter wrapper)
+ */
+export class RegisterDataDto {
+  @ApiProperty({
+    description: 'JWT access token',
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+  })
+  access_token: string;
 
   @ApiProperty({
     description: 'Token type',
@@ -78,20 +141,27 @@ export class LoginResponseDto {
   expiresIn: number;
 
   @ApiProperty({
-    description: 'User information',
+    description: 'Registered prosumer information',
     example: {
       prosumerId: 'prosumer_...',
       email: 'john.doe@example.com',
       name: 'John Doe',
+      createdAt: '2025-11-01T10:30:00.000Z',
+      updatedAt: '2025-11-01T10:30:00.000Z',
     },
   })
-  user: {
+  prosumer: {
     prosumerId: string;
     email: string;
     name: string;
+    createdAt: string;
+    updatedAt: string;
   };
 }
 
+/**
+ * Complete Register Response with ResponseFormatter wrapper
+ */
 export class RegisterResponseDto {
   @ApiProperty({
     description: 'Success status',
@@ -106,27 +176,18 @@ export class RegisterResponseDto {
   message: string;
 
   @ApiProperty({
-    description: 'Login information',
+    description: 'Registration data with auto-login JWT token',
+  })
+  data: RegisterDataDto;
+
+  @ApiProperty({
+    description: 'Response metadata',
     example: {
-      accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-      tokenType: 'Bearer',
-      expiresIn: 3600,
-      prosumer: {
-        prosumerId: 'prosumer_...',
-        email: 'john.doe@example.com',
-        name: 'John Doe',
-      },
+      timestamp: '2025-11-01T10:30:00.000Z',
     },
   })
-  loginInfo: {
-    accessToken: string;
-    tokenType: string;
-    expiresIn: number;
-    prosumer: {
-      prosumerId: string;
-      email: string;
-      name: string;
-    };
+  metadata: {
+    timestamp: string;
   };
 }
 
@@ -215,41 +276,67 @@ class MeterInfoDto {
   deviceVersion: string;
 }
 
+/**
+ * Profile Response with ResponseFormatter wrapper
+ */
 export class ProfileResponseDto {
   @ApiProperty({
-    description: 'Prosumer account details',
-    type: ProfileInfoDto,
+    description: 'Success status',
+    example: true,
   })
-  profile: ProfileInfoDto;
+  success: boolean;
 
   @ApiProperty({
-    description: 'List of associated wallets',
-    type: [WalletInfoDto],
-    example: [
-      {
-        walletAddress: '0xabcd...',
-        walletName: "Jhon Doe's Wallet",
-        isActive: true,
-        createdAt: '2025-07-19T12:00:00.000Z',
-      },
-    ],
+    description: 'Success message',
+    example: 'Profile retrieved successfully',
   })
-  wallets: WalletInfoDto[];
+  message: string;
 
   @ApiProperty({
-    description: 'List of associated smart meters',
-    type: [MeterInfoDto],
-    example: [
-      {
-        meterId: 'METER001',
-        location: 'Bandung, Indonesia',
-        status: 'ACTIVE',
-        createdAt: '2025-07-19T12:00:00.000Z',
-        lastSeen: '2025-07-19T12:00:00.000Z',
-        deviceModel: 'Generic Smart Meter',
-        deviceVersion: '1.0.0',
+    description: 'Profile data with account, wallets, and meters information',
+    example: {
+      profile: {
+        prosumerId: 'prosumer_...',
+        email: 'john.doe@example.com',
+        name: 'John Doe',
+        primaryWalletAddress: '0xabcd...',
+        createdAt: '2025-11-01T10:30:00.000Z',
+        updatedAt: '2025-11-01T10:30:00.000Z',
       },
-    ],
+      wallets: [
+        {
+          walletAddress: '0xabcd...',
+          walletName: "John Doe's Wallet",
+          isActive: true,
+          createdAt: '2025-11-01T10:30:00.000Z',
+        },
+      ],
+      meters: [
+        {
+          meterId: 'METER001',
+          location: 'Bandung, Indonesia',
+          status: 'ACTIVE',
+          createdAt: '2025-11-01T10:30:00.000Z',
+          lastSeen: '2025-11-01T10:30:00.000Z',
+          deviceModel: 'Generic Smart Meter',
+          deviceVersion: '1.0.0',
+        },
+      ],
+    },
   })
-  meters: MeterInfoDto[];
+  data: {
+    profile: ProfileInfoDto;
+    wallets: WalletInfoDto[];
+    meters: MeterInfoDto[];
+  };
+
+  @ApiProperty({
+    description: 'Response metadata',
+    example: {
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    timestamp: string;
+  };
 }

@@ -7,6 +7,7 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -21,6 +22,7 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/auth.dto';
 import { JwtAuthGuard, LocalAuthGuard } from './guards/auth.guards';
 import { Request as ExpressRequest } from 'express';
+import { ResponseFormatter } from '../common/response-formatter';
 import {
   LoginDto,
   LoginResponseDto,
@@ -55,16 +57,18 @@ interface ValidatedProsumer {
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(private authService: AuthService) {}
 
   /**
    * Login Endpoint
    *
    * Authenticates a prosumer with email and password.
-   * Returns JWT access token for subsequent API requests.
+   * Returns JWT access token wrapped in ResponseFormatter structure.
    *
    * @param req - Request object containing validated user from LocalAuthGuard
-   * @returns JWT token and prosumer information
+   * @returns ResponseFormatter with JWT token data
    *
    * @example
    * POST /auth/login
@@ -74,11 +78,15 @@ export class AuthController {
    * }
    *
    * Response: {
-   *   "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-   *   "prosumer": {
-   *     "prosumerId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-   *     "email": "john.doe@example.com",
-   *     "name": "John Doe"
+   *   "success": true,
+   *   "message": "Login successful",
+   *   "data": {
+   *     "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+   *     "tokenType": "Bearer",
+   *     "expiresIn": 3600
+   *   },
+   *   "metadata": {
+   *     "timestamp": "2025-11-01T10:30:00.000Z"
    *   }
    * }
    *
@@ -118,17 +126,21 @@ export class AuthController {
   })
   @ApiUnauthorizedResponse({
     description: 'Invalid credentials - Wrong email or password',
-    schema: {
-      example: {
-        message: '...',
-        error: 'Unauthorized',
-        statusCode: 401,
-      },
-    },
   })
   login(@Request() req: { user: ValidatedProsumer }) {
-    // User sudah divalidasi oleh LocalAuthGuard, tersedia di req.user
-    return this.authService.generateTokens(req.user);
+    try {
+      // User already validated by LocalAuthGuard, available in req.user
+      return ResponseFormatter.success(
+        this.authService.generateTokens(req.user),
+        'Login successful',
+      );
+    } catch (error) {
+      this.logger.error('Login error:', error);
+      return ResponseFormatter.error(
+        'Login failed',
+        error instanceof Error ? error.message : 'Unknown error',
+      );
+    }
   }
 
   /**
@@ -140,7 +152,7 @@ export class AuthController {
    * Generates JWT token for auto-login after registration.
    *
    * @param registerDto - Registration data including email, password, and name
-   * @returns JWT token and created prosumer information (password excluded)
+   * @returns ResponseFormatter with JWT token and created prosumer information
    *
    * @example
    * POST /auth/register
@@ -151,11 +163,22 @@ export class AuthController {
    * }
    *
    * Response: {
-   *   "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-   *   "prosumer": {
-   *     "prosumerId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-   *     "email": "john.doe@example.com",
-   *     "name": "John Doe"
+   *   "success": true,
+   *   "message": "User registered successfully",
+   *   "data": {
+   *     "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+   *     "tokenType": "Bearer",
+   *     "expiresIn": 3600,
+   *     "prosumer": {
+   *       "prosumerId": "prosumer_...",
+   *       "email": "john.doe@example.com",
+   *       "name": "John Doe",
+   *       "createdAt": "2025-11-01T10:30:00.000Z",
+   *       "updatedAt": "2025-11-01T10:30:00.000Z"
+   *     }
+   *   },
+   *   "metadata": {
+   *     "timestamp": "2025-11-01T10:30:00.000Z"
    *   }
    * }
    *
@@ -195,26 +218,34 @@ export class AuthController {
   })
   @ApiBadRequestResponse({
     description: 'Email already registered or validation failed',
-    schema: {
-      example: {
-        message: 'Email already registered',
-        error: 'Bad Request',
-        statusCode: 400,
-      },
-    },
   })
-  async register(@Body() registerDto: RegisterDto) {
-    // Register prosumer (returns ValidatedProsumer)
-    const validatedProsumer = await this.authService.register(registerDto);
+  async register(
+    @Body() registerDto: RegisterDto,
+  ): Promise<
+    | ReturnType<typeof ResponseFormatter.success>
+    | ReturnType<typeof ResponseFormatter.error>
+  > {
+    try {
+      // Register prosumer (returns ValidatedProsumer)
+      const validatedProsumer = await this.authService.register(registerDto);
 
-    // Generate JWT token for auto-login (same pattern as login endpoint)
-    const loginInfo = await this.authService.generateTokens(validatedProsumer);
+      // Generate JWT token for auto-login (same pattern as login endpoint)
+      const loginInfo = this.authService.generateTokens(validatedProsumer);
 
-    return {
-      success: true,
-      message: 'User registered successfully',
-      loginInfo: { ...loginInfo },
-    };
+      return ResponseFormatter.success(
+        {
+          ...loginInfo,
+          prosumer: validatedProsumer,
+        },
+        'User registered successfully',
+      );
+    } catch (error) {
+      this.logger.error('Registration error:', error);
+      return ResponseFormatter.error(
+        'Registration failed',
+        error instanceof Error ? error.message : 'Unknown error',
+      );
+    }
   }
 
   /**
@@ -228,40 +259,47 @@ export class AuthController {
    * Requires valid JWT token in Authorization header.
    *
    * @param req - Request object containing authenticated user from JWT
-   * @returns Complete user profile with wallets and smart meters
+   * @returns ResponseFormatter with complete user profile
    *
    * @example
    * GET /auth/profile
    * Headers: { "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
    *
    * Response: {
-   *   "profile": {
-   *     "prosumerId": "prosumer_1752482825660_0t9odlzv4",
-   *     "email": "mnyasin26@energy.com",
-   *     "name": "Yasin",
-   *     "primaryWalletAddress": "0xec7CeB00FC447E2003DE6874b0E1eCD895250230",
-   *     "createdAt": "2025-07-14T08:47:05.660Z",
-   *     "updatedAt": "2025-07-15T11:40:38.234Z"
+   *   "success": true,
+   *   "message": "Profile retrieved successfully",
+   *   "data": {
+   *     "profile": {
+   *       "prosumerId": "prosumer_...",
+   *       "email": "john.doe@example.com",
+   *       "name": "John Doe",
+   *       "primaryWalletAddress": "0xabcd...",
+   *       "createdAt": "2025-11-01T10:30:00.000Z",
+   *       "updatedAt": "2025-11-01T10:30:00.000Z"
+   *     },
+   *     "wallets": [
+   *       {
+   *         "walletAddress": "0xabcd...",
+   *         "walletName": "John Doe's Wallet",
+   *         "isActive": true,
+   *         "createdAt": "2025-11-01T10:30:00.000Z"
+   *       }
+   *     ],
+   *     "meters": [
+   *       {
+   *         "meterId": "METER001",
+   *         "location": "Bandung, Indonesia",
+   *         "status": "ACTIVE",
+   *         "createdAt": "2025-11-01T10:30:00.000Z",
+   *         "lastSeen": "2025-11-01T10:30:00.000Z",
+   *         "deviceModel": "Generic Smart Meter",
+   *         "deviceVersion": "1.0.0"
+   *       }
+   *     ]
    *   },
-   *   "wallets": [
-   *     {
-   *       "walletAddress": "0xec7CeB00FC447E2003DE6874b0E1eCD895250230",
-   *       "walletName": "Muhamad Nur Yasin Amadudin's Wallet",
-   *       "isActive": true,
-   *       "createdAt": "2025-07-14T08:47:05.769Z"
-   *     }
-   *   ],
-   *   "meters": [
-   *     {
-   *       "meterId": "METER001",
-   *       "location": "Sukasari, Bandung",
-   *       "status": "ACTIVE",
-   *       "createdAt": "2025-07-14T08:47:29.386Z",
-   *       "lastSeen": "2025-07-29T07:58:55.473Z",
-   *       "deviceModel": "Generic Smart Meter",
-   *       "deviceVersion": "1.0.0"
-   *     }
-   *   ]
+   *   "metadata": {
+   *     "timestamp": "2025-11-01T10:30:00.000Z"
+   *   }
    * }
    *
    * @throws {UnauthorizedException} Invalid or expired JWT token
@@ -282,16 +320,21 @@ export class AuthController {
   })
   @ApiUnauthorizedResponse({
     description: 'Invalid or missing JWT token',
-    schema: {
-      example: {
-        message: '...',
-        error: 'Unauthorized',
-        statusCode: 401,
-      },
-    },
   })
   async getProfile(@Request() req: { user: { prosumerId: string } }) {
-    return this.authService.getProfile(req.user.prosumerId);
+    try {
+      const profile = await this.authService.getProfile(req.user.prosumerId);
+      return ResponseFormatter.success(
+        profile,
+        'Profile retrieved successfully',
+      );
+    } catch (error) {
+      this.logger.error('Get profile error:', error);
+      return ResponseFormatter.error(
+        'Failed to retrieve profile',
+        error instanceof Error ? error.message : 'Unknown error',
+      );
+    }
   }
 
   /**
@@ -301,15 +344,21 @@ export class AuthController {
    * Only affects the current device/session. Other active sessions remain valid.
    *
    * @param req - Request object containing authenticated user and JWT token
-   * @returns Success message confirming logout
+   * @returns ResponseFormatter with success confirmation
    *
    * @example
    * POST /auth/logout
    * Headers: { "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
    *
    * Response: {
-   *   "message": "Logout successful",
-   *   "timestamp": "2025-10-23T07:15:00.000Z"
+   *   "success": true,
+   *   "message": "Logged out successfully",
+   *   "data": {
+   *     "message": "Logout successful"
+   *   },
+   *   "metadata": {
+   *     "timestamp": "2025-11-01T10:30:00.000Z"
+   *   }
    * }
    *
    * @remarks
@@ -330,28 +379,28 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'Logout successful - Token invalidated',
-    schema: {
-      example: {
-        message: 'Logged out successfully',
-        timestamp: '2025-10-23T07:15:00.000Z',
-      },
-    },
   })
   @ApiUnauthorizedResponse({
     description: 'Invalid or expired JWT token',
-    schema: {
-      example: {
-        message: '...',
-        error: 'Unauthorized',
-        statusCode: 401,
-      },
-    },
   })
   async logout(
     @Request() req: ExpressRequest & { user: { prosumerId: string } },
   ) {
-    // Token akan diambil otomatis dari Authorization header
-    return await this.authService.logout(req.user.prosumerId, undefined, req);
+    try {
+      // Token will be extracted automatically from Authorization header
+      const result = await this.authService.logout(
+        req.user.prosumerId,
+        undefined,
+        req,
+      );
+      return ResponseFormatter.success(result, 'Logged out successfully');
+    } catch (error) {
+      this.logger.error('Logout error:', error);
+      return ResponseFormatter.error(
+        'Logout failed',
+        error instanceof Error ? error.message : 'Unknown error',
+      );
+    }
   }
 
   /**
@@ -361,16 +410,22 @@ export class AuthController {
    * This is useful for security purposes when user suspects unauthorized access.
    *
    * @param req - Request object containing authenticated user
-   * @returns Success message confirming all sessions logged out
+   * @returns ResponseFormatter with success confirmation
    *
    * @example
    * POST /auth/logout-all
    * Headers: { "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
    *
    * Response: {
-   *   "message": "All sessions logged out successfully",
-   *   "devicesLoggedOut": 5,
-   *   "timestamp": "2025-10-23T07:15:00.000Z"
+   *   "success": true,
+   *   "message": "Logged out from all devices successfully",
+   *   "data": {
+   *     "message": "All sessions logged out successfully",
+   *     "devicesLoggedOut": 5
+   *   },
+   *   "metadata": {
+   *     "timestamp": "2025-11-01T10:30:00.000Z"
+   *   }
    * }
    *
    * @remarks
@@ -393,26 +448,25 @@ export class AuthController {
     status: 200,
     description:
       'All sessions logged out successfully - All tokens invalidated',
-    schema: {
-      example: {
-        message: 'Logged out from all devices successfully',
-        timestamp: '2025-07-19T12:00:00.000Z',
-      },
-    },
   })
   @ApiUnauthorizedResponse({
     description: 'Invalid or expired JWT token',
-    schema: {
-      example: {
-        message: '...',
-        error: 'Unauthorized',
-        statusCode: 401,
-      },
-    },
   })
   async logoutAll(
     @Request() req: ExpressRequest & { user: { prosumerId: string } },
   ) {
-    return await this.authService.logoutAll(req.user.prosumerId, req);
+    try {
+      const result = await this.authService.logoutAll(req.user.prosumerId, req);
+      return ResponseFormatter.success(
+        result,
+        'Logged out from all devices successfully',
+      );
+    } catch (error) {
+      this.logger.error('Logout all error:', error);
+      return ResponseFormatter.error(
+        'Logout all failed',
+        error instanceof Error ? error.message : 'Unknown error',
+      );
+    }
   }
 }

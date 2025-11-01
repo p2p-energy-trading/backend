@@ -77,10 +77,13 @@ async function bootstrap() {
         'JWT-auth',
       )
       .addTag('Authentication', 'User authentication and authorization')
-      .addTag('Dashboard', 'Analytics and monitoring')
-      .addTag('Device', 'IoT device management and control')
+      .addTag(
+        'Blockchain',
+        'Ethereum blockchain interactions and smart contracts',
+      )
       .addTag('Energy', 'Energy readings and settlement management')
       .addTag('Smart Meters', 'Smart meter device management')
+      .addTag('Statistics', 'Energy and trading statistics')
       .addTag('System', 'Health checks and system status')
       .addTag('Trading', 'P2P energy trading operations')
       .addTag('Wallet', 'Cryptocurrency wallet management')

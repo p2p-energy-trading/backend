@@ -23,6 +23,8 @@ import { ResponseFormatter } from '../../common/response-formatter';
 import {
   ConvertIDRSDto,
   ConvertIDRSResponseDto,
+  NetworkInfoResponseDto,
+  ContractAddressesResponseDto,
 } from '../../common/dto/blockchain.dto';
 
 /**
@@ -166,23 +168,7 @@ export class BlockchainController {
   @ApiResponse({
     status: 200,
     description: 'Network information retrieved successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean', example: true },
-        data: {
-          type: 'object',
-          properties: {
-            rpcUrl: { type: 'string', example: 'http://localhost:8545' },
-            networkName: {
-              type: 'string',
-              example: 'Private Ethereum Network',
-            },
-            connected: { type: 'boolean', example: true },
-          },
-        },
-      },
-    },
+    type: NetworkInfoResponseDto,
   })
   @ApiResponse({
     status: 401,
@@ -212,33 +198,7 @@ export class BlockchainController {
   @ApiResponse({
     status: 200,
     description: 'Contract addresses retrieved successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean', example: true },
-        data: {
-          type: 'object',
-          properties: {
-            etkToken: {
-              type: 'string',
-              example: '0x1234567890123456789012345678901234567890',
-            },
-            idrsToken: {
-              type: 'string',
-              example: '0x2345678901234567890123456789012345678901',
-            },
-            market: {
-              type: 'string',
-              example: '0x3456789012345678901234567890123456789012',
-            },
-            energyConverter: {
-              type: 'string',
-              example: '0x4567890123456789012345678901234567890123',
-            },
-          },
-        },
-      },
-    },
+    type: ContractAddressesResponseDto,
   })
   @ApiResponse({
     status: 401,

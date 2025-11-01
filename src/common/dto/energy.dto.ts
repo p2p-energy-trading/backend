@@ -1,10 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsDateString,
-} from 'class-validator';
 
 export class EnergyReadingDto {
   @ApiProperty({
@@ -95,6 +89,85 @@ export class EnergyStatsDto {
   netEnergy: string;
 }
 
+/**
+ * Settlement Estimate Data (Inner)
+ * This represents the actual settlement estimate data
+ */
+export class SettlementEstimateDataDto {
+  @ApiProperty({
+    description: 'Smart meter ID',
+    example: 'SM001',
+  })
+  meterId: string;
+
+  @ApiProperty({
+    description: 'Estimated ETK tokens to be minted/burned',
+    example: '1.956',
+  })
+  estimatedEtk: string;
+
+  @ApiProperty({
+    description: 'Net energy in kWh',
+    example: '1.956',
+  })
+  netEnergyKwh: string;
+
+  @ApiProperty({
+    description: 'Energy accumulated since last settlement',
+    example: {
+      export: '1.960',
+      import: '0.004',
+    },
+  })
+  settlementEnergy: {
+    export: string;
+    import: string;
+  };
+
+  @ApiProperty({
+    description: 'Time until next settlement',
+    example: '4 minutes',
+  })
+  nextSettlementIn: string;
+}
+
+/**
+ * Settlement Estimate Response (Wrapper)
+ * Uses ResponseFormatter pattern
+ */
+export class SettlementEstimateResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Settlement estimate retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Settlement estimate data',
+    type: SettlementEstimateDataDto,
+  })
+  data: SettlementEstimateDataDto;
+
+  @ApiProperty({
+    description: 'Response metadata',
+    example: {
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    timestamp: string;
+  };
+}
+
+/**
+ * @deprecated Use SettlementEstimateDataDto for data or SettlementEstimateResponseDto for responses
+ */
 export class SettlementEstimateDto {
   @ApiProperty({
     description: 'Estimated ETK tokens to be minted/burned',
@@ -171,4 +244,623 @@ export class SettlementRecordDto {
     enum: ['PENDING', 'SUCCESS', 'FAILED'],
   })
   status: string;
+}
+
+/**
+ * Generic Energy Response Wrapper
+ * For single data responses (stats, estimates, etc.)
+ */
+export class EnergyResponseDto<T = any> {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Data retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Response data',
+  })
+  data: T;
+
+  @ApiProperty({
+    description: 'Response metadata',
+    example: {
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    timestamp: string;
+  };
+}
+
+/**
+ * Paginated Energy Response Wrapper
+ * For list/history endpoints
+ */
+export class EnergyListResponseDto<T = any> {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Data retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Array of data items',
+    isArray: true,
+  })
+  data: T[];
+
+  @ApiProperty({
+    description: 'Pagination metadata',
+    example: {
+      total: 100,
+      count: 10,
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    total?: number;
+    count: number;
+    timestamp: string;
+  };
+}
+
+// ==================== SPECIFIC RESPONSE WRAPPERS ====================
+
+/**
+ * Settlement Record Single Response
+ */
+export class SettlementRecordResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Settlement details retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Settlement record data',
+    type: SettlementRecordDto,
+  })
+  data: SettlementRecordDto;
+
+  @ApiProperty({
+    description: 'Response metadata',
+    example: {
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    timestamp: string;
+  };
+}
+
+/**
+ * Settlement History List Response
+ */
+export class SettlementHistoryResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Settlement history retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Array of settlement records',
+    type: [SettlementRecordDto],
+  })
+  data: SettlementRecordDto[];
+
+  @ApiProperty({
+    description: 'Metadata with scope and count',
+    example: {
+      scope: 'own',
+      meterId: 'SM001',
+      count: 50,
+      limit: 50,
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    scope: string;
+    meterId: string;
+    count: number;
+    limit: number;
+    timestamp: string;
+  };
+}
+
+/**
+ * Hourly Energy Data Point
+ */
+export class HourlyEnergyDto {
+  @ApiProperty({
+    description: 'Hour timestamp',
+    example: '2025-10-23T10:00:00.000Z',
+  })
+  hour: string;
+
+  @ApiProperty({
+    description: 'Energy exported in kWh',
+    example: 12.5,
+  })
+  export: number;
+
+  @ApiProperty({
+    description: 'Energy imported in kWh',
+    example: 5.3,
+  })
+  import: number;
+
+  @ApiProperty({
+    description: 'Net energy in kWh',
+    example: 7.2,
+  })
+  net: number;
+
+  @ApiProperty({
+    description: 'Energy generated in kWh',
+    example: 15.0,
+  })
+  generation: number;
+
+  @ApiProperty({
+    description: 'Energy consumed in kWh',
+    example: 7.8,
+  })
+  consumption: number;
+}
+
+/**
+ * Hourly Energy History Response
+ */
+export class HourlyEnergyHistoryResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Hourly energy history retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Array of hourly energy data',
+    type: [HourlyEnergyDto],
+  })
+  data: HourlyEnergyDto[];
+
+  @ApiProperty({
+    description: 'Metadata with hours and count',
+    example: {
+      hours: 24,
+      meterId: 'all',
+      count: 24,
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    hours: number;
+    meterId: string;
+    count: number;
+    timestamp: string;
+  };
+}
+
+/**
+ * Energy Chart Data Point
+ */
+export class EnergyChartDataDto {
+  @ApiProperty({
+    description: 'Timestamp',
+    example: '2025-10-23T10:00:00.000Z',
+  })
+  timestamp: string;
+
+  @ApiProperty({
+    description: 'Energy generation in kWh',
+    example: 12.5,
+  })
+  generation: number;
+
+  @ApiProperty({
+    description: 'Energy consumption in kWh',
+    example: 8.3,
+  })
+  consumption: number;
+
+  @ApiProperty({
+    description: 'Energy exported in kWh',
+    example: 4.2,
+  })
+  export: number;
+
+  @ApiProperty({
+    description: 'Energy imported in kWh',
+    example: 0.5,
+  })
+  import: number;
+
+  @ApiProperty({
+    description: 'Battery energy in kWh',
+    example: 2.1,
+  })
+  battery: number;
+
+  @ApiProperty({
+    description: 'Net energy in kWh',
+    example: 4.2,
+  })
+  net: number;
+}
+
+/**
+ * Energy Chart Response
+ */
+export class EnergyChartResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Energy chart data retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Array of chart data points',
+    type: [EnergyChartDataDto],
+  })
+  data: EnergyChartDataDto[];
+
+  @ApiProperty({
+    description: 'Metadata with count',
+    example: {
+      count: 168,
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    count: number;
+    timestamp: string;
+  };
+}
+
+/**
+ * Real-time Energy Time Series Data
+ */
+export class RealTimeEnergyTimeSeriesDto {
+  @ApiProperty({
+    description: 'Smart meter ID',
+    example: 'SM001',
+  })
+  meterId: string;
+
+  @ApiProperty({
+    description: 'Timestamp',
+    example: '2025-10-23T12:00:00.000Z',
+  })
+  timestamp: string;
+
+  @ApiProperty({
+    description: 'Solar power in kW',
+    example: 3.5,
+  })
+  solar: number;
+
+  @ApiProperty({
+    description: 'Consumption power in kW',
+    example: 2.1,
+  })
+  consumption: number;
+
+  @ApiProperty({
+    description: 'Battery power in kW',
+    example: 0.5,
+  })
+  battery: number;
+
+  @ApiProperty({
+    description: 'Grid export power in kW',
+    example: 1.4,
+  })
+  gridExport: number;
+
+  @ApiProperty({
+    description: 'Grid import power in kW',
+    example: 0.0,
+  })
+  gridImport: number;
+
+  @ApiProperty({
+    description: 'Net flow in kW',
+    example: 1.4,
+  })
+  netFlow: number;
+}
+
+/**
+ * Real-time Energy Aggregated Data
+ */
+export class RealTimeEnergyAggregatedDto {
+  @ApiProperty({
+    description: 'Total solar power in kW',
+    example: 10.5,
+  })
+  totalSolar: number;
+
+  @ApiProperty({
+    description: 'Total consumption power in kW',
+    example: 6.3,
+  })
+  totalConsumption: number;
+
+  @ApiProperty({
+    description: 'Total battery power in kW',
+    example: 1.5,
+  })
+  totalBattery: number;
+
+  @ApiProperty({
+    description: 'Total grid export power in kW',
+    example: 4.2,
+  })
+  totalGridExport: number;
+
+  @ApiProperty({
+    description: 'Total grid import power in kW',
+    example: 0.0,
+  })
+  totalGridImport: number;
+
+  @ApiProperty({
+    description: 'Total net flow in kW',
+    example: 4.2,
+  })
+  totalNetFlow: number;
+}
+
+/**
+ * Real-time Energy Data Container
+ */
+export class RealTimeEnergyDataDto {
+  @ApiProperty({
+    description: 'Time series data per meter',
+    type: [RealTimeEnergyTimeSeriesDto],
+  })
+  timeSeries: RealTimeEnergyTimeSeriesDto[];
+
+  @ApiProperty({
+    description: 'Aggregated totals',
+    type: RealTimeEnergyAggregatedDto,
+  })
+  aggregated: RealTimeEnergyAggregatedDto;
+}
+
+/**
+ * Real-time Energy Response
+ */
+export class RealTimeEnergyResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Real-time energy data retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Real-time energy data',
+    type: RealTimeEnergyDataDto,
+  })
+  data: RealTimeEnergyDataDto;
+
+  @ApiProperty({
+    description: 'Response metadata',
+    example: {
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    timestamp: string;
+  };
+}
+
+/**
+ * Energy Summary Generation Data
+ */
+export class EnergySummaryGenerationDto {
+  @ApiProperty({
+    description: 'Generation today in kWh',
+    example: 45.5,
+  })
+  today: number;
+
+  @ApiProperty({
+    description: 'Total generation in kWh',
+    example: 1250.8,
+  })
+  total: number;
+
+  @ApiProperty({
+    description: 'Grid export in kWh',
+    example: 12.3,
+  })
+  gridExport: number;
+}
+
+/**
+ * Energy Summary Consumption Data
+ */
+export class EnergySummaryConsumptionDto {
+  @ApiProperty({
+    description: 'Consumption today in kWh',
+    example: 35.2,
+  })
+  today: number;
+
+  @ApiProperty({
+    description: 'Total consumption in kWh',
+    example: 980.5,
+  })
+  total: number;
+
+  @ApiProperty({
+    description: 'Grid import in kWh',
+    example: 5.8,
+  })
+  gridImport: number;
+}
+
+/**
+ * Energy Summary Net Data
+ */
+export class EnergySummaryNetDto {
+  @ApiProperty({
+    description: 'Net energy in kWh',
+    example: 270.3,
+  })
+  energy: number;
+
+  @ApiProperty({
+    description: 'Net grid energy in kWh',
+    example: 6.5,
+  })
+  gridEnergy: number;
+}
+
+/**
+ * Energy Summary Settlements Data
+ */
+export class EnergySummarySettlementsDto {
+  @ApiProperty({
+    description: 'Total settlements count',
+    example: 150,
+  })
+  total: number;
+
+  @ApiProperty({
+    description: 'Settlements today count',
+    example: 12,
+  })
+  today: number;
+
+  @ApiProperty({
+    description: 'ETK minted',
+    example: 1250.8,
+  })
+  etkMinted: number;
+
+  @ApiProperty({
+    description: 'ETK burned',
+    example: 980.5,
+  })
+  etkBurned: number;
+}
+
+/**
+ * Energy Summary Data Container
+ */
+export class EnergySummaryDataDto {
+  @ApiProperty({
+    description: 'Summary period',
+    example: 'daily',
+  })
+  period: string;
+
+  @ApiProperty({
+    description: 'Generation data',
+    type: EnergySummaryGenerationDto,
+  })
+  generation: EnergySummaryGenerationDto;
+
+  @ApiProperty({
+    description: 'Consumption data',
+    type: EnergySummaryConsumptionDto,
+  })
+  consumption: EnergySummaryConsumptionDto;
+
+  @ApiProperty({
+    description: 'Net energy data',
+    type: EnergySummaryNetDto,
+  })
+  net: EnergySummaryNetDto;
+
+  @ApiProperty({
+    description: 'Chart data array',
+    type: [Object],
+  })
+  chartData: any[];
+
+  @ApiProperty({
+    description: 'Settlements data',
+    type: EnergySummarySettlementsDto,
+  })
+  settlements: EnergySummarySettlementsDto;
+}
+
+/**
+ * Energy Summary Response
+ */
+export class EnergySummaryResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Energy summary retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Energy summary data',
+    type: EnergySummaryDataDto,
+  })
+  data: EnergySummaryDataDto;
+
+  @ApiProperty({
+    description: 'Response metadata',
+    example: {
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    timestamp: string;
+  };
 }

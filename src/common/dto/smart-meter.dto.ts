@@ -68,7 +68,10 @@ export class CreateSmartMeterDto {
   capabilities?: any;
 }
 
-export class SmartMeterResponseDto {
+/**
+ * Smart meter data (inside ResponseFormatter wrapper)
+ */
+export class SmartMeterDataDto {
   @ApiProperty({
     description: 'Smart meter ID',
     example: 'SM001',
@@ -115,14 +118,48 @@ export class SmartMeterResponseDto {
   @ApiProperty({
     description: 'Last seen timestamp',
     example: '2025-10-23T10:30:00.000Z',
+    nullable: true,
   })
-  lastSeen: string;
+  lastSeen: string | null;
 
   @ApiProperty({
     description: 'Creation timestamp',
     example: '2025-10-22T08:00:00.000Z',
   })
   createdAt: string;
+}
+
+/**
+ * Smart meter response with ResponseFormatter wrapper
+ */
+export class SmartMeterResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Smart meter created successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Smart meter data',
+    type: SmartMeterDataDto,
+  })
+  data: SmartMeterDataDto;
+
+  @ApiProperty({
+    description: 'Response metadata',
+    example: {
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    timestamp: string;
+  };
 }
 
 export class LinkSmartMeterDto {

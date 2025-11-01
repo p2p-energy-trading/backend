@@ -34,8 +34,13 @@ import {
   CreateWalletResponseDto,
   IdrsConversionDto,
   IdrsConversionResponseDto,
-  WalletBalanceDto,
-  WalletInfoDto,
+  WalletInfoResponseDto,
+  WalletListResponseDto,
+  WalletBalanceResponseDto,
+  IdrsConversionListResponseDto,
+  WalletStatusResponseDto,
+  IdrsTransactionHistoryResponseDto,
+  TokenMintingHistoryResponseDto,
 } from '../../common/dto/wallet.dto';
 // import { create } from 'domain';
 
@@ -45,7 +50,7 @@ interface User extends Request {
   };
 }
 
-@ApiTags('Wallets')
+@ApiTags('Wallet')
 @ApiBearerAuth('JWT-auth')
 @Controller('wallet')
 @UseGuards(JwtAuthGuard)
@@ -207,7 +212,7 @@ export class WalletController {
   @ApiResponse({
     status: 200,
     description: 'Wallets retrieved successfully',
-    type: [WalletInfoDto],
+    type: WalletListResponseDto,
   })
   async getWallets(@Request() req: User) {
     const prosumerId = req.user.prosumerId;
@@ -240,7 +245,7 @@ export class WalletController {
   @ApiResponse({
     status: 200,
     description: 'Wallet details retrieved successfully',
-    type: WalletInfoDto,
+    type: WalletInfoResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -499,7 +504,7 @@ export class WalletController {
   @ApiResponse({
     status: 200,
     description: 'Conversions retrieved successfully',
-    type: [IdrsConversionResponseDto],
+    type: IdrsConversionListResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -544,6 +549,7 @@ export class WalletController {
   @ApiResponse({
     status: 200,
     description: 'Wallet activated successfully',
+    type: WalletStatusResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -585,7 +591,7 @@ export class WalletController {
   // Change Settlement Primary Wallet
   // This endpoint allows a prosumer to change their primary wallet for settlement purposes.
   // It verifies ownership of the wallet and updates the primary wallet in the prosumer's profile
-  @Post(':walletAddress/primary')
+  @Post(':walletAddress/set-primary')
   @ApiOperation({
     summary: 'Set as primary wallet',
     description: 'Set a wallet as the primary wallet for the user',
@@ -598,6 +604,7 @@ export class WalletController {
   @ApiResponse({
     status: 200,
     description: 'Primary wallet updated successfully',
+    type: WalletStatusResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -641,6 +648,7 @@ export class WalletController {
   @ApiResponse({
     status: 200,
     description: 'Wallet deactivated successfully',
+    type: WalletStatusResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -692,7 +700,7 @@ export class WalletController {
   @ApiResponse({
     status: 200,
     description: 'Balances retrieved successfully',
-    type: WalletBalanceDto,
+    type: WalletBalanceResponseDto,
   })
   @ApiResponse({
     status: 404,
@@ -760,29 +768,7 @@ export class WalletController {
   @ApiResponse({
     status: 200,
     description: 'Transaction history retrieved successfully',
-    schema: {
-      properties: {
-        success: { type: 'boolean', example: true },
-        data: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              logId: { type: 'string', example: '123' },
-              transactionType: { type: 'string', example: 'IDRS_CONVERSION' },
-              description: { type: 'string', example: 'ON_RAMP conversion' },
-              amountPrimary: { type: 'string', example: '100000' },
-              currencyPrimary: { type: 'string', example: 'IDRS' },
-              blockchainTxHash: { type: 'string', example: '0xabcd...' },
-              transactionTimestamp: {
-                type: 'string',
-                example: '2025-10-23T10:30:00.000Z',
-              },
-            },
-          },
-        },
-      },
-    },
+    type: IdrsTransactionHistoryResponseDto,
   })
   async getIdrsTransactionHistory(
     @Request() req: User,
@@ -907,39 +893,7 @@ export class WalletController {
   @ApiResponse({
     status: 200,
     description: 'Token minting history retrieved successfully',
-    schema: {
-      properties: {
-        success: { type: 'boolean', example: true },
-        data: {
-          type: 'object',
-          properties: {
-            mints: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  logId: { type: 'string', example: '456' },
-                  transactionType: { type: 'string', example: 'ETK_MINT' },
-                  amountPrimary: { type: 'string', example: '10.5' },
-                  currencyPrimary: { type: 'string', example: 'ETK' },
-                  blockchainTxHash: { type: 'string', example: '0x1234...' },
-                  transactionTimestamp: {
-                    type: 'string',
-                    example: '2025-10-23T10:00:00.000Z',
-                  },
-                },
-              },
-            },
-            burns: {
-              type: 'array',
-              items: {
-                type: 'object',
-              },
-            },
-          },
-        },
-      },
-    },
+    type: TokenMintingHistoryResponseDto,
   })
   async getTokenMintingHistory(
     @Request() req: User,

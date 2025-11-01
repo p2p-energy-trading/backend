@@ -41,9 +41,9 @@ export class ConvertIDRSDto {
 }
 
 /**
- * Response DTO for successful IDRS conversion
+ * IDRS conversion data (inside ResponseFormatter wrapper)
  */
-export class ConvertIDRSResponseDto {
+export class ConvertIDRSDataDto {
   @ApiProperty({
     description: 'Conversion direction',
     example: 'on-ramp',
@@ -74,4 +74,157 @@ export class ConvertIDRSResponseDto {
     example: '2024-01-01T12:00:00.000Z',
   })
   timestamp: string;
+}
+
+/**
+ * Response DTO for successful IDRS conversion with ResponseFormatter wrapper
+ */
+export class ConvertIDRSResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'IDRS conversion successful',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Conversion data',
+    type: ConvertIDRSDataDto,
+  })
+  data: ConvertIDRSDataDto;
+
+  @ApiProperty({
+    description: 'Response metadata',
+    example: {
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    timestamp: string;
+  };
+}
+
+// ==================== NETWORK & CONTRACTS ====================
+
+/**
+ * Network Information Data
+ */
+export class NetworkInfoDataDto {
+  @ApiProperty({
+    description: 'RPC URL',
+    example: 'http://localhost:8545',
+  })
+  rpcUrl: string;
+
+  @ApiProperty({
+    description: 'Network name',
+    example: 'Private Ethereum Network',
+  })
+  networkName: string;
+
+  @ApiProperty({
+    description: 'Connection status',
+    example: true,
+  })
+  connected: boolean;
+}
+
+/**
+ * Network Information Response
+ */
+export class NetworkInfoResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Network information retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Network information',
+    type: NetworkInfoDataDto,
+  })
+  data: NetworkInfoDataDto;
+
+  @ApiProperty({
+    description: 'Response metadata',
+    example: {
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    timestamp: string;
+  };
+}
+
+/**
+ * Contract Addresses Data
+ */
+export class ContractAddressesDataDto {
+  @ApiProperty({
+    description: 'ETK Token contract address',
+    example: '0x1234567890123456789012345678901234567890',
+  })
+  etkToken: string | null;
+
+  @ApiProperty({
+    description: 'IDRS Token contract address',
+    example: '0x2345678901234567890123456789012345678901',
+  })
+  idrsToken: string | null;
+
+  @ApiProperty({
+    description: 'Market contract address',
+    example: '0x3456789012345678901234567890123456789012',
+  })
+  market: string | null;
+
+  @ApiProperty({
+    description: 'Energy Converter contract address',
+    example: '0x4567890123456789012345678901234567890123',
+  })
+  energyConverter: string | null;
+}
+
+/**
+ * Contract Addresses Response
+ */
+export class ContractAddressesResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Contract addresses retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Contract addresses',
+    type: ContractAddressesDataDto,
+  })
+  data: ContractAddressesDataDto;
+
+  @ApiProperty({
+    description: 'Response metadata',
+    example: {
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    timestamp: string;
+  };
 }

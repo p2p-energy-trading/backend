@@ -37,9 +37,18 @@ import {
   PlaceOrderDto,
   PlaceOrderResponseDto,
   CancelOrderDto,
-  OrderResponseDto,
-  TradeResponseDto,
-  OrderBookSummaryDto,
+  CancelOrderResponseDto,
+  OrdersListResponseDto,
+  OrderBookDetailedResponseDto,
+  OrderBookSummaryResponseDto,
+  TradesListResponseDto,
+  MarketStatsResponseDto,
+  TokenBalanceResponseDto,
+  MarketSupplyResponseDto,
+  MarketLiquidityResponseDto,
+  PriceHistoryResponseDto,
+  CandlesResponseDto,
+  TradingPerformanceResponseDto,
 } from '../../common/dto/trading.dto';
 
 interface User extends Request {
@@ -208,7 +217,7 @@ export class TradingController {
   @ApiResponse({
     status: 200,
     description: 'Orders retrieved successfully',
-    type: [OrderResponseDto],
+    type: OrdersListResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -314,24 +323,7 @@ export class TradingController {
   @ApiResponse({
     status: 200,
     description: 'Order book retrieved successfully',
-    schema: {
-      properties: {
-        success: { type: 'boolean', example: true },
-        data: {
-          type: 'object',
-          properties: {
-            buyOrders: {
-              type: 'array',
-              items: { $ref: '#/components/schemas/OrderResponseDto' },
-            },
-            sellOrders: {
-              type: 'array',
-              items: { $ref: '#/components/schemas/OrderResponseDto' },
-            },
-          },
-        },
-      },
-    },
+    type: OrderBookDetailedResponseDto,
   })
   async getOrderBookDetailed() {
     const allOrders =
@@ -366,36 +358,7 @@ export class TradingController {
   @ApiResponse({
     status: 200,
     description: 'Aggregated order book retrieved successfully',
-    schema: {
-      properties: {
-        success: { type: 'boolean', example: true },
-        data: {
-          type: 'object',
-          properties: {
-            buyOrders: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  price: { type: 'string', example: '1450' },
-                  quantity: { type: 'string', example: '250.5' },
-                },
-              },
-            },
-            sellOrders: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  price: { type: 'string', example: '1550' },
-                  quantity: { type: 'string', example: '180.3' },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
+    type: OrderBookSummaryResponseDto,
   })
   async getOrderBook() {
     const allOrders =
@@ -505,7 +468,7 @@ export class TradingController {
   @ApiResponse({
     status: 200,
     description: 'Trades retrieved successfully',
-    type: [TradeResponseDto],
+    type: TradesListResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -613,28 +576,7 @@ export class TradingController {
   @ApiResponse({
     status: 200,
     description: 'Market statistics retrieved successfully',
-    schema: {
-      properties: {
-        success: { type: 'boolean', example: true },
-        data: {
-          type: 'object',
-          properties: {
-            lastPrice: { type: 'number', example: 1500 },
-            currentMarketPrice: { type: 'string', example: '1500' },
-            volume24h: { type: 'number', example: 1250.5 },
-            averagePrice24h: { type: 'number', example: 1485.3 },
-            tradesCount24h: { type: 'number', example: 45 },
-            marketLiquidity: {
-              type: 'object',
-              properties: {
-                etkBalance: { type: 'string', example: '5000' },
-                idrsBalance: { type: 'string', example: '7500000' },
-              },
-            },
-          },
-        },
-      },
-    },
+    type: MarketStatsResponseDto,
   })
   async getMarketStats() {
     // Get recent trades for market statistics
@@ -694,16 +636,7 @@ export class TradingController {
   @ApiResponse({
     status: 200,
     description: 'Order cancelled successfully',
-    schema: {
-      properties: {
-        success: { type: 'boolean', example: true },
-        transactionHash: {
-          type: 'string',
-          example: '0xabcd1234567890abcdef...',
-        },
-        message: { type: 'string', example: 'Order cancelled successfully' },
-      },
-    },
+    type: CancelOrderResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -772,18 +705,7 @@ export class TradingController {
   @ApiResponse({
     status: 200,
     description: 'Balances retrieved successfully',
-    schema: {
-      properties: {
-        success: { type: 'boolean', example: true },
-        data: {
-          type: 'object',
-          properties: {
-            etk: { type: 'string', example: '150.5' },
-            idrs: { type: 'string', example: '500000' },
-          },
-        },
-      },
-    },
+    type: TokenBalanceResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -815,11 +737,7 @@ export class TradingController {
   @ApiResponse({
     status: 200,
     description: 'ETK supply retrieved successfully',
-    schema: {
-      properties: {
-        etkSupply: { type: 'string', example: '50000.5' },
-      },
-    },
+    type: MarketSupplyResponseDto,
   })
   async getETKSupplyInMarket() {
     try {
@@ -847,11 +765,7 @@ export class TradingController {
   @ApiResponse({
     status: 200,
     description: 'IDRS supply retrieved successfully',
-    schema: {
-      properties: {
-        idrsSupply: { type: 'string', example: '75000000' },
-      },
-    },
+    type: MarketSupplyResponseDto,
   })
   async getIDRSSupplyInMarket() {
     try {
@@ -879,12 +793,7 @@ export class TradingController {
   @ApiResponse({
     status: 200,
     description: 'Market liquidity retrieved successfully',
-    schema: {
-      properties: {
-        etkBalance: { type: 'string', example: '5000' },
-        idrsBalance: { type: 'string', example: '7500000' },
-      },
-    },
+    type: MarketLiquidityResponseDto,
   })
   async getMarketLiquidity() {
     try {
@@ -934,25 +843,7 @@ export class TradingController {
   @ApiResponse({
     status: 200,
     description: 'Price history retrieved successfully',
-    schema: {
-      properties: {
-        success: { type: 'boolean', example: true },
-        data: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              time: { type: 'number', example: 1698123456 },
-              open: { type: 'number', example: 1450 },
-              high: { type: 'number', example: 1550 },
-              low: { type: 'number', example: 1400 },
-              close: { type: 'number', example: 1500 },
-              volume: { type: 'number', example: 150.5 },
-            },
-          },
-        },
-      },
-    },
+    type: PriceHistoryResponseDto,
   })
   async getPriceHistory(
     @Query('interval') interval: string = '1m', // 1s, 1m, 5m, 15m, 1h, 1d
@@ -1020,23 +911,7 @@ export class TradingController {
   @ApiResponse({
     status: 200,
     description: 'Real-time price data retrieved successfully',
-    schema: {
-      properties: {
-        success: { type: 'boolean', example: true },
-        data: {
-          type: 'object',
-          properties: {
-            price: { type: 'number', example: 1500 },
-            timestamp: { type: 'string', example: '2025-10-23T10:30:00.000Z' },
-            change24h: { type: 'number', example: 50 },
-            changePercent24h: { type: 'number', example: 3.45 },
-            volume24h: { type: 'number', example: 1250.5 },
-            high24h: { type: 'number', example: 1550 },
-            low24h: { type: 'number', example: 1400 },
-          },
-        },
-      },
-    },
+    type: PriceHistoryResponseDto,
   })
   async getRealTimePriceData() {
     try {
@@ -1113,37 +988,7 @@ export class TradingController {
   @ApiResponse({
     status: 200,
     description: 'Price candles retrieved successfully',
-    schema: {
-      properties: {
-        success: { type: 'boolean', example: true },
-        data: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              time: { type: 'number', example: 1698123456 },
-              open: { type: 'number', example: 1450 },
-              high: { type: 'number', example: 1550 },
-              low: { type: 'number', example: 1400 },
-              close: { type: 'number', example: 1500 },
-              volume: { type: 'number', example: 150.5 },
-            },
-          },
-        },
-        metadata: {
-          type: 'object',
-          properties: {
-            interval: { type: 'string', example: '1m' },
-            limit: { type: 'number', example: 300 },
-            count: { type: 'number', example: 300 },
-            generatedAt: {
-              type: 'string',
-              example: '2025-10-23T10:30:00.000Z',
-            },
-          },
-        },
-      },
-    },
+    type: CandlesResponseDto,
   })
   async getPriceCandles(
     @Query('interval') interval: string = '1m',
@@ -1311,43 +1156,7 @@ export class TradingController {
   @ApiResponse({
     status: 200,
     description: 'Trading performance retrieved successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean', example: true },
-        data: {
-          type: 'object',
-          properties: {
-            period: { type: 'string', example: '30 days' },
-            summary: {
-              type: 'object',
-              properties: {
-                totalTrades: { type: 'number', example: 25 },
-                totalVolume: { type: 'string', example: '150.500' },
-                averagePrice: { type: 'string', example: '1250.75' },
-                last24hVolume: { type: 'string', example: '12.350' },
-              },
-            },
-            financial: {
-              type: 'object',
-              properties: {
-                totalEarnings: { type: 'string', example: '95000.50' },
-                totalSpending: { type: 'string', example: '85000.25' },
-                netProfit: { type: 'string', example: '10000.25' },
-                profitMargin: { type: 'number', example: 10 },
-              },
-            },
-            balances: {
-              type: 'object',
-              properties: {
-                etkBalance: { type: 'string', example: '45.750' },
-                idrsBalance: { type: 'string', example: '50000.00' },
-              },
-            },
-          },
-        },
-      },
-    },
+    type: TradingPerformanceResponseDto,
   })
   @ApiResponse({
     status: 401,

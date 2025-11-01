@@ -17,9 +17,10 @@ import { JwtAuthGuard } from '../../auth/guards/auth.guards';
 import { AuthenticatedUser, ApiSuccessResponse } from '../../common/interfaces';
 import { ResponseFormatter } from '../../common/response-formatter';
 import {
-  DashboardStatsDto,
-  SettlementRecommendationDto,
+  DashboardStatsResponseDto,
+  SettlementRecommendationsResponseDto,
   BlockchainSyncStatusDto,
+  SystemOverviewResponseDto,
 } from '../../common/dto/dashboard.dto';
 
 @ApiTags('Statistics')
@@ -41,7 +42,7 @@ export class StatController {
   @ApiResponse({
     status: 200,
     description: 'Statistics retrieved successfully',
-    type: DashboardStatsDto,
+    type: DashboardStatsResponseDto,
   })
   @ApiResponse({
     status: 401,
@@ -72,7 +73,7 @@ export class StatController {
   @ApiResponse({
     status: 200,
     description: 'Settlement recommendations retrieved successfully',
-    type: [SettlementRecommendationDto],
+    type: SettlementRecommendationsResponseDto,
   })
   @ApiResponse({
     status: 401,
@@ -134,55 +135,7 @@ export class StatController {
   @ApiResponse({
     status: 200,
     description: 'System overview retrieved successfully',
-    schema: {
-      properties: {
-        success: { type: 'boolean', example: true },
-        data: {
-          type: 'object',
-          properties: {
-            energy: {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'string',
-                  enum: ['surplus', 'deficit'],
-                  example: 'surplus',
-                },
-                efficiency: { type: 'number', example: 85 },
-                todayNet: { type: 'number', example: 10.3 },
-              },
-            },
-            devices: {
-              type: 'object',
-              properties: {
-                status: {
-                  type: 'string',
-                  enum: ['all_online', 'partial', 'all_offline'],
-                  example: 'partial',
-                },
-                onlineCount: { type: 'number', example: 2 },
-                totalCount: { type: 'number', example: 3 },
-              },
-            },
-            trading: {
-              type: 'object',
-              properties: {
-                activeOrders: { type: 'number', example: 5 },
-                todayTrades: { type: 'number', example: 8 },
-                marketStatus: { type: 'string', example: 'active' },
-              },
-            },
-            blockchain: {
-              type: 'object',
-              properties: {
-                syncStatus: { type: 'string', example: 'synced' },
-                pendingTx: { type: 'number', example: 2 },
-              },
-            },
-          },
-        },
-      },
-    },
+    type: SystemOverviewResponseDto,
   })
   @ApiResponse({
     status: 401,

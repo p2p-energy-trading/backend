@@ -1,5 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+/**
+ * Dashboard Stats Data (inner data structure)
+ */
 export class DashboardStatsDto {
   @ApiProperty({
     description: 'Current wallet balances',
@@ -73,6 +76,72 @@ export class DashboardStatsDto {
     totalDevices: number;
     connectedDevices: number;
     disconnectedDevices: number;
+  };
+}
+
+/**
+ * Dashboard Stats Response (with ResponseFormatter wrapper)
+ */
+export class DashboardStatsResponseDto {
+  @ApiProperty({
+    description: 'Request success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Response message',
+    example: 'Statistics retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Dashboard statistics data',
+    type: DashboardStatsDto,
+    example: {
+      balances: {
+        etk: '150.5',
+        idrs: '500000',
+      },
+      energy: {
+        totalGenerated: '1250.5',
+        totalConsumed: '980.3',
+        totalExported: '270.2',
+        totalImported: '0',
+        netEnergy: '270.2',
+      },
+      trading: {
+        openOrders: 5,
+        filledOrders: 23,
+        totalTradesVolume: '1500.5',
+        totalTradesValue: '2250750',
+      },
+      recentSettlements: [
+        {
+          settlementId: '123',
+          timestamp: '2025-10-23T10:00:00.000Z',
+          netEnergyKwh: '10.5',
+          etkAmount: '10.5',
+          status: 'SUCCESS',
+        },
+      ],
+      devices: {
+        totalDevices: 3,
+        connectedDevices: 2,
+        disconnectedDevices: 1,
+      },
+    },
+  })
+  data: DashboardStatsDto;
+
+  @ApiProperty({
+    description: 'Response metadata',
+    example: {
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata?: {
+    timestamp: string;
   };
 }
 
@@ -240,6 +309,59 @@ export class SettlementRecommendationDto {
   reason: string;
 }
 
+/**
+ * Settlement Recommendations Response (with ResponseFormatter wrapper)
+ */
+export class SettlementRecommendationsResponseDto {
+  @ApiProperty({
+    description: 'Request success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Response message',
+    example: 'Settlement recommendations retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Array of settlement recommendations',
+    type: [SettlementRecommendationDto],
+    example: [
+      {
+        meterId: 'SM001',
+        shouldSettle: true,
+        estimatedEtk: '5.5',
+        netEnergyKwh: '5.5',
+        timeSinceLastSettlement: '4 minutes 30 seconds',
+        reason: 'Settlement interval reached',
+      },
+      {
+        meterId: 'SM002',
+        shouldSettle: false,
+        estimatedEtk: '0.2',
+        netEnergyKwh: '0.2',
+        timeSinceLastSettlement: '1 minute 15 seconds',
+        reason: 'Below minimum threshold',
+      },
+    ],
+  })
+  data: SettlementRecommendationDto[];
+
+  @ApiProperty({
+    description: 'Metadata with count',
+    example: {
+      count: 2,
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata?: {
+    count: number;
+    timestamp: string;
+  };
+}
+
 class BlockchainSyncDataDto {
   @ApiProperty({
     description: 'Whether wallet is connected',
@@ -292,8 +414,163 @@ export class BlockchainSyncStatusDto {
   success: boolean;
 
   @ApiProperty({
+    description: 'Response message',
+    example: 'Blockchain sync status retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
     description: 'Blockchain sync status data',
     type: BlockchainSyncDataDto,
+    example: {
+      walletConnected: true,
+      walletAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+      devicesAuthorized: 2,
+      totalDevices: 3,
+      pendingTransactions: 1,
+      lastBlockchainActivity: '2025-11-01T10:25:00.000Z',
+      authorizationRate: 67,
+    },
   })
   data: BlockchainSyncDataDto;
+
+  @ApiProperty({
+    description: 'Response metadata',
+    example: {
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata?: {
+    timestamp: string;
+  };
+}
+
+// System Overview DTOs
+export class SystemOverviewEnergyDataDto {
+  @ApiProperty({
+    description: 'Energy status (surplus or deficit)',
+    enum: ['surplus', 'deficit'],
+    example: 'surplus',
+  })
+  status: string;
+
+  @ApiProperty({
+    description: 'Energy efficiency percentage',
+    example: 85,
+  })
+  efficiency: number;
+
+  @ApiProperty({
+    description: 'Today net energy in kWh',
+    example: 10.3,
+  })
+  todayNet: number;
+}
+
+export class SystemOverviewDevicesDataDto {
+  @ApiProperty({
+    description: 'Device status',
+    enum: ['all_online', 'partial_online', 'all_offline'],
+    example: 'partial_online',
+  })
+  status: string;
+
+  @ApiProperty({
+    description: 'Device health score percentage',
+    example: 67,
+  })
+  healthScore: number;
+}
+
+export class SystemOverviewTradingDataDto {
+  @ApiProperty({
+    description: 'Trading status',
+    enum: ['active', 'inactive'],
+    example: 'active',
+  })
+  status: string;
+
+  @ApiProperty({
+    description: 'Profitability status',
+    enum: ['profitable', 'loss'],
+    example: 'profitable',
+  })
+  profitability: string;
+}
+
+export class SystemOverviewBlockchainDataDto {
+  @ApiProperty({
+    description: 'Total number of settlements',
+    example: 145,
+  })
+  settlements: number;
+
+  @ApiProperty({
+    description: 'Number of pending settlements',
+    example: 2,
+  })
+  pendingSettlements: number;
+
+  @ApiProperty({
+    description: 'Blockchain sync status',
+    enum: ['synced', 'pending'],
+    example: 'pending',
+  })
+  syncStatus: string;
+}
+
+export class SystemOverviewDataDto {
+  @ApiProperty({
+    description: 'Energy overview',
+    type: SystemOverviewEnergyDataDto,
+  })
+  energy: SystemOverviewEnergyDataDto;
+
+  @ApiProperty({
+    description: 'Devices overview',
+    type: SystemOverviewDevicesDataDto,
+  })
+  devices: SystemOverviewDevicesDataDto;
+
+  @ApiProperty({
+    description: 'Trading overview',
+    type: SystemOverviewTradingDataDto,
+  })
+  trading: SystemOverviewTradingDataDto;
+
+  @ApiProperty({
+    description: 'Blockchain overview',
+    type: SystemOverviewBlockchainDataDto,
+  })
+  blockchain: SystemOverviewBlockchainDataDto;
+}
+
+export class SystemOverviewResponseDto {
+  @ApiProperty({
+    description: 'Request success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Response message',
+    example: 'System overview retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'System overview data',
+    type: SystemOverviewDataDto,
+  })
+  data: SystemOverviewDataDto;
+
+  @ApiProperty({
+    description: 'Response metadata',
+    example: {
+      timestamp: '2025-10-27T03:45:00.000Z',
+    },
+  })
+  metadata?: {
+    timestamp: string;
+  };
 }

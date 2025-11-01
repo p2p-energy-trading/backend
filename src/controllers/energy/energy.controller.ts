@@ -28,8 +28,13 @@ import { AuthService } from '../../auth/auth.service';
 import { AuthenticatedUser } from '../../common/interfaces';
 import { ResponseFormatter } from '../../common/response-formatter';
 import {
-  SettlementEstimateDto,
-  SettlementRecordDto,
+  SettlementEstimateResponseDto,
+  SettlementRecordResponseDto,
+  SettlementHistoryResponseDto,
+  HourlyEnergyHistoryResponseDto,
+  EnergyChartResponseDto,
+  RealTimeEnergyResponseDto,
+  EnergySummaryResponseDto,
 } from '../../common/dto/energy.dto';
 // import { SettlementTrigger } from '../common/enums';
 
@@ -77,7 +82,7 @@ export class EnergyController {
   @ApiResponse({
     status: 200,
     description: 'Settlement history retrieved successfully',
-    type: [SettlementRecordDto],
+    type: SettlementHistoryResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -161,7 +166,7 @@ export class EnergyController {
   @ApiResponse({
     status: 200,
     description: 'Settlement details retrieved successfully',
-    type: SettlementRecordDto,
+    type: SettlementRecordResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -248,7 +253,7 @@ export class EnergyController {
   @ApiResponse({
     status: 200,
     description: 'Settlement estimate retrieved successfully',
-    type: SettlementEstimateDto,
+    type: SettlementEstimateResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -348,33 +353,7 @@ export class EnergyController {
   @ApiResponse({
     status: 200,
     description: 'Hourly energy history retrieved successfully',
-    schema: {
-      properties: {
-        success: { type: 'boolean', example: true },
-        data: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              hour: { type: 'string', example: '2025-10-23T10:00:00.000Z' },
-              export: { type: 'number', example: 12.5 },
-              import: { type: 'number', example: 5.3 },
-              net: { type: 'number', example: 7.2 },
-              generation: { type: 'number', example: 15.0 },
-              consumption: { type: 'number', example: 7.8 },
-            },
-          },
-        },
-        metadata: {
-          type: 'object',
-          properties: {
-            hours: { type: 'number', example: 24 },
-            meterId: { type: 'string', example: 'all' },
-            generatedAt: { type: 'string', example: '2025-10-23T12:00:00Z' },
-          },
-        },
-      },
-    },
+    type: HourlyEnergyHistoryResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -449,29 +428,7 @@ export class EnergyController {
   @ApiResponse({
     status: 200,
     description: 'Energy chart data retrieved successfully',
-    schema: {
-      properties: {
-        success: { type: 'boolean', example: true },
-        data: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              timestamp: {
-                type: 'string',
-                example: '2025-10-23T10:00:00.000Z',
-              },
-              generation: { type: 'number', example: 12.5 },
-              consumption: { type: 'number', example: 8.3 },
-              export: { type: 'number', example: 4.2 },
-              import: { type: 'number', example: 0.5 },
-              battery: { type: 'number', example: 2.1 },
-              net: { type: 'number', example: 4.2 },
-            },
-          },
-        },
-      },
-    },
+    type: EnergyChartResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -516,46 +473,7 @@ export class EnergyController {
   @ApiResponse({
     status: 200,
     description: 'Real-time energy data retrieved successfully',
-    schema: {
-      properties: {
-        success: { type: 'boolean', example: true },
-        data: {
-          type: 'object',
-          properties: {
-            timeSeries: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  meterId: { type: 'string', example: 'SM001' },
-                  timestamp: {
-                    type: 'string',
-                    example: '2025-10-23T12:00:00.000Z',
-                  },
-                  solar: { type: 'number', example: 3.5 },
-                  consumption: { type: 'number', example: 2.1 },
-                  battery: { type: 'number', example: 0.5 },
-                  gridExport: { type: 'number', example: 1.4 },
-                  gridImport: { type: 'number', example: 0.0 },
-                  netFlow: { type: 'number', example: 1.4 },
-                },
-              },
-            },
-            aggregated: {
-              type: 'object',
-              properties: {
-                totalSolar: { type: 'number', example: 10.5 },
-                totalConsumption: { type: 'number', example: 6.3 },
-                totalBattery: { type: 'number', example: 1.5 },
-                totalGridExport: { type: 'number', example: 4.2 },
-                totalGridImport: { type: 'number', example: 0.0 },
-                totalNetFlow: { type: 'number', example: 4.2 },
-              },
-            },
-          },
-        },
-      },
-    },
+    type: RealTimeEnergyResponseDto,
   })
   @ApiResponse({
     status: 401,
@@ -601,53 +519,7 @@ export class EnergyController {
   @ApiResponse({
     status: 200,
     description: 'Energy summary retrieved successfully',
-    schema: {
-      properties: {
-        success: { type: 'boolean', example: true },
-        data: {
-          type: 'object',
-          properties: {
-            period: { type: 'string', example: 'daily' },
-            generation: {
-              type: 'object',
-              properties: {
-                today: { type: 'number', example: 45.5 },
-                total: { type: 'number', example: 1250.8 },
-                gridExport: { type: 'number', example: 12.3 },
-              },
-            },
-            consumption: {
-              type: 'object',
-              properties: {
-                today: { type: 'number', example: 35.2 },
-                total: { type: 'number', example: 980.5 },
-                gridImport: { type: 'number', example: 5.8 },
-              },
-            },
-            net: {
-              type: 'object',
-              properties: {
-                energy: { type: 'number', example: 270.3 },
-                gridEnergy: { type: 'number', example: 6.5 },
-              },
-            },
-            chartData: {
-              type: 'array',
-              items: { type: 'object' },
-            },
-            settlements: {
-              type: 'object',
-              properties: {
-                total: { type: 'number', example: 150 },
-                today: { type: 'number', example: 12 },
-                etkMinted: { type: 'number', example: 1250.8 },
-                etkBurned: { type: 'number', example: 980.5 },
-              },
-            },
-          },
-        },
-      },
-    },
+    type: EnergySummaryResponseDto,
   })
   @ApiResponse({
     status: 400,

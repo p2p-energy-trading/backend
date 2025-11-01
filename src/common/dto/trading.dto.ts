@@ -42,13 +42,10 @@ export class PlaceOrderDto {
   price: number;
 }
 
-export class PlaceOrderResponseDto {
-  @ApiProperty({
-    description: 'Operation success status',
-    example: true,
-  })
-  success: boolean;
-
+/**
+ * Place order response data (inside ResponseFormatter wrapper)
+ */
+export class PlaceOrderDataDto {
   @ApiProperty({
     description: 'Blockchain transaction hash',
     example:
@@ -57,10 +54,43 @@ export class PlaceOrderResponseDto {
   transactionHash: string;
 
   @ApiProperty({
+    description: 'Order ID',
+    example: '1',
+  })
+  orderId?: string;
+}
+
+/**
+ * Place order response with ResponseFormatter wrapper
+ */
+export class PlaceOrderResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
     description: 'Response message',
-    example: 'ASK order placed',
+    example: 'ASK order placed successfully',
   })
   message: string;
+
+  @ApiProperty({
+    description: 'Order placement data',
+    type: PlaceOrderDataDto,
+  })
+  data: PlaceOrderDataDto;
+
+  @ApiProperty({
+    description: 'Response metadata',
+    example: {
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    timestamp: string;
+  };
 }
 
 export class CancelOrderDto {
@@ -162,4 +192,660 @@ export class OrderBookSummaryDto {
     type: [OrderResponseDto],
   })
   asks: OrderResponseDto[];
+}
+
+// ==================== RESPONSE WRAPPERS ====================
+
+/**
+ * Orders List Response
+ */
+export class OrdersListResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Orders retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Array of orders',
+    type: [OrderResponseDto],
+  })
+  data: OrderResponseDto[];
+
+  @ApiProperty({
+    description: 'Metadata with count',
+    example: {
+      count: 50,
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    count: number;
+    timestamp: string;
+  };
+}
+
+/**
+ * Order Book Detailed Data
+ */
+export class OrderBookDetailedDataDto {
+  @ApiProperty({
+    description: 'Buy orders (BIDs)',
+    type: [OrderResponseDto],
+  })
+  buyOrders: OrderResponseDto[];
+
+  @ApiProperty({
+    description: 'Sell orders (ASKs)',
+    type: [OrderResponseDto],
+  })
+  sellOrders: OrderResponseDto[];
+}
+
+/**
+ * Order Book Detailed Response
+ */
+export class OrderBookDetailedResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Order book retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Order book data',
+    type: OrderBookDetailedDataDto,
+  })
+  data: OrderBookDetailedDataDto;
+
+  @ApiProperty({
+    description: 'Response metadata',
+    example: {
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    timestamp: string;
+  };
+}
+
+/**
+ * Order Book Summary Response
+ */
+export class OrderBookSummaryResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Order book summary retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Order book summary data',
+    type: OrderBookSummaryDto,
+  })
+  data: OrderBookSummaryDto;
+
+  @ApiProperty({
+    description: 'Response metadata',
+    example: {
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    timestamp: string;
+  };
+}
+
+/**
+ * Trades List Response
+ */
+export class TradesListResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Trades retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Array of trades',
+    type: [TradeResponseDto],
+  })
+  data: TradeResponseDto[];
+
+  @ApiProperty({
+    description: 'Metadata with count',
+    example: {
+      count: 50,
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    count: number;
+    timestamp: string;
+  };
+}
+
+/**
+ * Market Statistics Data
+ */
+export class MarketStatsDataDto {
+  @ApiProperty({
+    description: 'Last traded price',
+    example: '1500',
+  })
+  lastPrice: string;
+
+  @ApiProperty({
+    description: '24h price change',
+    example: '50',
+  })
+  priceChange24h: string;
+
+  @ApiProperty({
+    description: '24h price change percentage',
+    example: '3.45',
+  })
+  priceChangePercent24h: string;
+
+  @ApiProperty({
+    description: '24h high price',
+    example: '1550',
+  })
+  high24h: string;
+
+  @ApiProperty({
+    description: '24h low price',
+    example: '1400',
+  })
+  low24h: string;
+
+  @ApiProperty({
+    description: '24h trading volume in ETK',
+    example: '1250.5',
+  })
+  volume24h: string;
+
+  @ApiProperty({
+    description: 'Total number of trades',
+    example: 450,
+  })
+  totalTrades: number;
+
+  @ApiProperty({
+    description: 'Number of active buy orders',
+    example: 15,
+  })
+  activeBuyOrders: number;
+
+  @ApiProperty({
+    description: 'Number of active sell orders',
+    example: 12,
+  })
+  activeSellOrders: number;
+}
+
+/**
+ * Market Statistics Response
+ */
+export class MarketStatsResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Market statistics retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Market statistics data',
+    type: MarketStatsDataDto,
+  })
+  data: MarketStatsDataDto;
+
+  @ApiProperty({
+    description: 'Response metadata',
+    example: {
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    timestamp: string;
+  };
+}
+
+/**
+ * Token Balance Data
+ */
+export class TokenBalanceDataDto {
+  @ApiProperty({
+    description: 'ETK token balance',
+    example: '150.5',
+  })
+  etkBalance: string;
+
+  @ApiProperty({
+    description: 'IDRS token balance',
+    example: '500000',
+  })
+  idrsBalance: string;
+}
+
+/**
+ * Token Balance Response
+ */
+export class TokenBalanceResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Balances retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Token balances',
+    type: TokenBalanceDataDto,
+  })
+  data: TokenBalanceDataDto;
+
+  @ApiProperty({
+    description: 'Response metadata',
+    example: {
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    timestamp: string;
+  };
+}
+
+/**
+ * Market Supply Data
+ */
+export class MarketSupplyDataDto {
+  @ApiProperty({
+    description: 'Total supply',
+    example: '10000',
+  })
+  totalSupply: string;
+
+  @ApiProperty({
+    description: 'Circulating supply',
+    example: '8500',
+  })
+  circulatingSupply: string;
+}
+
+/**
+ * Market Supply Response
+ */
+export class MarketSupplyResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Supply data retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Supply data',
+    type: MarketSupplyDataDto,
+  })
+  data: MarketSupplyDataDto;
+
+  @ApiProperty({
+    description: 'Response metadata',
+    example: {
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    timestamp: string;
+  };
+}
+
+/**
+ * Market Liquidity Data
+ */
+export class MarketLiquidityDataDto {
+  @ApiProperty({
+    description: 'Total ETK liquidity',
+    example: '5000',
+  })
+  totalEtkLiquidity: string;
+
+  @ApiProperty({
+    description: 'Total IDRS liquidity',
+    example: '7500000',
+  })
+  totalIdrsLiquidity: string;
+
+  @ApiProperty({
+    description: 'Liquidity ratio',
+    example: '1.5',
+  })
+  liquidityRatio: string;
+}
+
+/**
+ * Market Liquidity Response
+ */
+export class MarketLiquidityResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Liquidity data retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Liquidity data',
+    type: MarketLiquidityDataDto,
+  })
+  data: MarketLiquidityDataDto;
+
+  @ApiProperty({
+    description: 'Response metadata',
+    example: {
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    timestamp: string;
+  };
+}
+
+/**
+ * Price History Point
+ */
+export class PriceHistoryPointDto {
+  @ApiProperty({
+    description: 'Timestamp',
+    example: '2025-10-23T10:00:00.000Z',
+  })
+  timestamp: string;
+
+  @ApiProperty({
+    description: 'Price in IDRS',
+    example: '1500',
+  })
+  price: string;
+
+  @ApiProperty({
+    description: 'Trading volume',
+    example: '125.5',
+  })
+  volume?: string;
+}
+
+/**
+ * Price History Response
+ */
+export class PriceHistoryResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Price history retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Array of price history points',
+    type: [PriceHistoryPointDto],
+  })
+  data: PriceHistoryPointDto[];
+
+  @ApiProperty({
+    description: 'Metadata with count',
+    example: {
+      count: 168,
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    count: number;
+    timestamp: string;
+  };
+}
+
+/**
+ * Candle Data
+ */
+export class CandleDataDto {
+  @ApiProperty({
+    description: 'Candle timestamp',
+    example: '2025-10-23T10:00:00.000Z',
+  })
+  timestamp: string;
+
+  @ApiProperty({
+    description: 'Opening price',
+    example: '1450',
+  })
+  open: string;
+
+  @ApiProperty({
+    description: 'Highest price',
+    example: '1550',
+  })
+  high: string;
+
+  @ApiProperty({
+    description: 'Lowest price',
+    example: '1400',
+  })
+  low: string;
+
+  @ApiProperty({
+    description: 'Closing price',
+    example: '1500',
+  })
+  close: string;
+
+  @ApiProperty({
+    description: 'Trading volume',
+    example: '250.5',
+  })
+  volume: string;
+
+  @ApiProperty({
+    description: 'Number of trades',
+    example: 45,
+  })
+  trades: number;
+}
+
+/**
+ * Candles Response
+ */
+export class CandlesResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Candle data retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Array of candle data',
+    type: [CandleDataDto],
+  })
+  data: CandleDataDto[];
+
+  @ApiProperty({
+    description: 'Metadata with count and interval',
+    example: {
+      count: 24,
+      interval: '1h',
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    count: number;
+    interval: string;
+    timestamp: string;
+  };
+}
+
+/**
+ * Trading Performance Data
+ */
+export class TradingPerformanceDataDto {
+  @ApiProperty({
+    description: 'Total trades executed',
+    example: 125,
+  })
+  totalTrades: number;
+
+  @ApiProperty({
+    description: 'Total ETK volume traded',
+    example: '5000.5',
+  })
+  totalEtkVolume: string;
+
+  @ApiProperty({
+    description: 'Total IDRS value',
+    example: '7500750',
+  })
+  totalIdrsValue: string;
+
+  @ApiProperty({
+    description: 'Average trade size in ETK',
+    example: '40.0',
+  })
+  averageTradeSize: string;
+
+  @ApiProperty({
+    description: 'Profit/Loss in IDRS',
+    example: '15000',
+  })
+  profitLoss?: string;
+
+  @ApiProperty({
+    description: 'Win rate percentage',
+    example: '65.5',
+  })
+  winRate?: string;
+}
+
+/**
+ * Trading Performance Response
+ */
+export class TradingPerformanceResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Trading performance retrieved successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Trading performance data',
+    type: TradingPerformanceDataDto,
+  })
+  data: TradingPerformanceDataDto;
+
+  @ApiProperty({
+    description: 'Response metadata',
+    example: {
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    timestamp: string;
+  };
+}
+
+/**
+ * Cancel Order Response
+ */
+export class CancelOrderResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Order canceled successfully',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Transaction data',
+    example: {
+      transactionHash: '0x1234567890abcdef...',
+    },
+  })
+  data: {
+    transactionHash: string;
+  };
+
+  @ApiProperty({
+    description: 'Response metadata',
+    example: {
+      timestamp: '2025-11-01T10:30:00.000Z',
+    },
+  })
+  metadata: {
+    timestamp: string;
+  };
 }
