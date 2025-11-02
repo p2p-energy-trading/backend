@@ -76,7 +76,7 @@ describe('EnergyAnalyticsService', () => {
 
   describe('getEnergyStats', () => {
     it('should return comprehensive energy statistics', async () => {
-      const prosumerId = 'PROSUMER001';
+      const userId = 'PROSUMER001';
       const mockMeters = [createMockSmartMeter({ meterId: 'METER001' })];
 
       const mockTodayAggregates = [
@@ -106,7 +106,7 @@ describe('EnergyAnalyticsService', () => {
         .mockResolvedValueOnce(mockTodayAggregates) // Today's data
         .mockResolvedValueOnce(mockTotalAggregates); // All-time data
 
-      const result = await service.getEnergyStats(prosumerId);
+      const result = await service.getEnergyStats(userId);
 
       expect(result).toBeDefined();
       expect(result.todayGeneration).toBe(10); // 10000 / 1000
@@ -168,7 +168,7 @@ describe('EnergyAnalyticsService', () => {
 
   describe('getEnergyChartData', () => {
     it('should return hourly chart data array for specified days', async () => {
-      const prosumerId = 'PROSUMER001';
+      const userId = 'PROSUMER001';
       const days = 7;
       const mockMeters = [createMockSmartMeter({ meterId: 'METER001' })];
 
@@ -197,7 +197,7 @@ describe('EnergyAnalyticsService', () => {
       smartMetersService.findAll.mockResolvedValue(mockMeters as any);
       setupMockQueryBuilder(mockAggregates);
 
-      const result = await service.getEnergyChartData(prosumerId, days);
+      const result = await service.getEnergyChartData(userId, days);
 
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
@@ -277,7 +277,7 @@ describe('EnergyAnalyticsService', () => {
 
   describe('getRealTimeEnergyData', () => {
     it('should return real-time telemetry data from Redis', async () => {
-      const prosumerId = 'PROSUMER001';
+      const userId = 'PROSUMER001';
       const mockMeters = [createMockSmartMeter({ meterId: 'METER001' })];
       const mockTelemetry = {
         data: {
@@ -300,7 +300,7 @@ describe('EnergyAnalyticsService', () => {
         mockTelemetry as any,
       );
 
-      const result = await service.getRealTimeEnergyData(prosumerId);
+      const result = await service.getRealTimeEnergyData(userId);
 
       expect(result).toBeDefined();
       expect(result.timeSeries).toBeDefined();
@@ -389,7 +389,7 @@ describe('EnergyAnalyticsService', () => {
 
   describe('getEnergySummary', () => {
     it('should return comprehensive energy summary with nested structure', async () => {
-      const prosumerId = 'PROSUMER001';
+      const userId = 'PROSUMER001';
       const period = 'daily';
 
       // Mock getEnergyStats response
@@ -439,7 +439,7 @@ describe('EnergyAnalyticsService', () => {
         .spyOn(service, 'getSettlementStats')
         .mockResolvedValue(mockSettlementStats);
 
-      const result = await service.getEnergySummary(prosumerId, period);
+      const result = await service.getEnergySummary(userId, period);
 
       expect(result).toBeDefined();
       expect(result.period).toBe('daily');
@@ -534,7 +534,7 @@ describe('EnergyAnalyticsService', () => {
 
   describe('getSettlementStats', () => {
     it('should return settlement statistics with ETK calculations', async () => {
-      const prosumerId = 'PROSUMER001';
+      const userId = 'PROSUMER001';
       const mockMeters = [createMockSmartMeter({ meterId: 'METER001' })];
 
       const today = new Date();
@@ -569,7 +569,7 @@ describe('EnergyAnalyticsService', () => {
         mockSettlements as any,
       );
 
-      const result = await service.getSettlementStats(prosumerId);
+      const result = await service.getSettlementStats(userId);
 
       expect(result).toBeDefined();
       expect(result.totalSettlements).toBe(3);
@@ -626,7 +626,7 @@ describe('EnergyAnalyticsService', () => {
 
   describe('getHourlyEnergyHistory', () => {
     it('should return hourly energy history for specified hours', async () => {
-      const prosumerId = 'PROSUMER001';
+      const userId = 'PROSUMER001';
       const hours = 24;
       const mockMeters = [createMockSmartMeter({ meterId: 'METER001' })];
 
@@ -647,7 +647,7 @@ describe('EnergyAnalyticsService', () => {
       smartMetersService.findAll.mockResolvedValue(mockMeters as any);
       setupMockQueryBuilder(mockAggregates);
 
-      const result = await service.getHourlyEnergyHistory(prosumerId, hours);
+      const result = await service.getHourlyEnergyHistory(userId, hours);
 
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
@@ -682,7 +682,7 @@ describe('EnergyAnalyticsService', () => {
       });
     });
 
-    it('should return empty array when meter does not belong to prosumer', async () => {
+    it('should return empty array when meter does not belong to user', async () => {
       const mockMeters = [createMockSmartMeter({ meterId: 'METER001' })];
       smartMetersService.findAll.mockResolvedValue(mockMeters as any);
 

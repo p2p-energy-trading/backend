@@ -88,7 +88,7 @@ export class LoginDataDto {
       name: 'John Doe',
     },
   })
-  prosumer: {
+  user: {
     userId: string;
     email: string;
     name: string;
@@ -117,7 +117,7 @@ export class LoginResponseDto {
       access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
       tokenType: 'Bearer',
       expiresIn: 3600,
-      prosumer: {
+      user: {
         userId: 'user_...',
         email: 'john.doe@example.com',
         name: 'John Doe',
@@ -160,7 +160,7 @@ export class RegisterDataDto {
   expiresIn: number;
 
   @ApiProperty({
-    description: 'Registered prosumer information',
+    description: 'Registered user information',
     example: {
       userId: 'user_...',
       email: 'john.doe@example.com',
@@ -169,7 +169,7 @@ export class RegisterDataDto {
       updatedAt: '2025-11-01T10:30:00.000Z',
     },
   })
-  prosumer: {
+  user: {
     userId: string;
     email: string;
     name: string;
@@ -212,7 +212,7 @@ export class RegisterResponseDto {
 
 class ProfileInfoDto {
   @ApiProperty({
-    description: 'Prosumer ID',
+    description: 'User ID',
     example: 'user_...',
   })
   userId: string;

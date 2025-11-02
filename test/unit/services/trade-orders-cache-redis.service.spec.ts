@@ -14,7 +14,7 @@ describe('TradeOrdersCacheRedisService - Unit Tests', () => {
 
   const mockOrderData: OrderData = {
     orderId: 'order-123',
-    prosumerId: 'prosumer-1',
+    userId: 'user-1',
     walletAddress: '0x742d35Cc6643C0532925a3b8D0B5a9d5E5b8e8C9',
     orderType: OrderType.BID,
     pair: 'ETK/IDRS',
@@ -31,7 +31,7 @@ describe('TradeOrdersCacheRedisService - Unit Tests', () => {
 
   const mockOrderData2: OrderData = {
     orderId: 'order-456',
-    prosumerId: 'prosumer-2',
+    userId: 'user-2',
     walletAddress: '0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199',
     orderType: OrderType.ASK,
     pair: 'ETK/IDRS',
@@ -113,16 +113,16 @@ describe('TradeOrdersCacheRedisService - Unit Tests', () => {
       });
     });
 
-    it('should filter by prosumerId', async () => {
+    it('should filter by userId', async () => {
       redisOrdersService.getAllOrders.mockResolvedValueOnce([mockOrderData]);
 
-      const args: TradeOrdersCacheArgs = { prosumerId: 'prosumer-1' };
+      const args: TradeOrdersCacheArgs = { userId: 'user-1' };
       const result = await service.findAll(args);
 
       expect(result).toHaveLength(1);
-      expect(result[0].prosumerId).toBe('prosumer-1');
+      expect(result[0].userId).toBe('user-1');
       expect(redisOrdersService.getAllOrders).toHaveBeenCalledWith({
-        prosumerId: 'prosumer-1',
+        userId: 'user-1',
       });
     });
 
@@ -278,7 +278,7 @@ describe('TradeOrdersCacheRedisService - Unit Tests', () => {
     it('should create a new order with all fields', async () => {
       const input: CreateTradeOrdersCacheInput = {
         orderId: 'order-789',
-        prosumerId: 'prosumer-3',
+        userId: 'user-3',
         walletAddress: '0x123abc',
         orderType: OrderType.BID,
         pair: 'ETK/IDRS',
@@ -297,12 +297,12 @@ describe('TradeOrdersCacheRedisService - Unit Tests', () => {
       const result = await service.create(input);
 
       expect(result.orderId).toBe('order-789');
-      expect(result.prosumerId).toBe('prosumer-3');
+      expect(result.userId).toBe('user-3');
       expect(result.amountEtk).toBe(20);
       expect(redisOrdersService.setOrder).toHaveBeenCalledWith(
         expect.objectContaining({
           orderId: 'order-789',
-          prosumerId: 'prosumer-3',
+          userId: 'user-3',
           amountEtk: 20,
         }),
       );
@@ -311,7 +311,7 @@ describe('TradeOrdersCacheRedisService - Unit Tests', () => {
     it('should create order with default values for optional fields', async () => {
       const input: CreateTradeOrdersCacheInput = {
         orderId: 'order-999',
-        prosumerId: 'prosumer-4',
+        userId: 'user-4',
         walletAddress: '0x456def',
         orderType: OrderType.ASK,
         pair: 'ETK/IDRS',
@@ -337,7 +337,7 @@ describe('TradeOrdersCacheRedisService - Unit Tests', () => {
     it('should throw error on Redis error', async () => {
       const input: CreateTradeOrdersCacheInput = {
         orderId: 'order-error',
-        prosumerId: 'prosumer-1',
+        userId: 'user-1',
         walletAddress: '0x123',
         orderType: OrderType.BID,
         pair: 'ETK/IDRS',
@@ -368,7 +368,7 @@ describe('TradeOrdersCacheRedisService - Unit Tests', () => {
 
       const input: CreateTradeOrdersCacheInput = {
         orderId: 'order-123',
-        prosumerId: 'prosumer-1',
+        userId: 'user-1',
         walletAddress: '0x742d35Cc6643C0532925a3b8D0B5a9d5E5b8e8C9',
         orderType: OrderType.BID,
         pair: 'ETK/IDRS',
@@ -402,7 +402,7 @@ describe('TradeOrdersCacheRedisService - Unit Tests', () => {
 
       const input: CreateTradeOrdersCacheInput = {
         orderId: 'order-123',
-        prosumerId: 'prosumer-1',
+        userId: 'user-1',
         walletAddress: '0x742d35Cc6643C0532925a3b8D0B5a9d5E5b8e8C9',
         orderType: OrderType.BID,
         pair: 'ETK/IDRS',
@@ -430,7 +430,7 @@ describe('TradeOrdersCacheRedisService - Unit Tests', () => {
 
       const input: CreateTradeOrdersCacheInput = {
         orderId: 'non-existent',
-        prosumerId: 'prosumer-1',
+        userId: 'user-1',
         walletAddress: '0x123',
         orderType: OrderType.BID,
         pair: 'ETK/IDRS',
@@ -453,7 +453,7 @@ describe('TradeOrdersCacheRedisService - Unit Tests', () => {
 
       const input: CreateTradeOrdersCacheInput = {
         orderId: 'order-123',
-        prosumerId: 'prosumer-1',
+        userId: 'user-1',
         walletAddress: '0x123',
         orderType: OrderType.BID,
         pair: 'ETK/IDRS',

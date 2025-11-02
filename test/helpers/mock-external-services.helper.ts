@@ -8,23 +8,23 @@ import Redis from 'ioredis';
 export const createMockJwtService = (): jest.Mocked<Partial<JwtService>> => ({
   sign: jest.fn((payload) => 'mock-jwt-token') as any,
   verify: jest.fn((token) => ({
-    prosumerId: 'test-prosumer-1',
+    userId: 'test-user-1',
     username: 'testuser',
-    sub: 'test-prosumer-1',
+    sub: 'test-user-1',
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + 3600,
   })) as any,
   decode: jest.fn((token) => ({
-    prosumerId: 'test-prosumer-1',
+    userId: 'test-user-1',
     username: 'testuser',
-    sub: 'test-prosumer-1',
+    sub: 'test-user-1',
   })) as any,
   signAsync: jest.fn((payload) => Promise.resolve('mock-jwt-token')) as any,
   verifyAsync: jest.fn((token) =>
     Promise.resolve({
-      prosumerId: 'test-prosumer-1',
+      userId: 'test-user-1',
       username: 'testuser',
-      sub: 'test-prosumer-1',
+      sub: 'test-user-1',
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 3600,
     }),

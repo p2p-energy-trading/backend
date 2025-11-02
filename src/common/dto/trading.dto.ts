@@ -8,7 +8,7 @@ export enum OrderType {
 
 export class PlaceOrderDto {
   @ApiProperty({
-    description: 'Ethereum wallet address of the prosumer',
+    description: 'Ethereum wallet address of the user',
     example: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
   })
   @IsString()
@@ -95,7 +95,7 @@ export class PlaceOrderResponseDto {
 
 export class CancelOrderDto {
   @ApiProperty({
-    description: 'Ethereum wallet address of the prosumer',
+    description: 'Ethereum wallet address of the user',
     example: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
   })
   @IsString()

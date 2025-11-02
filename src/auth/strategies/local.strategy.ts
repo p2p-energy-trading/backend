@@ -12,11 +12,11 @@ import { AuthService } from '../auth.service';
  * @remarks
  * - Uses 'email' field as username (configured in constructor)
  * - Password field uses default 'password' name
- * - Validates credentials via AuthService.validateProsumer()
- * - Returns prosumer object that will be injected to req.user
+ * - Validates credentials via AuthService.validateUser()
+ * - Returns user object that will be injected to req.user
  *
  * @see {@link LocalAuthGuard} Guard that activates this strategy
- * @see {@link AuthService.validateProsumer} Called by validate() method
+ * @see {@link AuthService.validateUser} Called by validate() method
  * @see {@link AuthController.login} Endpoint that uses this strategy
  */
 @Injectable()
@@ -29,37 +29,37 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
   }
 
   /**
-   * Validate Prosumer Credentials
+   * Validate User Credentials
    *
    * Method called automatically by Passport when LocalAuthGuard is active.
    * Passport will extract email & password from request body.
    *
-   * @param email - Prosumer email extracted from request body
-   * @param password - Prosumer password extracted from request body
+   * @param email - User email extracted from request body
+   * @param password - User password extracted from request body
    * @returns ValidatedUser object that will be injected to req.user
    * @throws {UnauthorizedException} If credentials are invalid
    *
    * @workflow
    * 1. Passport extracts credentials from request body
    * 2. Calls validate() with email and password
-   * 3. validate() delegates to authService.validateProsumer()
+   * 3. validate() delegates to authService.validateUser()
    * 4. authService verifies email exists and password matches
-   * 5. Returns prosumer object if valid
-   * 6. Passport injects prosumer to req.user
+   * 5. Returns user object if valid
+   * 6. Passport injects user to req.user
    * 7. Controller can access validated user via req.user
    *
    * @example
    * // Request:
    * POST /auth/login
    * {
-   *   "email": "prosumer@enerlink.com",
+   *   "email": "user@enerlink.com",
    *   "password": "SecurePass123"
    * }
    *
    * // If valid, req.user will contain:
    * {
    *   userId: "user_123",
-   *   email: "prosumer@enerlink.com",
+   *   email: "user@enerlink.com",
    *   name: "John Doe",
    *   createdAt: "2025-10-23T...",
    *   updatedAt: "2025-10-23T..."
@@ -67,13 +67,13 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
    */
   async validate(email: string, password: string): Promise<any> {
     // Delegate validation to AuthService
-    const prosumer = await this.authService.validateProsumer(email, password);
+    const user = await this.authService.validateUser(email, password);
 
-    if (!prosumer) {
+    if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Return prosumer object - will be available as req.user in controller
-    return prosumer;
+    // Return user object - will be available as req.user in controller
+    return user;
   }
 }

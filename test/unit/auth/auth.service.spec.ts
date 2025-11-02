@@ -18,7 +18,7 @@ import {
 
 describe('AuthService - Unit Tests', () => {
   let authService: AuthService;
-  let prosumersService: jest.Mocked<ProsumersService>;
+  let usersService: jest.Mocked<ProsumersService>;
   let walletsService: jest.Mocked<WalletsService>;
   let cryptoService: jest.Mocked<CryptoService>;
   let jwtService: jest.Mocked<JwtService>;
@@ -103,7 +103,7 @@ describe('AuthService - Unit Tests', () => {
     }).compile();
 
     authService = module.get<AuthService>(AuthService);
-    prosumersService = module.get(ProsumersService);
+    usersService = module.get(ProsumersService);
     walletsService = module.get(WalletsService);
     cryptoService = module.get(CryptoService);
     jwtService = module.get(JwtService);
@@ -118,13 +118,13 @@ describe('AuthService - Unit Tests', () => {
   });
 
   describe('validateProsumer', () => {
-    it('should return validated prosumer for valid credentials', async () => {
+    it('should return validated user for valid credentials', async () => {
       // Arrange
       const mockUser = await createMockUser();
       const email = 'test@example.com';
       const password = 'password123';
 
-      prosumersService.findAll.mockResolvedValue([mockUser]);
+      usersService.findAll.mockResolvedValue([mockUser]);
       cryptoService.verifyPassword.mockResolvedValue(true);
 
       // Act
@@ -132,9 +132,9 @@ describe('AuthService - Unit Tests', () => {
 
       // Assert
       expect(result).toBeDefined();
-      expect(result?.prosumerId).toBe(mockUser.prosumerId);
+      expect(result?.userId).toBe(mockUser.userId);
       expect(result?.email).toBe(mockUser.email);
-      expect(prosumersService.findAll).toHaveBeenCalledWith({ email });
+      expect(usersService.findAll).toHaveBeenCalledWith({ email });
       expect(cryptoService.verifyPassword).toHaveBeenCalledWith(
         password,
         mockUser.passwordHash,
@@ -146,14 +146,14 @@ describe('AuthService - Unit Tests', () => {
       const email = 'nonexistent@example.com';
       const password = 'password123';
 
-      prosumersService.findAll.mockResolvedValue([]);
+      usersService.findAll.mockResolvedValue([]);
 
       // Act
       const result = await authService.validateProsumer(email, password);
 
       // Assert
       expect(result).toBeNull();
-      expect(prosumersService.findAll).toHaveBeenCalledWith({ email });
+      expect(usersService.findAll).toHaveBeenCalledWith({ email });
       expect(cryptoService.verifyPassword).not.toHaveBeenCalled();
     });
 
@@ -163,7 +163,7 @@ describe('AuthService - Unit Tests', () => {
       const email = 'test@example.com';
       const wrongPassword = 'wrongpassword';
 
-      prosumersService.findAll.mockResolvedValue([mockUser]);
+      usersService.findAll.mockResolvedValue([mockUser]);
       cryptoService.verifyPassword.mockResolvedValue(false);
 
       // Act
@@ -182,7 +182,7 @@ describe('AuthService - Unit Tests', () => {
       const email = 'test@example.com';
       const password = 'password123';
 
-      prosumersService.findAll.mockRejectedValue(new Error('Database error'));
+      usersService.findAll.mockRejectedValue(new Error('Database error'));
 
       // Act
       const result = await authService.validateProsumer(email, password);
@@ -193,10 +193,10 @@ describe('AuthService - Unit Tests', () => {
   });
 
   describe('generateTokens', () => {
-    it('should generate JWT token with prosumer payload', () => {
+    it('should generate JWT token with user payload', () => {
       // Arrange
       const mockProsumer = {
-        prosumerId: 'test-prosumer-1',
+        userId: 'test-user-1',
         email: 'test@example.com',
         name: 'Test User',
         createdAt: new Date().toISOString(),
@@ -213,19 +213,19 @@ describe('AuthService - Unit Tests', () => {
       expect(result).toBeDefined();
       expect(result.access_token).toBe(mockToken);
       expect(result.tokenType).toBe('Bearer');
-      expect(result.prosumer.prosumerId).toBe(mockProsumer.prosumerId);
-      expect(result.prosumer.email).toBe(mockProsumer.email);
+      expect(result.user.userId).toBe(mockProsumer.userId);
+      expect(result.user.email).toBe(mockProsumer.email);
       expect(jwtService.sign).toHaveBeenCalledWith({
-        prosumerId: mockProsumer.prosumerId,
+        userId: mockProsumer.userId,
         email: mockProsumer.email,
-        sub: mockProsumer.prosumerId,
+        sub: mockProsumer.userId,
       });
     });
 
     it('should include expiration time in response', () => {
       // Arrange
       const mockProsumer = {
-        prosumerId: 'test-prosumer-1',
+        userId: 'test-user-1',
         email: 'test@example.com',
         name: 'Test User',
         createdAt: new Date().toISOString(),
@@ -245,7 +245,7 @@ describe('AuthService - Unit Tests', () => {
   });
 
   describe('register', () => {
-    it('should successfully register new prosumer with wallet', async () => {
+    it('should successfully register new user with wallet', async () => {
       // Arrange
       const registerDto: RegisterDto = {
         email: 'newuser@example.com',
@@ -254,20 +254,20 @@ describe('AuthService - Unit Tests', () => {
       };
 
       const mockCreatedUser = await createMockUser({
-        prosumerId: 'prosumer_new_123',
+        userId: 'user_new_123',
         email: registerDto.email,
         name: registerDto.name,
       });
 
       const mockWallet = {
         walletAddress: '0x742d35Cc6643C0532925a3b8D0B5a9d5E5b8e8C9',
-        prosumerId: mockCreatedUser.prosumerId,
+        userId: mockCreatedUser.userId,
         walletName: `${registerDto.name}'s Wallet`,
       };
 
-      prosumersService.findAll.mockResolvedValue([]);
+      usersService.findAll.mockResolvedValue([]);
       cryptoService.hashPassword.mockResolvedValue('hashed-password');
-      prosumersService.create.mockResolvedValue(mockCreatedUser as any);
+      usersService.create.mockResolvedValue(mockCreatedUser as any);
       cryptoService.encrypt.mockReturnValue('encrypted-private-key');
       walletsService.create.mockResolvedValue(mockWallet as any);
       transactionLogsService.create.mockResolvedValue({} as any);
@@ -277,16 +277,16 @@ describe('AuthService - Unit Tests', () => {
 
       // Assert
       expect(result).toBeDefined();
-      expect(result.prosumerId).toBeDefined();
+      expect(result.userId).toBeDefined();
       expect(result.email).toBe(registerDto.email);
       expect(result.name).toBe(registerDto.name);
-      expect(prosumersService.findAll).toHaveBeenCalledWith({
+      expect(usersService.findAll).toHaveBeenCalledWith({
         email: registerDto.email,
       });
       expect(cryptoService.hashPassword).toHaveBeenCalledWith(
         registerDto.password,
       );
-      expect(prosumersService.create).toHaveBeenCalled();
+      expect(usersService.create).toHaveBeenCalled();
       expect(walletsService.create).toHaveBeenCalled();
       expect(transactionLogsService.create).toHaveBeenCalled();
     });
@@ -303,7 +303,7 @@ describe('AuthService - Unit Tests', () => {
         email: registerDto.email,
       });
 
-      prosumersService.findAll.mockResolvedValue([existingUser]);
+      usersService.findAll.mockResolvedValue([existingUser]);
 
       // Act & Assert
       await expect(authService.register(registerDto)).rejects.toThrow(
@@ -323,9 +323,9 @@ describe('AuthService - Unit Tests', () => {
         name: 'New User',
       };
 
-      prosumersService.findAll.mockResolvedValue([]);
+      usersService.findAll.mockResolvedValue([]);
       cryptoService.hashPassword.mockResolvedValue('hashed-password');
-      prosumersService.create.mockRejectedValue(new Error('Database error'));
+      usersService.create.mockRejectedValue(new Error('Database error'));
 
       // Act & Assert
       await expect(authService.register(registerDto)).rejects.toThrow(
@@ -338,10 +338,10 @@ describe('AuthService - Unit Tests', () => {
   });
 
   describe('getProfile', () => {
-    it('should return prosumer profile with wallets and meters', async () => {
+    it('should return user profile with wallets and meters', async () => {
       // Arrange
-      const prosumerId = 'test-prosumer-1';
-      const mockUser = await createMockUser({ prosumerId });
+      const userId = 'test-user-1';
+      const mockUser = await createMockUser({ userId });
       const mockWallets = [
         {
           walletAddress: '0x742d35Cc6643C0532925a3b8D0B5a9d5E5b8e8C9',
@@ -362,45 +362,45 @@ describe('AuthService - Unit Tests', () => {
         },
       ];
 
-      prosumersService.findOne.mockResolvedValue(mockUser as any);
+      usersService.findOne.mockResolvedValue(mockUser as any);
       walletsService.findByProsumerId.mockResolvedValue(mockWallets as any);
       smartMetersService.findByProsumerId.mockResolvedValue(mockMeters as any);
 
       // Act
-      const result = await authService.getProfile(prosumerId);
+      const result = await authService.getProfile(userId);
 
       // Assert
       expect(result).toBeDefined();
-      expect(result.profile.prosumerId).toBe(prosumerId);
+      expect(result.profile.userId).toBe(userId);
       expect(result.wallets).toHaveLength(1);
       expect(result.meters).toHaveLength(1);
-      expect(prosumersService.findOne).toHaveBeenCalledWith(prosumerId);
-      expect(walletsService.findByProsumerId).toHaveBeenCalledWith(prosumerId);
+      expect(usersService.findOne).toHaveBeenCalledWith(userId);
+      expect(walletsService.findByProsumerId).toHaveBeenCalledWith(userId);
       expect(smartMetersService.findByProsumerId).toHaveBeenCalledWith(
-        prosumerId,
+        userId,
       );
     });
 
-    it('should throw UnauthorizedException if prosumer not found', async () => {
+    it('should throw UnauthorizedException if user not found', async () => {
       // Arrange
-      const prosumerId = 'non-existent';
+      const userId = 'non-existent';
 
-      prosumersService.findOne.mockRejectedValue(new Error('Not found'));
+      usersService.findOne.mockRejectedValue(new Error('Not found'));
 
       // Act & Assert
-      await expect(authService.getProfile(prosumerId)).rejects.toThrow(
+      await expect(authService.getProfile(userId)).rejects.toThrow(
         UnauthorizedException,
       );
-      await expect(authService.getProfile(prosumerId)).rejects.toThrow(
+      await expect(authService.getProfile(userId)).rejects.toThrow(
         'Profile not found',
       );
     });
   });
 
   describe('logout', () => {
-    it('should successfully logout prosumer and blacklist token', async () => {
+    it('should successfully logout user and blacklist token', async () => {
       // Arrange
-      const prosumerId = 'test-prosumer-1';
+      const userId = 'test-user-1';
       const accessToken = 'mock-jwt-token';
       const mockRequest = {
         ip: '127.0.0.1',
@@ -412,7 +412,7 @@ describe('AuthService - Unit Tests', () => {
 
       // Act
       const result = await authService.logout(
-        prosumerId,
+        userId,
         accessToken,
         mockRequest,
       );
@@ -422,7 +422,7 @@ describe('AuthService - Unit Tests', () => {
       expect(result.message).toBe('Logged out successfully');
       expect(blacklistService.blacklistToken).toHaveBeenCalledWith(
         accessToken,
-        prosumerId,
+        userId,
         expect.any(String),
         '127.0.0.1',
         'Mozilla/5.0',
@@ -433,7 +433,7 @@ describe('AuthService - Unit Tests', () => {
 
     it('should extract token from Authorization header if not provided', async () => {
       // Arrange
-      const prosumerId = 'test-prosumer-1';
+      const userId = 'test-user-1';
       const mockRequest = {
         headers: {
           authorization: 'Bearer mock-jwt-token',
@@ -447,7 +447,7 @@ describe('AuthService - Unit Tests', () => {
 
       // Act
       const result = await authService.logout(
-        prosumerId,
+        userId,
         undefined,
         mockRequest,
       );
@@ -456,7 +456,7 @@ describe('AuthService - Unit Tests', () => {
       expect(result).toBeDefined();
       expect(blacklistService.blacklistToken).toHaveBeenCalledWith(
         'mock-jwt-token',
-        prosumerId,
+        userId,
         expect.any(String),
         expect.any(String),
         expect.any(String),
@@ -466,7 +466,7 @@ describe('AuthService - Unit Tests', () => {
 
     it('should throw BadRequestException on blacklist error', async () => {
       // Arrange
-      const prosumerId = 'test-prosumer-1';
+      const userId = 'test-user-1';
       const accessToken = 'mock-jwt-token';
 
       blacklistService.blacklistToken.mockRejectedValue(
@@ -474,10 +474,10 @@ describe('AuthService - Unit Tests', () => {
       );
 
       // Act & Assert
-      await expect(authService.logout(prosumerId, accessToken)).rejects.toThrow(
+      await expect(authService.logout(userId, accessToken)).rejects.toThrow(
         BadRequestException,
       );
-      await expect(authService.logout(prosumerId, accessToken)).rejects.toThrow(
+      await expect(authService.logout(userId, accessToken)).rejects.toThrow(
         'Logout failed',
       );
     });
@@ -486,7 +486,7 @@ describe('AuthService - Unit Tests', () => {
   describe('logoutAll', () => {
     it('should successfully logout from all devices', async () => {
       // Arrange
-      const prosumerId = 'test-prosumer-1';
+      const userId = 'test-user-1';
       const mockRequest = {
         ip: '127.0.0.1',
         get: jest.fn().mockReturnValue('Mozilla/5.0'),
@@ -496,13 +496,13 @@ describe('AuthService - Unit Tests', () => {
       transactionLogsService.create.mockResolvedValue({} as any);
 
       // Act
-      const result = await authService.logoutAll(prosumerId, mockRequest);
+      const result = await authService.logoutAll(userId, mockRequest);
 
       // Assert
       expect(result).toBeDefined();
       expect(result.message).toBe('Logged out from all devices successfully');
       expect(blacklistService.blacklistUser).toHaveBeenCalledWith(
-        prosumerId,
+        userId,
         expect.any(String),
         '127.0.0.1',
         'Mozilla/5.0',
@@ -514,17 +514,17 @@ describe('AuthService - Unit Tests', () => {
 
     it('should throw BadRequestException on blacklist error', async () => {
       // Arrange
-      const prosumerId = 'test-prosumer-1';
+      const userId = 'test-user-1';
 
       blacklistService.blacklistUser.mockRejectedValue(
         new Error('Blacklist error'),
       );
 
       // Act & Assert
-      await expect(authService.logoutAll(prosumerId)).rejects.toThrow(
+      await expect(authService.logoutAll(userId)).rejects.toThrow(
         BadRequestException,
       );
-      await expect(authService.logoutAll(prosumerId)).rejects.toThrow(
+      await expect(authService.logoutAll(userId)).rejects.toThrow(
         'Logout from all devices failed',
       );
     });

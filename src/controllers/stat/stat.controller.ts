@@ -117,8 +117,7 @@ export class StatController {
   async getBlockchainSyncStatus(@Request() req: AuthenticatedUser) {
     const userId = req.user.userId;
 
-    const syncStatus =
-      await this.statService.getBlockchainSyncStatus(userId);
+    const syncStatus = await this.statService.getBlockchainSyncStatus(userId);
 
     return ResponseFormatter.success(
       syncStatus,

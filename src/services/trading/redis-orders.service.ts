@@ -26,7 +26,7 @@ export interface OrderData {
  * Data Structure:
  * - Hash: orders:{orderId} - Full order details
  * - Sorted Set: orders:by_type:{BID|ASK} - Orders sorted by price (score = price * 100)
- * - Sorted Set: orders:by_user:{userId} - Orders per prosumer
+ * - Sorted Set: orders:by_user:{userId} - Orders per user
  * - Sorted Set: orders:by_status:{status} - Orders by status
  * - Set: orders:all - Set of all order IDs for fast iteration
  *
@@ -103,7 +103,7 @@ export class RedisOrdersService implements OnModuleInit {
     const priceScore = Math.floor(order.priceIdrsPerEtk * 100); // Convert to integer
     pipeline.zadd(`orders:by_type:${order.orderType}`, priceScore, orderId);
 
-    // Add to sorted set by prosumer (score = timestamp)
+    // Add to sorted set by user (score = timestamp)
     const timestamp = new Date(order.createdAtOnChain).getTime();
     pipeline.zadd(`orders:by_user:${order.userId}`, timestamp, orderId);
 
@@ -163,7 +163,7 @@ export class RedisOrdersService implements OnModuleInit {
         -1,
       );
     } else if (filter?.userId) {
-      // Get orders by prosumer
+      // Get orders by user
       orderIds = await this.client.zrange(
         `orders:by_user:${filter.userId}`,
         0,
@@ -362,9 +362,9 @@ export class RedisOrdersService implements OnModuleInit {
     pipeline.del('orders:by_status:FILLED');
     pipeline.del('orders:by_status:CANCELLED');
 
-    // Delete prosumer sets (use scan for safety)
-    const prosumerKeys = await this.client.keys('orders:by_user:*');
-    for (const key of prosumerKeys) {
+    // Delete user sets (use scan for safety)
+    const userKeys = await this.client.keys('orders:by_user:*');
+    for (const key of userKeys) {
       pipeline.del(key);
     }
 

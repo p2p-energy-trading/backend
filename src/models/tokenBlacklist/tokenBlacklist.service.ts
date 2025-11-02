@@ -45,7 +45,7 @@ export class BlacklistService {
     // );
 
     // this.logger.debug(
-    //   `Blacklisting token for prosumer ${userId}: ${tokenHash}`,
+    //   `Blacklisting token for user ${userId}: ${tokenHash}`,
     // );
 
     // Check if token is already blacklisted

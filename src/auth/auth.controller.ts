@@ -100,7 +100,7 @@ export class AuthController {
    * LocalAuthGuard (Passport) handles credential validation via LocalStrategy.
    *
    * @throws {UnauthorizedException} Invalid credentials (wrong email or password)
-   * @throws {UnauthorizedException} Prosumer account not found
+   * @throws {UnauthorizedException} user account not found
    */
   @UseGuards(LocalAuthGuard)
   @Post('login')
@@ -156,7 +156,7 @@ export class AuthController {
    * Generates JWT token for auto-login after registration.
    *
    * @param registerDto - Registration data including email, password, and name
-   * @returns ResponseFormatter with JWT token and created prosumer information
+   * @returns ResponseFormatter with JWT token and created user information
    *
    * @example
    * POST /auth/register
@@ -187,8 +187,8 @@ export class AuthController {
    * }
    *
    * @remarks
-   * After successful registration, prosumer is automatically logged in.
-   * A wallet is automatically generated for the new prosumer.
+   * After successful registration, user is automatically logged in.
+   * A wallet is automatically generated for the new user.
    * Email is used as the unique identifier (not username).
    *
    * @throws {BadRequestException} Email already registered
@@ -230,7 +230,7 @@ export class AuthController {
     | ReturnType<typeof ResponseFormatter.error>
   > {
     try {
-      // Register prosumer (returns ValidatedUser)
+      // Register user (returns ValidatedUser)
       const validatedUser = await this.authService.register(registerDto);
 
       // Generate JWT token for auto-login (same pattern as login endpoint)
@@ -239,7 +239,7 @@ export class AuthController {
       return ResponseFormatter.success(
         {
           ...loginInfo,
-          prosumer: validatedUser,
+          user: validatedUser,
         },
         'User registered successfully',
       );
@@ -387,9 +387,7 @@ export class AuthController {
   @ApiUnauthorizedResponse({
     description: 'Invalid or expired JWT token',
   })
-  async logout(
-    @Request() req: ExpressRequest & { user: { userId: string } },
-  ) {
+  async logout(@Request() req: ExpressRequest & { user: { userId: string } }) {
     try {
       // Token will be extracted automatically from Authorization header
       const result = await this.authService.logout(

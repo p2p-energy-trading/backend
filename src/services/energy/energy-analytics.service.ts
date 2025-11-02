@@ -28,7 +28,7 @@ export class EnergyAnalyticsService {
    */
   async getEnergyStats(userId: string) {
     try {
-      // Get prosumer's meters
+      // Get user's meters
       const devices = await this.smartMetersService.findAll({ userId });
       const meterIds: string[] = devices.map(
         (d: { meterId: string }) => d.meterId,
@@ -130,7 +130,7 @@ export class EnergyAnalyticsService {
    */
   async getEnergyChartData(userId: string, days: number = 7) {
     try {
-      // Get prosumer's meters
+      // Get user's meters
       const devices = await this.smartMetersService.findAll({ userId });
       const meterIds: string[] = devices.map(
         (d: { meterId: string }) => d.meterId,
@@ -214,7 +214,7 @@ export class EnergyAnalyticsService {
    */
   async getRealTimeEnergyData(userId: string) {
     try {
-      // Get prosumer's meters
+      // Get user's meters
       const devices = await this.smartMetersService.findAll({ userId });
       const meterIds: string[] = devices.map(
         (d: { meterId: string }) => d.meterId,
@@ -341,7 +341,7 @@ export class EnergyAnalyticsService {
    */
   async getSettlementStats(userId: string) {
     try {
-      // Get prosumer's meters
+      // Get user's meters
       const devices = await this.smartMetersService.findAll({ userId });
       const meterIds: string[] = devices.map(
         (d: { meterId: string }) => d.meterId,
@@ -463,17 +463,17 @@ export class EnergyAnalyticsService {
     }>
   > {
     try {
-      // Get prosumer's meters
+      // Get user's meters
       const devices = await this.smartMetersService.findAll({ userId });
       let meterIds: string[] = devices.map(
         (d: { meterId: string }) => d.meterId,
       );
 
       if (meterId) {
-        // Verify meter belongs to prosumer
+        // Verify meter belongs to user
         if (!meterIds.includes(meterId)) {
           this.logger.warn(
-            `Meter ${meterId} does not belong to prosumer ${userId}`,
+            `Meter ${meterId} does not belong to user ${userId}`,
           );
           return [];
         }

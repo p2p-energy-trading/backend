@@ -61,7 +61,7 @@ export class WalletController {
     private walletsService: WalletsService,
     private idrsConversionsService: IdrsConversionsService,
     private cryptoService: CryptoService,
-    private prosumersService: UsersService,
+    private usersService: UsersService,
     private blockchainService: BlockchainService,
     private transactionLogsService: TransactionLogsService,
   ) {}
@@ -258,10 +258,9 @@ export class WalletController {
     const userId = req.user.userId;
 
     // Verify ownership
-    const prosumers =
-      await this.prosumersService.findByWalletAddress(walletAddress);
+    const users = await this.usersService.findByWalletAddress(walletAddress);
 
-    if (!prosumers.find((p) => p.userId === userId)) {
+    if (!users.find((p) => p.userId === userId)) {
       throw new BadRequestException('Unauthorized: You do not own this wallet');
     }
 
@@ -305,11 +304,11 @@ export class WalletController {
 
     try {
       // Verify wallet ownership
-      const prosumers = await this.prosumersService.findByWalletAddress(
+      const users = await this.usersService.findByWalletAddress(
         body.walletAddress,
       );
 
-      if (!prosumers.find((p) => p.userId === userId)) {
+      if (!users.find((p) => p.userId === userId)) {
         throw new BadRequestException(
           'Unauthorized: You do not own this wallet',
         );
@@ -419,7 +418,7 @@ export class WalletController {
       });
 
       this.logger.log(
-        `${body.conversionType} conversion completed for prosumer ${userId}, txHash: ${blockchainTxHash}`,
+        `${body.conversionType} conversion completed for user ${userId}, txHash: ${blockchainTxHash}`,
       );
 
       // Get wallet balances after conversion
@@ -451,7 +450,7 @@ export class WalletController {
       const errorStack = error instanceof Error ? error.stack : undefined;
 
       this.logger.error(
-        `IDRS conversion failed for prosumer ${userId}: ${errorMessage}`,
+        `IDRS conversion failed for user ${userId}: ${errorMessage}`,
         errorStack,
       );
 
@@ -517,10 +516,9 @@ export class WalletController {
     const userId = req.user.userId;
 
     // Verify ownership
-    const prosumers =
-      await this.prosumersService.findByWalletAddress(walletAddress);
+    const users = await this.usersService.findByWalletAddress(walletAddress);
 
-    if (!prosumers.find((p) => p.userId === userId)) {
+    if (!users.find((p) => p.userId === userId)) {
       throw new BadRequestException('Unauthorized');
     }
 
@@ -562,10 +560,9 @@ export class WalletController {
     const userId = req.user.userId;
 
     // Verify ownership
-    const prosumers =
-      await this.prosumersService.findByWalletAddress(walletAddress);
+    const users = await this.usersService.findByWalletAddress(walletAddress);
 
-    if (!prosumers.find((p) => p.userId === userId)) {
+    if (!users.find((p) => p.userId === userId)) {
       throw new BadRequestException('Unauthorized');
     }
 
@@ -590,7 +587,7 @@ export class WalletController {
 
   // Change Settlement Primary Wallet
   // This endpoint allows a user to change their primary wallet for settlement purposes.
-  // It verifies ownership of the wallet and updates the primary wallet in the prosumer's profile
+  // It verifies ownership of the wallet and updates the primary wallet in the user's profile
   @Post(':walletAddress/set-primary')
   @ApiOperation({
     summary: 'Set as primary wallet',
@@ -616,18 +613,14 @@ export class WalletController {
   ) {
     const userId = req.user.userId;
     // Verify ownership
-    const prosumers =
-      await this.prosumersService.findByWalletAddress(walletAddress);
+    const users = await this.usersService.findByWalletAddress(walletAddress);
 
-    if (!prosumers.find((p) => p.userId === userId)) {
+    if (!users.find((p) => p.userId === userId)) {
       throw new BadRequestException('Unauthorized');
     }
 
-    // Update primary wallet in prosumer's profile
-    await this.prosumersService.updatePrimaryWalletAddress(
-      userId,
-      walletAddress,
-    );
+    // Update primary wallet in user's profile
+    await this.usersService.updatePrimaryWalletAddress(userId, walletAddress);
 
     return ResponseFormatter.success(
       { walletAddress, isPrimary: true },
@@ -662,10 +655,9 @@ export class WalletController {
 
     // Verify ownership
     const currentWallet = await this.walletsService.findOne(walletAddress);
-    const prosumers =
-      await this.prosumersService.findByWalletAddress(walletAddress);
+    const users = await this.usersService.findByWalletAddress(walletAddress);
 
-    if (!prosumers.find((p) => p.userId === userId)) {
+    if (!users.find((p) => p.userId === userId)) {
       throw new BadRequestException('Unauthorized');
     }
 
@@ -854,7 +846,7 @@ export class WalletController {
         throw error;
       }
       this.logger.error(
-        `Error fetching IDRS transaction history for prosumer ${userId}: ${
+        `Error fetching IDRS transaction history for user ${userId}: ${
           error instanceof Error ? error.message : String(error)
         }`,
       );
@@ -992,7 +984,7 @@ export class WalletController {
         throw error;
       }
       this.logger.error(
-        `Error fetching token minting history for prosumer ${userId}: ${
+        `Error fetching token minting history for user ${userId}: ${
           error instanceof Error ? error.message : String(error)
         }`,
       );

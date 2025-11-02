@@ -42,7 +42,7 @@ export class BlockchainService {
     private cryptoService: CryptoService,
     @Inject(forwardRef(() => EnergySettlementService))
     private energySettlementService: EnergySettlementService,
-    private prosumerService: UsersService,
+    private userService: UsersService,
     private tradingMarketService: TradingMarketService,
   ) {
     this.initializeProvider();
@@ -1244,10 +1244,10 @@ export class BlockchainService {
     walletAddress: string,
   ): Promise<string | null> {
     try {
-      const prosumers =
-        await this.prosumerService.findByWalletAddress(walletAddress);
+      const users =
+        await this.userService.findByWalletAddress(walletAddress);
       const firstUser: unknown =
-        Array.isArray(prosumers) && prosumers.length > 0 ? prosumers[0] : null;
+        Array.isArray(users) && users.length > 0 ? users[0] : null;
       return firstUser &&
         typeof firstUser === 'object' &&
         firstUser !== null &&
@@ -1274,7 +1274,7 @@ export class BlockchainService {
     try {
       const userId = await this.getUserIdByWallet(user);
       if (!userId) {
-        this.logger.warn(`No prosumer found for wallet ${user}`);
+        this.logger.warn(`No user found for wallet ${user}`);
         return;
       }
 
@@ -1498,7 +1498,7 @@ export class BlockchainService {
     try {
       const userId = await this.getUserIdByWallet(userAddress);
       if (!userId) {
-        this.logger.warn(`No prosumer found for wallet ${userAddress}`);
+        this.logger.warn(`No user found for wallet ${userAddress}`);
         return;
       }
 

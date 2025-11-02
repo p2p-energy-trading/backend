@@ -84,7 +84,7 @@ export class SmartMeterController {
     private smartMetersService: SmartMetersService,
     private mqttService: MqttService,
     private smartMeterHealthService: SmartMeterHealthService,
-    private prosumersService: UsersService,
+    private usersService: UsersService,
     private redisTelemetryService: RedisTelemetryService,
     private telemetryAggregationService: TelemetryAggregationService,
     private telemetryArchivalService: TelemetryArchivalService,
@@ -170,7 +170,7 @@ export class SmartMeterController {
         await this.smartMetersService.create(smartMeterData);
 
       this.logger.log(
-        `Smart meter ${body.meterId} created and linked to prosumer ${userId}`,
+        `Smart meter ${body.meterId} created and linked to user ${userId}`,
       );
 
       return ResponseFormatter.success(
@@ -204,8 +204,7 @@ export class SmartMeterController {
   @Get('list')
   @ApiOperation({
     summary: 'Get my smart meters',
-    description:
-      'Retrieve all smart meters owned by the authenticated prosumer',
+    description: 'Retrieve all smart meters owned by the authenticated user',
   })
   @ApiResponse({
     status: 200,
@@ -228,9 +227,8 @@ export class SmartMeterController {
     try {
       const userId = req.user.userId;
 
-      // Get all smart meters for this prosumer
-      const smartMeters =
-        await this.smartMetersService.findByUserId(userId);
+      // Get all smart meters for this user
+      const smartMeters = await this.smartMetersService.findByUserId(userId);
 
       return ResponseFormatter.successWithMetadata(
         smartMeters.map((meter) => ({
@@ -364,18 +362,18 @@ export class SmartMeterController {
     const { meterId, command } = body;
     const userId: string = req.user.userId;
 
-    // Verify that the prosumer owns this device
+    // Verify that the user owns this device
     try {
-      const prosumers = await this.prosumersService.findByMeterId(meterId);
+      const users = await this.usersService.findByMeterId(meterId);
 
-      if (!prosumers.find((p) => p.userId === userId)) {
+      if (!users.find((p) => p.userId === userId)) {
         throw new BadRequestException(
           'Unauthorized: You do not own this device',
         );
       }
     } catch (error) {
       this.logger.error(
-        `Failed to send command to device ${meterId} for prosumer ${userId}: ${error instanceof Error ? error.message : String(error)}`,
+        `Failed to send command to device ${meterId} for user ${userId}: ${error instanceof Error ? error.message : String(error)}`,
       );
       return ResponseFormatter.error(
         'Device not found or unauthorized',
@@ -475,14 +473,14 @@ export class SmartMeterController {
 
     // Verify ownership
     try {
-      const prosumers = await this.prosumersService.findByMeterId(meterId);
+      const users = await this.usersService.findByMeterId(meterId);
 
-      if (!prosumers.find((p) => p.userId === userId)) {
+      if (!users.find((p) => p.userId === userId)) {
         throw new BadRequestException('Unauthorized');
       }
     } catch (error) {
       this.logger.error(
-        `Failed to fetch status for device ${meterId} for prosumer ${userId}: ${error instanceof Error ? error.message : String(error)}`,
+        `Failed to fetch status for device ${meterId} for user ${userId}: ${error instanceof Error ? error.message : String(error)}`,
       );
       return ResponseFormatter.error(
         'Device not found or unauthorized',
@@ -589,8 +587,7 @@ export class SmartMeterController {
   async getDeviceHealth(@Request() req: User) {
     try {
       const userId = req.user.userId;
-      const health =
-        await this.smartMeterHealthService.getDeviceHealth(userId);
+      const health = await this.smartMeterHealthService.getDeviceHealth(userId);
 
       return ResponseFormatter.success(
         health,
@@ -640,9 +637,9 @@ export class SmartMeterController {
     try {
       const userId = req.user.userId;
 
-      // Verify meter belongs to prosumer
-      const prosumers = await this.prosumersService.findByMeterId(meterId);
-      if (!prosumers.find((p) => p.userId === userId)) {
+      // Verify meter belongs to user
+      const users = await this.usersService.findByMeterId(meterId);
+      if (!users.find((p) => p.userId === userId)) {
         throw new BadRequestException('Unauthorized access to this meter');
       }
 
@@ -687,8 +684,7 @@ export class SmartMeterController {
   async listDevices(@Request() req: User) {
     try {
       const userId = req.user.userId;
-      const devices =
-        await this.smartMeterHealthService.getDeviceList(userId);
+      const devices = await this.smartMeterHealthService.getDeviceList(userId);
 
       return ResponseFormatter.successWithCount(
         devices,
@@ -733,9 +729,9 @@ export class SmartMeterController {
     try {
       const userId = req.user.userId;
 
-      // Verify meter belongs to prosumer
-      const prosumers = await this.prosumersService.findByMeterId(meterId);
-      if (!prosumers.find((p) => p.userId === userId)) {
+      // Verify meter belongs to user
+      const users = await this.usersService.findByMeterId(meterId);
+      if (!users.find((p) => p.userId === userId)) {
         throw new BadRequestException('Unauthorized access to this meter');
       }
 
@@ -1058,9 +1054,7 @@ export class SmartMeterController {
         throw new BadRequestException('Failed to remove smart meter');
       }
 
-      this.logger.log(
-        `Smart meter ${meterId} removed by prosumer ${userId}`,
-      );
+      this.logger.log(`Smart meter ${meterId} removed by user ${userId}`);
 
       return ResponseFormatter.success(
         {

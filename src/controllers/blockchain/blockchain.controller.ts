@@ -85,7 +85,7 @@ export class BlockchainController {
 
     if (!wallet) {
       throw new BadRequestException(
-        'Wallet not found or does not belong to this prosumer',
+        'Wallet not found or does not belong to this user',
       );
     }
 

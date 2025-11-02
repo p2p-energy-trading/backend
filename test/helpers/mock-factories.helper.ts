@@ -15,7 +15,7 @@ export const createMockUser = async (
   overrides?: Partial<User>,
 ): Promise<User> => {
   const user = new User();
-  user.prosumerId = overrides?.prosumerId || 'test-prosumer-1';
+  user.userId = overrides?.userId || 'test-user-1';
   user.email = overrides?.email || 'test@example.com';
   user.passwordHash =
     overrides?.passwordHash || (await bcrypt.hash('password123', 10));
@@ -36,7 +36,7 @@ export const createMockWallet = (overrides?: Partial<Wallet>): Wallet => {
   const wallet = new Wallet();
   wallet.walletAddress =
     overrides?.walletAddress || '0x742d35Cc6643C0532925a3b8D0B5a9d5E5b8e8C9';
-  wallet.prosumerId = overrides?.prosumerId || 'test-prosumer-1';
+  wallet.userId = overrides?.userId || 'test-user-1';
   wallet.walletName = overrides?.walletName || 'Test Wallet';
   wallet.encryptedPrivateKey =
     overrides?.encryptedPrivateKey || 'encrypted-private-key';
@@ -57,7 +57,7 @@ export const createMockSmartMeter = (
 ): SmartMeter => {
   const meter = new SmartMeter();
   meter.meterId = overrides?.meterId || 'meter-001';
-  meter.prosumerId = overrides?.prosumerId || 'test-prosumer-1';
+  meter.userId = overrides?.userId || 'test-user-1';
   meter.location = overrides?.location || 'Test Location';
   meter.status = overrides?.status || 'online';
   meter.meterBlockchainAddress =
@@ -120,7 +120,7 @@ export const createMockTradeOrder = (
 ): TradeOrdersCache => {
   const order = new TradeOrdersCache();
   order.orderId = overrides?.orderId || 'order-001';
-  order.prosumerId = overrides?.prosumerId || 'test-prosumer-1';
+  order.userId = overrides?.userId || 'test-user-1';
   order.walletAddress =
     overrides?.walletAddress || '0x742d35Cc6643C0532925a3b8D0B5a9d5E5b8e8C9';
   order.orderType = overrides?.orderType || 'ASK';
@@ -145,8 +145,8 @@ export const createMockMarketTrade = (
   trade.tradeId = overrides?.tradeId || 1;
   trade.buyerOrderId = overrides?.buyerOrderId || 'buy-order-001';
   trade.sellerOrderId = overrides?.sellerOrderId || 'sell-order-001';
-  trade.buyerProsumerId = overrides?.buyerProsumerId || 'buyer-prosumer-1';
-  trade.sellerProsumerId = overrides?.sellerProsumerId || 'seller-prosumer-1';
+  trade.buyerProsumerId = overrides?.buyerProsumerId || 'buyer-user-1';
+  trade.sellerProsumerId = overrides?.sellerProsumerId || 'seller-user-1';
   trade.buyerWalletAddress =
     overrides?.buyerWalletAddress ||
     '0x742d35Cc6643C0532925a3b8D0B5a9d5E5b8e8C9';
@@ -172,7 +172,7 @@ export const createMockTransactionLog = (
 ): TransactionLog => {
   const log = new TransactionLog();
   log.logId = overrides?.logId || 1;
-  log.prosumerId = overrides?.prosumerId || 'test-prosumer-1';
+  log.userId = overrides?.userId || 'test-user-1';
   log.relatedOrderId = overrides?.relatedOrderId || 'order-001';
   if (overrides?.relatedSettlementId !== undefined) {
     log.relatedSettlementId = overrides.relatedSettlementId;
@@ -197,7 +197,7 @@ export const createMockIdrsConversion = (
 ): IdrsConversion => {
   const conversion = new IdrsConversion();
   conversion.conversionId = overrides?.conversionId || 1;
-  conversion.prosumerId = overrides?.prosumerId || 'test-prosumer-1';
+  conversion.userId = overrides?.userId || 'test-user-1';
   conversion.walletAddress =
     overrides?.walletAddress || '0x742d35Cc6643C0532925a3b8D0B5a9d5E5b8e8C9';
   conversion.conversionType = overrides?.conversionType || 'ON_RAMP';
@@ -330,9 +330,9 @@ export const createMockDeviceStatus = (overrides?: any) => ({
  * Create mock JWT payload
  */
 export const createMockJwtPayload = (overrides?: any) => ({
-  prosumerId: overrides?.prosumerId || 'test-prosumer-1',
+  userId: overrides?.userId || 'test-user-1',
   username: overrides?.username || 'testuser',
-  sub: overrides?.sub || 'test-prosumer-1',
+  sub: overrides?.sub || 'test-user-1',
   iat: overrides?.iat || Math.floor(Date.now() / 1000),
   exp: overrides?.exp || Math.floor(Date.now() / 1000) + 3600,
 });

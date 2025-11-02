@@ -1,6 +1,6 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
+import { Repository } from 'typeorm';
 import { EnergySettlementsService } from '../../models/energySettlement/energySettlement.service';
 import { MarketTradesService } from '../../models/marketTrade/marketTrade.service';
 import { SmartMetersService } from '../../models/smartMeter/smartMeter.service';
@@ -85,7 +85,7 @@ export class StatService {
 
   async getStats(userId: string): Promise<StatStats> {
     try {
-      // Get prosumer's devices and wallets
+      // Get user's devices and wallets
       const [devices, wallets] = await Promise.all([
         this.getUserDevices(userId),
         this.walletsService.findAll({ userId }),
@@ -124,10 +124,7 @@ export class StatService {
       const devices = await this.smartMetersService.findAll({ userId });
       return devices || [];
     } catch (error) {
-      this.logger.warn(
-        `Error fetching devices for prosumer ${userId}:`,
-        error,
-      );
+      this.logger.warn(`Error fetching devices for user ${userId}:`, error);
       return [];
     }
   }

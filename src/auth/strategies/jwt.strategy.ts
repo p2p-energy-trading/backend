@@ -24,7 +24,7 @@ interface JwtPayload {
  * - Extracts JWT from Authorization header (Bearer token)
  * - Verifies token signature with JWT_SECRET
  * - Checks token and user blacklist status
- * - Validates prosumer still exists and is active
+ * - Validates user still exists and is active
  * - Injects user object to req.user
  *
  * @see {@link JwtAuthGuard} Guard that activates this strategy
@@ -35,7 +35,7 @@ interface JwtPayload {
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     private configService: ConfigService,
-    private prosumersService: UsersService,
+    private usersService: UsersService,
     private blacklistService: BlacklistService,
   ) {
     super({
@@ -74,13 +74,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
    * 6. Calls validate() with request and decoded payload
    * 7. Check if user is blacklisted (logout-all scenario)
    * 8. Check if specific token is blacklisted (logout scenario)
-   * 9. Verify prosumer still exists in database
+   * 9. Verify user still exists in database
    * 10. Return user object
    * 11. Passport injects user to req.user
    *
    * @security
    * - Blacklist check prevents revoked tokens from being accepted
-   * - Database check ensures prosumer still exists and is active
+   * - Database check ensures user still exists and is active
    * - Checks both user-level and token-level blacklists
    *
    * @example
@@ -93,7 +93,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
    * // If valid, req.user will contain:
    * {
    *   userId: "user_123",
-   *   email: "prosumer@enerlink.com",
+   *   email: "user@enerlink.com",
    *   name: "John Doe"
    * }
    */
@@ -114,14 +114,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         throw new UnauthorizedException('Token has been revoked');
       }
 
-      // Validate prosumer exists and is active in database
-      const prosumer = await this.prosumersService.findOne(payload.userId);
+      // Validate user exists and is active in database
+      const user = await this.usersService.findOne(payload.userId);
 
       // Return user object - will be available as req.user in controller
       return {
-        userId: prosumer.userId,
-        email: prosumer.email,
-        name: prosumer.name,
+        userId: user.userId,
+        email: user.email,
+        name: user.name,
       };
     } catch (error) {
       if (error instanceof UnauthorizedException) {

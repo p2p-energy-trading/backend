@@ -18,7 +18,7 @@ describe('TradingAnalyticsService - Unit Tests', () => {
     {
       walletId: 1,
       walletAddress: mockWalletAddress1,
-      prosumerId: 'prosumer-1',
+      userId: 'user-1',
       isPrimary: true,
       etkBalance: 100.5,
       idrsBalance: 5000.75,
@@ -26,7 +26,7 @@ describe('TradingAnalyticsService - Unit Tests', () => {
     {
       walletId: 2,
       walletAddress: mockWalletAddress2,
-      prosumerId: 'prosumer-1',
+      userId: 'user-1',
       isPrimary: false,
       etkBalance: 50.25,
       idrsBalance: 2500.5,
@@ -315,7 +315,7 @@ describe('TradingAnalyticsService - Unit Tests', () => {
     it('should return empty performance when no wallets found', async () => {
       walletsService.findAll.mockResolvedValueOnce([]);
 
-      const result = await service.getTradingPerformance('prosumer-1');
+      const result = await service.getTradingPerformance('user-1');
 
       expect(result.period).toBe('30 days');
       expect(result.summary.totalTrades).toBe(0);
@@ -327,7 +327,7 @@ describe('TradingAnalyticsService - Unit Tests', () => {
       walletsService.findAll.mockResolvedValueOnce(mockWallets);
       marketTradesService.findAll.mockResolvedValueOnce(mockTrades);
 
-      const result = await service.getTradingPerformance('prosumer-1', 30);
+      const result = await service.getTradingPerformance('user-1', 30);
 
       expect(result.period).toBe('30 days');
       expect(result.summary.totalTrades).toBe(4);
@@ -351,7 +351,7 @@ describe('TradingAnalyticsService - Unit Tests', () => {
       walletsService.findAll.mockResolvedValueOnce(walletsNoPrimary);
       marketTradesService.findAll.mockResolvedValueOnce(mockTrades);
 
-      const result = await service.getTradingPerformance('prosumer-1');
+      const result = await service.getTradingPerformance('user-1');
 
       // Should use first wallet's balances
       expect(result.balances.etkBalance).toBe('100.5');
@@ -362,7 +362,7 @@ describe('TradingAnalyticsService - Unit Tests', () => {
       walletsService.findAll.mockResolvedValueOnce(mockWallets);
       marketTradesService.findAll.mockResolvedValueOnce(mockTrades);
 
-      const result = await service.getTradingPerformance('prosumer-1', 7);
+      const result = await service.getTradingPerformance('user-1', 7);
 
       expect(result.period).toBe('7 days');
     });
@@ -382,7 +382,7 @@ describe('TradingAnalyticsService - Unit Tests', () => {
       walletsService.findAll.mockResolvedValueOnce(mockWallets);
       marketTradesService.findAll.mockResolvedValueOnce(buyOnlyTrades);
 
-      const result = await service.getTradingPerformance('prosumer-1');
+      const result = await service.getTradingPerformance('user-1');
 
       expect(result.financial.profitMargin).toBe(0);
     });
@@ -390,7 +390,7 @@ describe('TradingAnalyticsService - Unit Tests', () => {
     it('should handle service errors gracefully', async () => {
       walletsService.findAll.mockRejectedValueOnce(new Error('Database error'));
 
-      const result = await service.getTradingPerformance('prosumer-1');
+      const result = await service.getTradingPerformance('user-1');
 
       expect(result.period).toBe('30 days');
       expect(result.summary.totalTrades).toBe(0);
@@ -401,7 +401,7 @@ describe('TradingAnalyticsService - Unit Tests', () => {
     it('should return empty metrics when no wallets found', async () => {
       walletsService.findAll.mockResolvedValueOnce([]);
 
-      const result = await service.getTradingMetrics('prosumer-1');
+      const result = await service.getTradingMetrics('user-1');
 
       expect(result).toEqual({
         trades: {
@@ -424,7 +424,7 @@ describe('TradingAnalyticsService - Unit Tests', () => {
       marketTradesService.findAll.mockResolvedValueOnce(mockTrades);
       tradeOrdersCacheService.findAll.mockResolvedValueOnce(mockOrders);
 
-      const result = await service.getTradingMetrics('prosumer-1');
+      const result = await service.getTradingMetrics('user-1');
 
       // Trades: 2 buy (10 + 8 = 18 ETK), 2 sell (5 + 12 = 17 ETK)
       expect(result.trades.total).toBe(4);
@@ -466,7 +466,7 @@ describe('TradingAnalyticsService - Unit Tests', () => {
         ordersWithDifferentStatus,
       );
 
-      const result = await service.getTradingMetrics('prosumer-1');
+      const result = await service.getTradingMetrics('user-1');
 
       // Should only count OPEN orders (3 total)
       expect(result.orders.total).toBe(3);
@@ -488,7 +488,7 @@ describe('TradingAnalyticsService - Unit Tests', () => {
       marketTradesService.findAll.mockResolvedValueOnce(tradesWithDecimals);
       tradeOrdersCacheService.findAll.mockResolvedValueOnce([]);
 
-      const result = await service.getTradingMetrics('prosumer-1');
+      const result = await service.getTradingMetrics('user-1');
 
       expect(result.trades.buyVolume).toBe(10.123);
     });
@@ -496,7 +496,7 @@ describe('TradingAnalyticsService - Unit Tests', () => {
     it('should handle service errors gracefully', async () => {
       walletsService.findAll.mockRejectedValueOnce(new Error('Database error'));
 
-      const result = await service.getTradingMetrics('prosumer-1');
+      const result = await service.getTradingMetrics('user-1');
 
       expect(result.trades.total).toBe(0);
       expect(result.orders.total).toBe(0);
@@ -507,7 +507,7 @@ describe('TradingAnalyticsService - Unit Tests', () => {
     it('should return empty analytics when no wallets found', async () => {
       walletsService.findAll.mockResolvedValueOnce([]);
 
-      const result = await service.getTradeAnalytics('prosumer-1', 'monthly');
+      const result = await service.getTradeAnalytics('user-1', 'monthly');
 
       expect(result).toEqual({
         period: 'monthly',
@@ -529,7 +529,7 @@ describe('TradingAnalyticsService - Unit Tests', () => {
       walletsService.findAll.mockResolvedValueOnce(mockWallets);
       marketTradesService.findAll.mockResolvedValueOnce(mockTrades);
 
-      const result = await service.getTradeAnalytics('prosumer-1', 'daily');
+      const result = await service.getTradeAnalytics('user-1', 'daily');
 
       expect(result.period).toBe('daily');
       expect(result.periodDays).toBe(1);
@@ -552,7 +552,7 @@ describe('TradingAnalyticsService - Unit Tests', () => {
       walletsService.findAll.mockResolvedValueOnce(mockWallets);
       marketTradesService.findAll.mockResolvedValueOnce(mockTrades);
 
-      const result = await service.getTradeAnalytics('prosumer-1', 'weekly');
+      const result = await service.getTradeAnalytics('user-1', 'weekly');
 
       expect(result.period).toBe('weekly');
       expect(result.periodDays).toBe(7);
@@ -574,7 +574,7 @@ describe('TradingAnalyticsService - Unit Tests', () => {
       walletsService.findAll.mockResolvedValueOnce(mockWallets);
       marketTradesService.findAll.mockResolvedValueOnce(mockTrades);
 
-      const result = await service.getTradeAnalytics('prosumer-1', 'monthly');
+      const result = await service.getTradeAnalytics('user-1', 'monthly');
 
       expect(result.period).toBe('monthly');
       expect(result.periodDays).toBe(30);
@@ -598,7 +598,7 @@ describe('TradingAnalyticsService - Unit Tests', () => {
       walletsService.findAll.mockResolvedValueOnce(mockWallets);
       marketTradesService.findAll.mockResolvedValueOnce(mockTrades);
 
-      const result = await service.getTradeAnalytics('prosumer-1', 'daily');
+      const result = await service.getTradeAnalytics('user-1', 'daily');
 
       expect(result.trades).toBe(0);
       expect(result.volume).toBe(0);
@@ -627,7 +627,7 @@ describe('TradingAnalyticsService - Unit Tests', () => {
       walletsService.findAll.mockResolvedValueOnce(mockWallets);
       marketTradesService.findAll.mockResolvedValueOnce(tradesWithDecimals);
 
-      const result = await service.getTradeAnalytics('prosumer-1', 'daily');
+      const result = await service.getTradeAnalytics('user-1', 'daily');
 
       expect(result.volume).toBe(10.123); // 3 decimals
       expect(result.averagePrice).toBe(150.79); // 2 decimals
@@ -640,7 +640,7 @@ describe('TradingAnalyticsService - Unit Tests', () => {
     it('should handle service errors gracefully', async () => {
       walletsService.findAll.mockRejectedValueOnce(new Error('Database error'));
 
-      const result = await service.getTradeAnalytics('prosumer-1', 'monthly');
+      const result = await service.getTradeAnalytics('user-1', 'monthly');
 
       expect(result.period).toBe('monthly');
       expect(result.trades).toBe(0);
@@ -708,7 +708,7 @@ describe('TradingAnalyticsService - Unit Tests', () => {
       walletsService.findAll.mockResolvedValueOnce(zeroBalanceWallets);
       marketTradesService.findAll.mockResolvedValueOnce([]);
 
-      const result = await service.getTradingPerformance('prosumer-1');
+      const result = await service.getTradingPerformance('user-1');
 
       expect(result.balances.etkBalance).toBe('0');
       expect(result.balances.idrsBalance).toBe('0');

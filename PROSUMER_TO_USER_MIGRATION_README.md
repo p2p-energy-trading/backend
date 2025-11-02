@@ -7,12 +7,14 @@ This document provides comprehensive instructions for migrating the EnerLink dat
 ## 📋 What Changes?
 
 ### Database Schema Changes
+
 - **Table**: `prosumer` → `user`
 - **Primary Key**: `prosumer_id` → `user_id`
 - **Foreign Keys**: All references updated in 7 tables
 - **Indexes**: All indexes recreated with new names
 
 ### Affected Tables
+
 1. `user` (renamed from `prosumer`)
 2. `wallet` - FK: `prosumer_id` → `user_id`
 3. `smart_meter` - FK: `prosumer_id` → `user_id`
@@ -22,6 +24,7 @@ This document provides comprehensive instructions for migrating the EnerLink dat
 7. `token_blacklist` - FK: `prosumer_id` → `user_id`
 
 ### Code Changes (Already Completed ✅)
+
 - ✅ Entity models renamed
 - ✅ Services updated (200+ references)
 - ✅ Controllers updated
@@ -46,6 +49,7 @@ bash scripts/run-prosumer-to-user-migration.sh
 ```
 
 The script will:
+
 1. ✅ Check database connection
 2. ✅ Create automatic backup
 3. ✅ Show current state
@@ -63,12 +67,14 @@ Follow the steps in the [Manual Migration](#-manual-migration-steps) section bel
 ## 📝 Prerequisites
 
 ### Before Migration
+
 1. **Backup Database** (Critical!)
 2. **Stop Application** (All instances)
 3. **Clear Redis Cache** (After migration)
 4. **Update Frontend** (Coordinate deployment)
 
 ### System Requirements
+
 - PostgreSQL 12+
 - Node.js 18+
 - TypeORM 0.3.27
@@ -114,6 +120,7 @@ npm run migration:run
 ```
 
 **Expected Output:**
+
 ```
 query: SELECT * FROM current_schema()
 query: SELECT * FROM "information_schema"."tables" WHERE "table_schema" = 'public' AND "table_name" = 'migrations'
@@ -149,11 +156,11 @@ SELECT COUNT(*) FROM "user";
 
 -- Check foreign keys
 SELECT
-    tc.table_name, 
-    kcu.column_name, 
+    tc.table_name,
+    kcu.column_name,
     ccu.table_name AS foreign_table_name,
-    ccu.column_name AS foreign_column_name 
-FROM information_schema.table_constraints AS tc 
+    ccu.column_name AS foreign_column_name
+FROM information_schema.table_constraints AS tc
 JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name
 JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name
 WHERE tc.constraint_type = 'FOREIGN KEY' AND ccu.table_name = 'user';
@@ -219,6 +226,7 @@ npm run migration:revert
 ```
 
 **Expected Output:**
+
 ```
 [Step 9/9 ROLLBACK] Renaming table back to 'prosumer'...
 [Step 8/9 ROLLBACK] Restoring indexes...
@@ -252,6 +260,7 @@ pm2 start backend-p2p-energy
 ## ✅ Verification Checklist
 
 ### Database Verification
+
 - [ ] Table `user` exists
 - [ ] Column `user_id` exists
 - [ ] Record count matches original `prosumer` count
@@ -260,6 +269,7 @@ pm2 start backend-p2p-energy
 - [ ] No orphaned records
 
 ### Application Verification
+
 - [ ] Application starts without errors
 - [ ] Login endpoint returns `userId`
 - [ ] JWT token contains `userId` claim
@@ -268,6 +278,7 @@ pm2 start backend-p2p-energy
 - [ ] Redis keys use `orders:by_user:*` pattern
 
 ### Frontend Verification
+
 - [ ] API calls updated to use `userId`
 - [ ] User profile displays correctly
 - [ ] Dashboard loads user data
@@ -279,6 +290,7 @@ pm2 start backend-p2p-energy
 ### Issue: Migration Fails at Step X
 
 **Solution:**
+
 ```bash
 # Check current migration status
 npm run typeorm migration:show
@@ -293,6 +305,7 @@ npm run migration:run
 ### Issue: Foreign Key Constraint Violation
 
 **Solution:**
+
 ```bash
 # Check for orphaned records
 psql -h localhost -p 5432 -U your_user -d enerlink_db
@@ -311,11 +324,13 @@ DELETE FROM smart_meter WHERE prosumer_id NOT IN (SELECT prosumer_id FROM prosum
 ### Issue: Application Won't Start
 
 **Symptoms:**
+
 ```
 Error: relation "prosumer" does not exist
 ```
 
 **Solution:**
+
 ```bash
 # Verify migration ran successfully
 npm run typeorm migration:show
@@ -334,6 +349,7 @@ npm run start:dev
 ### Issue: JWT Still Contains prosumerId
 
 **Solution:**
+
 ```bash
 # Clear Redis cache
 redis-cli FLUSHALL
@@ -366,19 +382,19 @@ interface User {
 }
 
 // Update API calls
-const response = await fetch(`/api/users/${userId}`);  // not prosumerId
+const response = await fetch(`/api/users/${userId}`); // not prosumerId
 ```
 
 ## 📊 Performance Considerations
 
 ### Migration Duration
 
-| Records | Estimated Time |
-|---------|----------------|
-| < 1,000 | ~5 seconds |
-| 1,000 - 10,000 | ~30 seconds |
-| 10,000 - 100,000 | ~2 minutes |
-| 100,000+ | ~5-10 minutes |
+| Records          | Estimated Time |
+| ---------------- | -------------- |
+| < 1,000          | ~5 seconds     |
+| 1,000 - 10,000   | ~30 seconds    |
+| 10,000 - 100,000 | ~2 minutes     |
+| 100,000+         | ~5-10 minutes  |
 
 ### Downtime Window
 
@@ -396,28 +412,31 @@ const response = await fetch(`/api/users/${userId}`);  // not prosumerId
 ### Breaking Changes for Frontend
 
 1. **API Response Field Change**
+
    ```json
    // Before
    { "prosumerId": "prosumer_xxx", ... }
-   
+
    // After
    { "userId": "user_xxx", ... }
    ```
 
 2. **API Endpoint Parameters**
+
    ```bash
    # Before
    GET /api/prosumers/:prosumerId
-   
+
    # After
    GET /api/users/:userId
    ```
 
 3. **WebSocket Events**
+
    ```typescript
    // Before
    socket.emit('join', { prosumerId: '...' });
-   
+
    // After
    socket.emit('join', { userId: '...' });
    ```
@@ -425,11 +444,13 @@ const response = await fetch(`/api/users/${userId}`);  // not prosumerId
 ### Deployment Strategy
 
 **Option 1: Simultaneous Deployment (Recommended)**
+
 1. Deploy backend with migration
 2. Deploy frontend immediately after
 3. Downtime: 5-10 minutes
 
 **Option 2: Backward Compatible (Complex)**
+
 1. Add `userId` alongside `prosumerId` (transition period)
 2. Update frontend to use `userId`
 3. Remove `prosumerId` after frontend stable
@@ -454,11 +475,13 @@ const response = await fetch(`/api/users/${userId}`);  // not prosumerId
 ## ✨ Post-Migration Tasks
 
 1. **Monitor Application**
+
    - Check error logs for any remaining prosumer references
    - Monitor API response times
    - Verify database query performance
 
 2. **Update Documentation**
+
    - Update API documentation (Swagger/OpenAPI)
    - Update architecture diagrams
    - Update deployment guides
@@ -471,6 +494,7 @@ const response = await fetch(`/api/users/${userId}`);  // not prosumerId
 ## 🎉 Success Criteria
 
 Migration is successful when:
+
 - ✅ All database tables use `user` terminology
 - ✅ Application starts without errors
 - ✅ Authentication returns `userId`
@@ -483,6 +507,6 @@ Migration is successful when:
 
 **Last Updated**: 2024-11-02  
 **Migration Version**: 1730534400000  
-**Status**: Ready for Execution  
+**Status**: Ready for Execution
 
 Need help? Check the troubleshooting section or contact the development team.

@@ -9,7 +9,7 @@ describe('AuthController', () => {
   let authService: any;
 
   const mockValidatedProsumer = {
-    prosumerId: 'prosumer_123',
+    userId: 'user_123',
     email: 'john.doe@example.com',
     name: 'John Doe',
     createdAt: '2025-10-27T10:00:00Z',
@@ -18,8 +18,8 @@ describe('AuthController', () => {
 
   const mockTokenResponse = {
     access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-    prosumer: {
-      prosumerId: 'prosumer_123',
+    user: {
+      userId: 'user_123',
       email: 'john.doe@example.com',
       name: 'John Doe',
     },
@@ -27,7 +27,7 @@ describe('AuthController', () => {
 
   const mockProfileResponse = {
     profile: {
-      prosumerId: 'prosumer_123',
+      userId: 'user_123',
       email: 'john.doe@example.com',
       name: 'John Doe',
       primaryWalletAddress: '0xec7CeB00FC447E2003DE6874b0E1eCD895250230',
@@ -128,8 +128,8 @@ describe('AuthController', () => {
       const result = await controller.login(mockRequest);
 
       expect(result).toHaveProperty('access_token');
-      expect(result).toHaveProperty('prosumer');
-      expect(result.prosumer.prosumerId).toBe('prosumer_123');
+      expect(result).toHaveProperty('user');
+      expect(result.user.userId).toBe('user_123');
     });
   });
 
@@ -194,7 +194,7 @@ describe('AuthController', () => {
       expect(result).toHaveProperty('message', 'User registered successfully');
       expect(result).toHaveProperty('loginInfo');
       expect(result.loginInfo).toHaveProperty('access_token');
-      expect(result.loginInfo).toHaveProperty('prosumer');
+      expect(result.loginInfo).toHaveProperty('user');
     });
 
     it('should validate RegisterDto structure', async () => {
@@ -222,16 +222,16 @@ describe('AuthController', () => {
   describe('getProfile', () => {
     it('should return complete user profile with wallets and meters', async () => {
       const mockRequest = {
-        user: { prosumerId: 'prosumer_123' },
+        user: { userId: 'user_123' },
       };
 
       authService.getProfile.mockResolvedValue(mockProfileResponse as any);
 
       const result = await controller.getProfile(mockRequest);
 
-      expect(authService.getProfile).toHaveBeenCalledWith('prosumer_123');
+      expect(authService.getProfile).toHaveBeenCalledWith('user_123');
       expect(result).toEqual(mockProfileResponse);
-      expect(result.profile).toHaveProperty('prosumerId');
+      expect(result.profile).toHaveProperty('userId');
       expect(result.profile).toHaveProperty('email');
       expect(result.wallets).toBeInstanceOf(Array);
       expect(result.meters).toBeInstanceOf(Array);
@@ -239,7 +239,7 @@ describe('AuthController', () => {
 
     it('should handle profile not found', async () => {
       const mockRequest = {
-        user: { prosumerId: 'nonexistent_user' },
+        user: { userId: 'nonexistent_user' },
       };
 
       authService.getProfile.mockRejectedValue(new Error('User not found'));
@@ -250,21 +250,21 @@ describe('AuthController', () => {
       expect(authService.getProfile).toHaveBeenCalledWith('nonexistent_user');
     });
 
-    it('should extract prosumerId from JWT authenticated request', async () => {
+    it('should extract userId from JWT authenticated request', async () => {
       const mockRequest = {
-        user: { prosumerId: 'prosumer_456' },
+        user: { userId: 'user_456' },
       };
 
       authService.getProfile.mockResolvedValue(mockProfileResponse as any);
 
       await controller.getProfile(mockRequest);
 
-      expect(authService.getProfile).toHaveBeenCalledWith('prosumer_456');
+      expect(authService.getProfile).toHaveBeenCalledWith('user_456');
     });
 
     it('should return profile with proper structure', async () => {
       const mockRequest = {
-        user: { prosumerId: 'prosumer_123' },
+        user: { userId: 'user_123' },
       };
 
       authService.getProfile.mockResolvedValue(mockProfileResponse as any);
@@ -273,7 +273,7 @@ describe('AuthController', () => {
 
       expect(result).toMatchObject({
         profile: expect.objectContaining({
-          prosumerId: expect.any(String),
+          userId: expect.any(String),
           email: expect.any(String),
           name: expect.any(String),
         }),
@@ -284,7 +284,7 @@ describe('AuthController', () => {
 
     it('should handle profile with no wallets or meters', async () => {
       const mockRequest = {
-        user: { prosumerId: 'prosumer_123' },
+        user: { userId: 'user_123' },
       };
 
       const emptyProfileResponse = {
@@ -305,11 +305,11 @@ describe('AuthController', () => {
   describe('logout', () => {
     it('should logout current session successfully', async () => {
       const mockRequest = {
-        user: { prosumerId: 'prosumer_123' },
+        user: { userId: 'user_123' },
         headers: {
           authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
         },
-      } as ExpressRequest & { user: { prosumerId: string } };
+      } as ExpressRequest & { user: { userId: string } };
 
       const mockLogoutResponse = {
         message: 'Logged out successfully',
@@ -321,7 +321,7 @@ describe('AuthController', () => {
       const result = await controller.logout(mockRequest);
 
       expect(authService.logout).toHaveBeenCalledWith(
-        'prosumer_123',
+        'user_123',
         undefined,
         mockRequest,
       );
@@ -330,11 +330,11 @@ describe('AuthController', () => {
 
     it('should handle logout errors', async () => {
       const mockRequest = {
-        user: { prosumerId: 'prosumer_123' },
+        user: { userId: 'user_123' },
         headers: {
           authorization: 'Bearer token',
         },
-      } as ExpressRequest & { user: { prosumerId: string } };
+      } as ExpressRequest & { user: { userId: string } };
 
       authService.logout.mockRejectedValue(new Error('Logout failed'));
 
@@ -342,7 +342,7 @@ describe('AuthController', () => {
         'Logout failed',
       );
       expect(authService.logout).toHaveBeenCalledWith(
-        'prosumer_123',
+        'user_123',
         undefined,
         mockRequest,
       );
@@ -350,11 +350,11 @@ describe('AuthController', () => {
 
     it('should pass request object to service for token extraction', async () => {
       const mockRequest = {
-        user: { prosumerId: 'prosumer_123' },
+        user: { userId: 'user_123' },
         headers: {
           authorization: 'Bearer test_token',
         },
-      } as ExpressRequest & { user: { prosumerId: string } };
+      } as ExpressRequest & { user: { userId: string } };
 
       authService.logout.mockResolvedValue({
         message: 'Logged out successfully',
@@ -365,7 +365,7 @@ describe('AuthController', () => {
 
       // Service should receive the request object to extract token from Authorization header
       expect(authService.logout).toHaveBeenCalledWith(
-        'prosumer_123',
+        'user_123',
         undefined,
         expect.objectContaining({
           headers: expect.objectContaining({
@@ -377,8 +377,8 @@ describe('AuthController', () => {
 
     it('should return proper logout response structure', async () => {
       const mockRequest = {
-        user: { prosumerId: 'prosumer_123' },
-      } as ExpressRequest & { user: { prosumerId: string } };
+        user: { userId: 'user_123' },
+      } as ExpressRequest & { user: { userId: string } };
 
       const mockLogoutResponse = {
         message: 'Logged out successfully',
@@ -397,11 +397,11 @@ describe('AuthController', () => {
   describe('logoutAll', () => {
     it('should logout all sessions successfully', async () => {
       const mockRequest = {
-        user: { prosumerId: 'prosumer_123' },
+        user: { userId: 'user_123' },
         headers: {
           authorization: 'Bearer token',
         },
-      } as ExpressRequest & { user: { prosumerId: string } };
+      } as ExpressRequest & { user: { userId: string } };
 
       const mockLogoutAllResponse = {
         message: 'Logged out from all devices successfully',
@@ -413,7 +413,7 @@ describe('AuthController', () => {
       const result = await controller.logoutAll(mockRequest);
 
       expect(authService.logoutAll).toHaveBeenCalledWith(
-        'prosumer_123',
+        'user_123',
         mockRequest,
       );
       expect(result).toEqual(mockLogoutAllResponse);
@@ -421,8 +421,8 @@ describe('AuthController', () => {
 
     it('should handle logoutAll errors', async () => {
       const mockRequest = {
-        user: { prosumerId: 'prosumer_123' },
-      } as ExpressRequest & { user: { prosumerId: string } };
+        user: { userId: 'user_123' },
+      } as ExpressRequest & { user: { userId: string } };
 
       authService.logoutAll.mockRejectedValue(new Error('Logout all failed'));
 
@@ -430,18 +430,18 @@ describe('AuthController', () => {
         'Logout all failed',
       );
       expect(authService.logoutAll).toHaveBeenCalledWith(
-        'prosumer_123',
+        'user_123',
         mockRequest,
       );
     });
 
     it('should pass request object to service', async () => {
       const mockRequest = {
-        user: { prosumerId: 'prosumer_456' },
+        user: { userId: 'user_456' },
         headers: {
           authorization: 'Bearer test_token',
         },
-      } as ExpressRequest & { user: { prosumerId: string } };
+      } as ExpressRequest & { user: { userId: string } };
 
       authService.logoutAll.mockResolvedValue({
         message: 'Logged out from all devices successfully',
@@ -451,15 +451,15 @@ describe('AuthController', () => {
       await controller.logoutAll(mockRequest);
 
       expect(authService.logoutAll).toHaveBeenCalledWith(
-        'prosumer_456',
+        'user_456',
         mockRequest,
       );
     });
 
     it('should return proper logoutAll response structure', async () => {
       const mockRequest = {
-        user: { prosumerId: 'prosumer_123' },
-      } as ExpressRequest & { user: { prosumerId: string } };
+        user: { userId: 'user_123' },
+      } as ExpressRequest & { user: { userId: string } };
 
       const mockLogoutAllResponse = {
         message: 'Logged out from all devices successfully',
@@ -477,8 +477,8 @@ describe('AuthController', () => {
 
     it('should invalidate all user tokens across devices', async () => {
       const mockRequest = {
-        user: { prosumerId: 'prosumer_123' },
-      } as ExpressRequest & { user: { prosumerId: string } };
+        user: { userId: 'user_123' },
+      } as ExpressRequest & { user: { userId: string } };
 
       authService.logoutAll.mockResolvedValue({
         message: 'Logged out from all devices successfully',
@@ -490,7 +490,7 @@ describe('AuthController', () => {
       // Should call logoutAll which invalidates all tokens for the user
       expect(authService.logoutAll).toHaveBeenCalledTimes(1);
       expect(authService.logoutAll).toHaveBeenCalledWith(
-        'prosumer_123',
+        'user_123',
         expect.any(Object),
       );
     });
@@ -514,12 +514,12 @@ describe('AuthController', () => {
       expect(authService.logoutAll).toBeDefined();
     });
 
-    it('should use consistent prosumerId across methods', async () => {
-      const prosumerId = 'consistent_prosumer_id';
+    it('should use consistent userId across methods', async () => {
+      const userId = 'consistent_user_id';
 
       const mockRequest = {
-        user: { prosumerId },
-      } as ExpressRequest & { user: { prosumerId: string } };
+        user: { userId },
+      } as ExpressRequest & { user: { userId: string } };
 
       authService.getProfile.mockResolvedValue(mockProfileResponse as any);
       authService.logout.mockResolvedValue({
@@ -535,14 +535,14 @@ describe('AuthController', () => {
       await controller.logout(mockRequest);
       await controller.logoutAll(mockRequest);
 
-      expect(authService.getProfile).toHaveBeenCalledWith(prosumerId);
+      expect(authService.getProfile).toHaveBeenCalledWith(userId);
       expect(authService.logout).toHaveBeenCalledWith(
-        prosumerId,
+        userId,
         undefined,
         mockRequest,
       );
       expect(authService.logoutAll).toHaveBeenCalledWith(
-        prosumerId,
+        userId,
         mockRequest,
       );
     });

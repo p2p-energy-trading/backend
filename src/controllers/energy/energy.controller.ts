@@ -198,7 +198,7 @@ export class EnergyController {
       }
 
       // Verify the settlement belongs to the user's meter
-      // This requires checking if the meter belongs to the prosumer
+      // This requires checking if the meter belongs to the user
       const userId = req.user.userId;
 
       // Get settlement history to verify ownership (reusing existing logic)
@@ -281,14 +281,14 @@ export class EnergyController {
         const profile = await this.authService.getProfile(userId);
 
         if (!profile.meters || profile.meters.length === 0) {
-          throw new NotFoundException('No meters found for this prosumer');
+          throw new NotFoundException('No meters found for this user');
         }
 
         // Use the first meter from profile
         targetMeterId = profile.meters[0].meterId;
       }
 
-      // Verify the meter belongs to the prosumer by checking profile
+      // Verify the meter belongs to the user by checking profile
       const profile = await this.authService.getProfile(userId);
       const userMeter = profile.meters?.find(
         (m) => m.meterId === targetMeterId,

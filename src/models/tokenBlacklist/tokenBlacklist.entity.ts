@@ -76,5 +76,5 @@ export class TokenBlacklist {
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
-  prosumer: User;
+  user: User;
 }

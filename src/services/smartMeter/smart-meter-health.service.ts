@@ -25,7 +25,7 @@ export class SmartMeterHealthService {
    */
   async getDeviceHealth(userId: string) {
     try {
-      // Get prosumer's meters
+      // Get user's meters
       const devices = await this.smartMetersService.findAll({ userId });
       const meterIds: string[] = devices.map(
         (d: { meterId: string }) => d.meterId,
@@ -432,7 +432,7 @@ export class SmartMeterHealthService {
    */
   async getDeviceList(userId: string) {
     try {
-      // Get prosumer's meters
+      // Get user's meters
       const devices = await this.smartMetersService.findAll({ userId });
 
       if (devices.length === 0) {

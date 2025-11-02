@@ -33,7 +33,7 @@ describe('EnergySettlementService', () => {
   let redisTelemetryService: jest.Mocked<RedisTelemetryService>;
   let blockchainService: jest.Mocked<BlockchainService>;
   let mqttService: jest.Mocked<MqttService>;
-  let prosumersService: jest.Mocked<ProsumersService>;
+  let usersService: jest.Mocked<ProsumersService>;
   let walletsService: jest.Mocked<WalletsService>;
   let energyAnalyticsService: jest.Mocked<EnergyAnalyticsService>;
   let configService: ConfigService;
@@ -130,7 +130,7 @@ describe('EnergySettlementService', () => {
     redisTelemetryService = module.get(RedisTelemetryService);
     blockchainService = module.get(BlockchainService);
     mqttService = module.get(MqttService);
-    prosumersService = module.get(ProsumersService);
+    usersService = module.get(ProsumersService);
     walletsService = module.get(WalletsService);
     energyAnalyticsService = module.get(EnergyAnalyticsService);
     configService = module.get(ConfigService);
@@ -403,14 +403,14 @@ describe('EnergySettlementService', () => {
   describe('sendSettlementResetCommand', () => {
     it('should send MQTT reset command', async () => {
       const meterId = 'METER001';
-      const prosumerId = 'PROSUMER001';
+      const userId = 'PROSUMER001';
 
-      await (service as any).sendSettlementResetCommand(meterId, prosumerId);
+      await (service as any).sendSettlementResetCommand(meterId, userId);
 
       expect(mqttService.sendCommand).toHaveBeenCalledWith(
         meterId,
         { energy: { reset_settlement: 'all' } },
-        prosumerId,
+        userId,
       );
     });
 
@@ -425,46 +425,46 @@ describe('EnergySettlementService', () => {
   });
 
   describe('manualSettlement', () => {
-    it('should process settlement for authorized prosumer', async () => {
+    it('should process settlement for authorized user', async () => {
       const meterId = 'METER001';
-      const prosumerId = 'PROSUMER001';
+      const userId = 'PROSUMER001';
       const mockProsumers = [
         {
-          prosumerId: prosumerId,
+          userId: userId,
           username: 'testuser',
         },
       ];
 
-      prosumersService.findByMeterId.mockResolvedValue(mockProsumers as any);
+      usersService.findByMeterId.mockResolvedValue(mockProsumers as any);
 
       const processSpy = jest
         .spyOn(service, 'processMeterSettlement')
         .mockResolvedValue('0xabc123');
 
-      const result = await service.manualSettlement(meterId, prosumerId);
+      const result = await service.manualSettlement(meterId, userId);
 
       expect(result).toBe('0xabc123');
-      expect(prosumersService.findByMeterId).toHaveBeenCalledWith(meterId);
+      expect(usersService.findByMeterId).toHaveBeenCalledWith(meterId);
       expect(processSpy).toHaveBeenCalledWith(
         meterId,
         SettlementTrigger.MANUAL,
       );
     });
 
-    it('should throw error for unauthorized prosumer', async () => {
+    it('should throw error for unauthorized user', async () => {
       const meterId = 'METER001';
-      const prosumerId = 'PROSUMER001';
-      const mockProsumers = [createMockUser({ prosumerId: 'PROSUMER002' })];
+      const userId = 'PROSUMER001';
+      const mockProsumers = [createMockUser({ userId: 'PROSUMER002' })];
 
-      prosumersService.findByMeterId.mockResolvedValue(mockProsumers as any);
+      usersService.findByMeterId.mockResolvedValue(mockProsumers as any);
 
       await expect(
-        service.manualSettlement(meterId, prosumerId),
+        service.manualSettlement(meterId, userId),
       ).rejects.toThrow('Unauthorized: Prosumer does not own this meter');
     });
 
     it('should handle errors during manual settlement', async () => {
-      prosumersService.findByMeterId.mockRejectedValue(new Error('DB error'));
+      usersService.findByMeterId.mockRejectedValue(new Error('DB error'));
 
       await expect(
         service.manualSettlement('METER001', 'PROSUMER001'),
@@ -528,11 +528,11 @@ describe('EnergySettlementService', () => {
   });
 
   describe('getSettlementHistory', () => {
-    it('should return own settlements for prosumer', async () => {
-      const prosumerId = 'PROSUMER001';
+    it('should return own settlements for user', async () => {
+      const userId = 'PROSUMER001';
       const mockMeters = [
-        createMockSmartMeter({ meterId: 'METER001', prosumerId }),
-        createMockSmartMeter({ meterId: 'METER002', prosumerId }),
+        createMockSmartMeter({ meterId: 'METER001', userId }),
+        createMockSmartMeter({ meterId: 'METER002', userId }),
       ];
       const mockSettlements = [
         createMockEnergySettlement({ meterId: 'METER001' }),
@@ -546,21 +546,21 @@ describe('EnergySettlementService', () => {
 
       const result = await service.getSettlementHistory(
         undefined,
-        prosumerId,
+        userId,
         50,
         'own',
       );
 
       expect(result).toHaveLength(2);
-      expect(smartMetersService.findAll).toHaveBeenCalledWith({ prosumerId });
+      expect(smartMetersService.findAll).toHaveBeenCalledWith({ userId });
     });
 
     it('should filter settlements by specific meterId', async () => {
-      const prosumerId = 'PROSUMER001';
+      const userId = 'PROSUMER001';
       const meterId = 'METER001';
       const mockMeters = [
-        createMockSmartMeter({ meterId: 'METER001', prosumerId }),
-        createMockSmartMeter({ meterId: 'METER002', prosumerId }),
+        createMockSmartMeter({ meterId: 'METER001', userId }),
+        createMockSmartMeter({ meterId: 'METER002', userId }),
       ];
       const mockSettlements = [
         createMockEnergySettlement({ meterId: 'METER001' }),
@@ -574,7 +574,7 @@ describe('EnergySettlementService', () => {
 
       const result = await service.getSettlementHistory(
         meterId,
-        prosumerId,
+        userId,
         50,
         'own',
       );
@@ -626,7 +626,7 @@ describe('EnergySettlementService', () => {
       expect(result).toEqual(mockSettlements);
     });
 
-    it('should throw error when prosumerId missing for own scope', async () => {
+    it('should throw error when userId missing for own scope', async () => {
       await expect(
         service.getSettlementHistory(undefined, undefined, 50, 'own'),
       ).rejects.toThrow('Prosumer ID is required for own settlements');
@@ -687,10 +687,10 @@ describe('EnergySettlementService', () => {
   describe('getSettlementEstimator', () => {
     it('should return estimator data with valid readings', async () => {
       const meterId = 'METER001';
-      const prosumerId = 'PROSUMER001';
+      const userId = 'PROSUMER001';
       const mockProsumers = [
         {
-          prosumerId: prosumerId,
+          userId: userId,
           username: 'testuser',
         },
       ];
@@ -708,7 +708,7 @@ describe('EnergySettlementService', () => {
         ],
       };
 
-      prosumersService.findByMeterId.mockResolvedValue(mockProsumers as any);
+      usersService.findByMeterId.mockResolvedValue(mockProsumers as any);
       energyAnalyticsService.getRealTimeEnergyData.mockResolvedValue(
         mockRealTimeData as any,
       );
@@ -728,8 +728,8 @@ describe('EnergySettlementService', () => {
       });
     });
 
-    it('should return null when no prosumer found', async () => {
-      prosumersService.findByMeterId.mockResolvedValue([]);
+    it('should return null when no user found', async () => {
+      usersService.findByMeterId.mockResolvedValue([]);
 
       const result = await service.getSettlementEstimator('METER001');
 
@@ -737,9 +737,9 @@ describe('EnergySettlementService', () => {
     });
 
     it('should return null when no real-time data available', async () => {
-      const mockProsumers = [createMockUser({ prosumerId: 'PROSUMER001' })];
+      const mockProsumers = [createMockUser({ userId: 'PROSUMER001' })];
 
-      prosumersService.findByMeterId.mockResolvedValue(mockProsumers as any);
+      usersService.findByMeterId.mockResolvedValue(mockProsumers as any);
       energyAnalyticsService.getRealTimeEnergyData.mockResolvedValue({
         timeSeries: [],
       } as any);
@@ -752,7 +752,7 @@ describe('EnergySettlementService', () => {
     it('should determine IMPORTING status for negative power', async () => {
       const mockProsumers = [
         {
-          prosumerId: 'PROSUMER001',
+          userId: 'PROSUMER001',
           username: 'testuser',
         },
       ];
@@ -768,7 +768,7 @@ describe('EnergySettlementService', () => {
         ],
       };
 
-      prosumersService.findByMeterId.mockResolvedValue(mockProsumers as any);
+      usersService.findByMeterId.mockResolvedValue(mockProsumers as any);
       energyAnalyticsService.getRealTimeEnergyData.mockResolvedValue(
         mockRealTimeData as any,
       );
@@ -784,7 +784,7 @@ describe('EnergySettlementService', () => {
     it('should determine IDLE status for near-zero power', async () => {
       const mockProsumers = [
         {
-          prosumerId: 'PROSUMER001',
+          userId: 'PROSUMER001',
           username: 'testuser',
         },
       ];
@@ -800,7 +800,7 @@ describe('EnergySettlementService', () => {
         ],
       };
 
-      prosumersService.findByMeterId.mockResolvedValue(mockProsumers as any);
+      usersService.findByMeterId.mockResolvedValue(mockProsumers as any);
       energyAnalyticsService.getRealTimeEnergyData.mockResolvedValue(
         mockRealTimeData as any,
       );
@@ -816,7 +816,7 @@ describe('EnergySettlementService', () => {
     it('should calculate progress percentage based on settlement interval', async () => {
       const mockProsumers = [
         {
-          prosumerId: 'PROSUMER001',
+          userId: 'PROSUMER001',
           username: 'testuser',
         },
       ];
@@ -829,7 +829,7 @@ describe('EnergySettlementService', () => {
         ],
       };
 
-      prosumersService.findByMeterId.mockResolvedValue(mockProsumers as any);
+      usersService.findByMeterId.mockResolvedValue(mockProsumers as any);
       energyAnalyticsService.getRealTimeEnergyData.mockResolvedValue(
         mockRealTimeData as any,
       );
@@ -845,7 +845,7 @@ describe('EnergySettlementService', () => {
     });
 
     it('should handle invalid settlement energy data', async () => {
-      const mockProsumers = [createMockUser({ prosumerId: 'PROSUMER001' })];
+      const mockProsumers = [createMockUser({ userId: 'PROSUMER001' })];
       const mockRealTimeData = {
         timeSeries: [
           {
@@ -858,7 +858,7 @@ describe('EnergySettlementService', () => {
         ],
       };
 
-      prosumersService.findByMeterId.mockResolvedValue(mockProsumers as any);
+      usersService.findByMeterId.mockResolvedValue(mockProsumers as any);
       energyAnalyticsService.getRealTimeEnergyData.mockResolvedValue(
         mockRealTimeData as any,
       );
@@ -877,7 +877,7 @@ describe('EnergySettlementService', () => {
       ];
       const mockProsumers = [
         {
-          prosumerId: 'PROSUMER001',
+          userId: 'PROSUMER001',
           username: 'testuser',
         },
       ];
@@ -886,7 +886,7 @@ describe('EnergySettlementService', () => {
       };
 
       smartMetersService.findAll.mockResolvedValue(mockMeters as any);
-      prosumersService.findByMeterId.mockResolvedValue(mockProsumers as any);
+      usersService.findByMeterId.mockResolvedValue(mockProsumers as any);
       energyAnalyticsService.getRealTimeEnergyData.mockResolvedValue(
         mockRealTimeData as any,
       );
@@ -894,7 +894,7 @@ describe('EnergySettlementService', () => {
       await service.logPowerData();
 
       expect(smartMetersService.findAll).toHaveBeenCalled();
-      expect(prosumersService.findByMeterId).toHaveBeenCalledTimes(2);
+      expect(usersService.findByMeterId).toHaveBeenCalledTimes(2);
       expect(
         energyAnalyticsService.getRealTimeEnergyData,
       ).toHaveBeenCalledTimes(2);

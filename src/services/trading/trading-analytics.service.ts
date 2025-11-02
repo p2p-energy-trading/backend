@@ -107,7 +107,7 @@ export class TradingAnalyticsService {
    */
   async getTradingPerformance(userId: string, days: number = 30) {
     try {
-      // Get prosumer's wallets
+      // Get user's wallets
       const wallets = await this.walletsService.findAll({ userId });
       const walletAddresses = wallets.map(
         (w: { walletAddress: string }) => w.walletAddress,
@@ -169,7 +169,7 @@ export class TradingAnalyticsService {
    */
   async getTradingMetrics(userId: string) {
     try {
-      // Get prosumer's wallets
+      // Get user's wallets
       const wallets = await this.walletsService.findAll({ userId });
       const walletAddresses = wallets.map(
         (w: { walletAddress: string }) => w.walletAddress,
@@ -266,7 +266,7 @@ export class TradingAnalyticsService {
     period: 'daily' | 'weekly' | 'monthly' = 'monthly',
   ) {
     try {
-      // Get prosumer's wallets
+      // Get user's wallets
       const wallets = await this.walletsService.findAll({ userId });
       const walletAddresses = wallets.map(
         (w: { walletAddress: string }) => w.walletAddress,

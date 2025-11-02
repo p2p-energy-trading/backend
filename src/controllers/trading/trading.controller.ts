@@ -28,10 +28,7 @@ import { MarketTradesService } from '../../models/marketTrade/marketTrade.servic
 import { JwtAuthGuard } from '../../auth/guards/auth.guards';
 import { UsersService } from 'src/models/user/user.service';
 import { PriceCacheService } from '../../services/trading/price-cache.service';
-import {
-  ApiSuccessResponse,
-  ApiPaginatedResponse,
-} from '../../common/interfaces';
+
 import { ResponseFormatter } from '../../common/response-formatter';
 import {
   PlaceOrderDto,
@@ -265,7 +262,7 @@ export class TradingController {
         const orders = await this.tradeOrdersCacheService.findAll({});
 
         // Anonymize sensitive data for public view
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+
         allOrders = orders.map((order: any) => this.anonymizeOrderData(order));
       } else {
         // Get all orders with full data (admin/debug)
@@ -330,15 +327,15 @@ export class TradingController {
       await this.tradeOrdersCacheService.findOpenOrPartiallyFilledOrders();
 
     const buyOrders = allOrders
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
       .filter((order: any) => order.orderType === 'BID')
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
       .sort((a: any, b: any) => b.priceIdrsPerEtk - a.priceIdrsPerEtk); // Highest price first for buy orders
 
     const sellOrders = allOrders
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
       .filter((order: any) => order.orderType === 'ASK')
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
       .sort((a: any, b: any) => a.priceIdrsPerEtk - b.priceIdrsPerEtk); // Lowest price first for sell orders
 
     return ResponseFormatter.success(
@@ -381,13 +378,12 @@ export class TradingController {
 
     // Group sell orders by price and sum quantities
     const sellOrdersMap = allOrders
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
       .filter((order: any) => order.orderType === 'ASK')
       .reduce(
         (acc, order: any) => {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
           const price = Number(order.priceIdrsPerEtk);
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
           const quantity = Number(order.amountEtk);
           acc[price] = (acc[price] || 0) + quantity;
           // this.logger.debug(
@@ -518,7 +514,7 @@ export class TradingController {
         const trades = await this.marketTradesService.findAll({});
 
         // Anonymize sensitive data for public view
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+
         allTrades = trades.map((trade: any) => this.anonymizeTradeData(trade));
       } else {
         // Get all trades with full data (admin/debug)
@@ -1030,10 +1026,7 @@ export class TradingController {
     }
   }
 
-  private async verifyWalletOwnership(
-    walletAddress: string,
-    userId: string,
-  ) {
+  private async verifyWalletOwnership(walletAddress: string, userId: string) {
     try {
       // Verify wallet exists and user owns it
       const prosumers =
