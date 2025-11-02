@@ -7,7 +7,7 @@ export class CreateSmartMetersInput {
   meterId: string;
 
   @Field(() => String)
-  prosumerId: string;
+  userId: string;
 
   @Field(() => String, { nullable: true })
   meterBlockchainAddress?: string | undefined;

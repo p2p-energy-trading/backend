@@ -18,8 +18,8 @@ export class Wallet {
   @PrimaryColumn({ type: 'varchar', name: 'wallet_address' })
   walletAddress: string;
 
-  @Column({ type: 'varchar', name: 'prosumer_id' })
-  prosumerId: string;
+  @Column({ type: 'varchar', name: 'user_id' })
+  userId: string;
 
   @Column({ type: 'varchar', name: 'wallet_name', nullable: true })
   walletName: string;
@@ -54,6 +54,6 @@ export class Wallet {
   // Removed: tradeorderscacheList (replaced by Redis)
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'prosumer_id' })
-  prosumers: User;
+  @JoinColumn({ name: 'user_id' })
+  users: User;
 }

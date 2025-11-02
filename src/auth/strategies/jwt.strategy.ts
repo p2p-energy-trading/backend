@@ -2,12 +2,12 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { ProsumersService } from '../../models/user/user.service';
+import { UsersService } from '../../models/user/user.service';
 import { BlacklistService } from '../../models/tokenBlacklist/tokenBlacklist.service';
 import { Request } from 'express';
 
 interface JwtPayload {
-  prosumerId: string;
+  userId: string;
   email: string;
   sub: string;
   iat?: number;
@@ -35,7 +35,7 @@ interface JwtPayload {
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     private configService: ConfigService,
-    private prosumersService: ProsumersService,
+    private prosumersService: UsersService,
     private blacklistService: BlacklistService,
   ) {
     super({
@@ -92,7 +92,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
    *
    * // If valid, req.user will contain:
    * {
-   *   prosumerId: "prosumer_123",
+   *   userId: "user_123",
    *   email: "prosumer@enerlink.com",
    *   name: "John Doe"
    * }
@@ -104,7 +104,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
       // Check if user is blacklisted first (faster check)
       // This catches logout-all scenarios
-      if (await this.blacklistService.isUserBlacklisted(payload.prosumerId)) {
+      if (await this.blacklistService.isUserBlacklisted(payload.userId)) {
         throw new UnauthorizedException('User session has been terminated');
       }
 
@@ -115,11 +115,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       }
 
       // Validate prosumer exists and is active in database
-      const prosumer = await this.prosumersService.findOne(payload.prosumerId);
+      const prosumer = await this.prosumersService.findOne(payload.userId);
 
       // Return user object - will be available as req.user in controller
       return {
-        prosumerId: prosumer.prosumerId,
+        userId: prosumer.userId,
         email: prosumer.email,
         name: prosumer.name,
       };

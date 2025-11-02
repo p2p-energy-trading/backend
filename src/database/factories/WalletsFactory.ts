@@ -24,7 +24,7 @@ export const WalletsFactory = setSeederFactory(Wallet, (faker) => {
   wallet.isActive = true;
   wallet.createdAt = new Date();
 
-  // Note: prosumerId will be set in seeder
+  // Note: userId will be set in seeder
 
   return wallet;
 });

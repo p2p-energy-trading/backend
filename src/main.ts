@@ -56,7 +56,7 @@ async function bootstrap() {
         private Ethereum blockchain, and modern web technologies.
 
         ### Key Features:
-        - **Authentication**: JWT-based authentication with prosumer management
+        - **Authentication**: JWT-based authentication with user management
         - **Energy Management**: Real-time energy data collection and settlement
         - **Trading**: P2P energy trading with ETK/IDRS token pairs
         - **IoT Integration**: MQTT communication with smart meters
@@ -76,6 +76,11 @@ async function bootstrap() {
         },
         'JWT-auth',
       )
+      .addSecurity('JWT-auth', {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      })
       .addTag('Authentication', 'User authentication and authorization')
       .addTag(
         'Blockchain',
@@ -94,6 +99,7 @@ async function bootstrap() {
       swaggerOptions: {
         tagsSorter: 'alpha',
         operationsSorter: 'alpha',
+        persistAuthorization: true,
       },
     });
 

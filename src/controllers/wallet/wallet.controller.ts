@@ -26,7 +26,7 @@ import { CryptoService } from '../../common/crypto.service';
 import { JwtAuthGuard } from '../../auth/guards/auth.guards';
 import { ResponseFormatter } from '../../common/response-formatter';
 import { TransactionType } from '../../common/enums';
-import { ProsumersService } from 'src/models/user/user.service';
+import { UsersService } from 'src/models/user/user.service';
 import { BlockchainService } from '../../services/blockchain/blockchain.service';
 import { TransactionLogsService } from '../../models/transactionLog/transactionLog.service';
 import {
@@ -46,7 +46,7 @@ import {
 
 interface User extends Request {
   user: {
-    prosumerId: string;
+    userId: string;
   };
 }
 
@@ -61,7 +61,7 @@ export class WalletController {
     private walletsService: WalletsService,
     private idrsConversionsService: IdrsConversionsService,
     private cryptoService: CryptoService,
-    private prosumersService: ProsumersService,
+    private prosumersService: UsersService,
     private blockchainService: BlockchainService,
     private transactionLogsService: TransactionLogsService,
   ) {}
@@ -83,7 +83,7 @@ export class WalletController {
     currencySecondary: string | null;
     blockchainTxHash: string | null;
     transactionTimestamp: string | null;
-    prosumerId?: string;
+    userId?: string;
   } {
     const txData = tx as {
       logId?: string | number;
@@ -94,7 +94,7 @@ export class WalletController {
       amountSecondary?: string | number;
       currencySecondary?: string;
       transactionTimestamp?: string;
-      prosumerId?: string;
+      userId?: string;
       blockchainTxHash?: string;
     };
 
@@ -123,7 +123,7 @@ export class WalletController {
       currencySecondary: txData.currencySecondary || null,
       blockchainTxHash: txData.blockchainTxHash || null,
       transactionTimestamp: txData.transactionTimestamp || null,
-      ...(scope !== 'own' && { prosumerId: txData.prosumerId }),
+      ...(scope !== 'own' && { userId: txData.userId }),
     };
   }
 
@@ -148,7 +148,7 @@ export class WalletController {
     description: 'Conflict - Wallet already exists',
   })
   async createWallet(@Body() body: CreateWalletDto, @Request() req: User) {
-    const prosumerId = req.user.prosumerId;
+    const userId = req.user.userId;
 
     let walletAddress: string;
     let privateKey: string;
@@ -184,7 +184,7 @@ export class WalletController {
     // Create wallet record
     const wallet = await this.walletsService.create({
       walletAddress,
-      prosumerId: prosumerId,
+      userId: userId,
       walletName: body.walletName,
       encryptedPrivateKey,
       importMethod: body.importMethod,
@@ -215,9 +215,9 @@ export class WalletController {
     type: WalletListResponseDto,
   })
   async getWallets(@Request() req: User) {
-    const prosumerId = req.user.prosumerId;
+    const userId = req.user.userId;
 
-    const wallets = await this.walletsService.findAll({ prosumerId });
+    const wallets = await this.walletsService.findAll({ userId });
 
     return ResponseFormatter.successWithCount(
       wallets.map((wallet) => ({
@@ -255,13 +255,13 @@ export class WalletController {
     @Param('walletAddress') walletAddress: string,
     @Request() req: User,
   ) {
-    const prosumerId = req.user.prosumerId;
+    const userId = req.user.userId;
 
     // Verify ownership
     const prosumers =
       await this.prosumersService.findByWalletAddress(walletAddress);
 
-    if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
+    if (!prosumers.find((p) => p.userId === userId)) {
       throw new BadRequestException('Unauthorized: You do not own this wallet');
     }
 
@@ -301,7 +301,7 @@ export class WalletController {
     description: 'Unauthorized - Wallet does not belong to user',
   })
   async convertIdrs(@Body() body: IdrsConversionDto, @Request() req: User) {
-    const prosumerId = req.user.prosumerId;
+    const userId = req.user.userId;
 
     try {
       // Verify wallet ownership
@@ -309,7 +309,7 @@ export class WalletController {
         body.walletAddress,
       );
 
-      if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
+      if (!prosumers.find((p) => p.userId === userId)) {
         throw new BadRequestException(
           'Unauthorized: You do not own this wallet',
         );
@@ -336,7 +336,7 @@ export class WalletController {
 
         // Log transaction
         await this.transactionLogsService.create({
-          prosumerId,
+          userId,
           transactionType: TransactionType.TOKEN_MINT,
           description: JSON.stringify({
             message: 'IDRS tokens minted for ON_RAMP conversion',
@@ -377,7 +377,7 @@ export class WalletController {
 
         // Log transaction
         await this.transactionLogsService.create({
-          prosumerId,
+          userId,
           transactionType: TransactionType.TOKEN_BURN,
           description: JSON.stringify({
             message: 'IDRS tokens burned for OFF_RAMP conversion',
@@ -397,7 +397,7 @@ export class WalletController {
 
       // Create conversion record in database
       const conversion = await this.idrsConversionsService.create({
-        prosumerId,
+        userId,
         walletAddress: body.walletAddress,
         conversionType: body.conversionType,
         idrAmount:
@@ -419,7 +419,7 @@ export class WalletController {
       });
 
       this.logger.log(
-        `${body.conversionType} conversion completed for prosumer ${prosumerId}, txHash: ${blockchainTxHash}`,
+        `${body.conversionType} conversion completed for prosumer ${userId}, txHash: ${blockchainTxHash}`,
       );
 
       // Get wallet balances after conversion
@@ -451,13 +451,13 @@ export class WalletController {
       const errorStack = error instanceof Error ? error.stack : undefined;
 
       this.logger.error(
-        `IDRS conversion failed for prosumer ${prosumerId}: ${errorMessage}`,
+        `IDRS conversion failed for prosumer ${userId}: ${errorMessage}`,
         errorStack,
       );
 
       // Log failed transaction
       await this.transactionLogsService.create({
-        prosumerId,
+        userId,
         transactionType:
           String(body.conversionType) === 'ON_RAMP'
             ? TransactionType.TOKEN_MINT
@@ -476,7 +476,7 @@ export class WalletController {
 
       // Create failed conversion record
       await this.idrsConversionsService.create({
-        prosumerId,
+        userId,
         walletAddress: body.walletAddress,
         conversionType: body.conversionType,
         idrAmount: String(body.conversionType) === 'ON_RAMP' ? body.amount : 0,
@@ -514,13 +514,13 @@ export class WalletController {
     @Param('walletAddress') walletAddress: string,
     @Request() req: User,
   ) {
-    const prosumerId = req.user.prosumerId;
+    const userId = req.user.userId;
 
     // Verify ownership
     const prosumers =
       await this.prosumersService.findByWalletAddress(walletAddress);
 
-    if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
+    if (!prosumers.find((p) => p.userId === userId)) {
       throw new BadRequestException('Unauthorized');
     }
 
@@ -559,13 +559,13 @@ export class WalletController {
     @Param('walletAddress') walletAddress: string,
     @Request() req: User,
   ) {
-    const prosumerId = req.user.prosumerId;
+    const userId = req.user.userId;
 
     // Verify ownership
     const prosumers =
       await this.prosumersService.findByWalletAddress(walletAddress);
 
-    if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
+    if (!prosumers.find((p) => p.userId === userId)) {
       throw new BadRequestException('Unauthorized');
     }
 
@@ -573,7 +573,7 @@ export class WalletController {
     const currentWallet = await this.walletsService.findOne(walletAddress);
     await this.walletsService.update(walletAddress, {
       walletAddress: currentWallet.walletAddress,
-      prosumerId: currentWallet.prosumerId,
+      userId: currentWallet.userId,
       walletName: currentWallet.walletName,
       encryptedPrivateKey: currentWallet.encryptedPrivateKey,
       createdAt: currentWallet.createdAt.toISOString(),
@@ -589,7 +589,7 @@ export class WalletController {
   }
 
   // Change Settlement Primary Wallet
-  // This endpoint allows a prosumer to change their primary wallet for settlement purposes.
+  // This endpoint allows a user to change their primary wallet for settlement purposes.
   // It verifies ownership of the wallet and updates the primary wallet in the prosumer's profile
   @Post(':walletAddress/set-primary')
   @ApiOperation({
@@ -614,18 +614,18 @@ export class WalletController {
     @Param('walletAddress') walletAddress: string,
     @Request() req: User,
   ) {
-    const prosumerId = req.user.prosumerId;
+    const userId = req.user.userId;
     // Verify ownership
     const prosumers =
       await this.prosumersService.findByWalletAddress(walletAddress);
 
-    if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
+    if (!prosumers.find((p) => p.userId === userId)) {
       throw new BadRequestException('Unauthorized');
     }
 
     // Update primary wallet in prosumer's profile
     await this.prosumersService.updatePrimaryWalletAddress(
-      prosumerId,
+      userId,
       walletAddress,
     );
 
@@ -658,20 +658,20 @@ export class WalletController {
     @Param('walletAddress') walletAddress: string,
     @Request() req: User,
   ) {
-    const prosumerId = req.user.prosumerId;
+    const userId = req.user.userId;
 
     // Verify ownership
     const currentWallet = await this.walletsService.findOne(walletAddress);
     const prosumers =
       await this.prosumersService.findByWalletAddress(walletAddress);
 
-    if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
+    if (!prosumers.find((p) => p.userId === userId)) {
       throw new BadRequestException('Unauthorized');
     }
 
     await this.walletsService.update(walletAddress, {
       walletAddress: currentWallet.walletAddress,
-      prosumerId: currentWallet.prosumerId,
+      userId: currentWallet.userId,
       walletName: currentWallet.walletName,
       encryptedPrivateKey: currentWallet.encryptedPrivateKey,
       createdAt: currentWallet.createdAt.toISOString(),
@@ -776,7 +776,7 @@ export class WalletController {
     @Query('transactionType') transactionType?: string,
     @Query('scope') scope?: 'own' | 'public' | 'all',
   ) {
-    const prosumerId = req.user.prosumerId;
+    const userId = req.user.userId;
 
     try {
       const maxLimit = limit ? parseInt(limit) : 50;
@@ -792,7 +792,7 @@ export class WalletController {
       // Log admin scope access
       if (validScope === 'all') {
         this.logger.warn(
-          `User ${prosumerId} requested 'all' scope for IDRS transaction history`,
+          `User ${userId} requested 'all' scope for IDRS transaction history`,
         );
       }
 
@@ -813,7 +813,7 @@ export class WalletController {
       } else {
         // Default: Get only user's own IDRS transactions
         transactions = await this.transactionLogsService.findAll({
-          prosumerId,
+          userId,
           currencyPrimary: 'IDRS',
           transactionType: transactionType || undefined,
         });
@@ -841,7 +841,7 @@ export class WalletController {
         sortedTransactions,
         {
           scope: validScope,
-          prosumerId: validScope === 'own' ? prosumerId : 'multiple',
+          userId: validScope === 'own' ? userId : 'multiple',
           currencyPrimary: 'IDRS',
           transactionType: transactionType || 'all',
           limit: maxLimit,
@@ -854,7 +854,7 @@ export class WalletController {
         throw error;
       }
       this.logger.error(
-        `Error fetching IDRS transaction history for prosumer ${prosumerId}: ${
+        `Error fetching IDRS transaction history for prosumer ${userId}: ${
           error instanceof Error ? error.message : String(error)
         }`,
       );
@@ -901,7 +901,7 @@ export class WalletController {
     @Query('tokenType') tokenType?: string, // 'ETK' or 'IDRS'
     @Query('scope') scope?: 'own' | 'public' | 'all',
   ) {
-    const prosumerId = req.user.prosumerId;
+    const userId = req.user.userId;
 
     try {
       const maxLimit = limit ? parseInt(limit) : 50;
@@ -917,7 +917,7 @@ export class WalletController {
       // Log admin scope access
       if (validScope === 'all') {
         this.logger.warn(
-          `User ${prosumerId} requested 'all' scope for token minting history`,
+          `User ${userId} requested 'all' scope for token minting history`,
         );
       }
 
@@ -926,14 +926,14 @@ export class WalletController {
 
       // Build query parameters based on scope
       const baseQueryParams: {
-        prosumerId?: string;
+        userId?: string;
         currencyPrimary?: string;
         transactionType?: string;
       } = {};
 
-      // Add prosumerId only for 'own' scope
+      // Add userId only for 'own' scope
       if (validScope === 'own') {
-        baseQueryParams.prosumerId = prosumerId;
+        baseQueryParams.userId = userId;
       }
 
       // Filter by token type if specified
@@ -979,7 +979,7 @@ export class WalletController {
         sortedTransactions,
         {
           scope: validScope,
-          prosumerId: validScope === 'own' ? prosumerId : 'multiple',
+          userId: validScope === 'own' ? userId : 'multiple',
           tokenType: tokenType || 'all',
           limit: maxLimit,
           count: sortedTransactions.length,
@@ -992,7 +992,7 @@ export class WalletController {
         throw error;
       }
       this.logger.error(
-        `Error fetching token minting history for prosumer ${prosumerId}: ${
+        `Error fetching token minting history for prosumer ${userId}: ${
           error instanceof Error ? error.message : String(error)
         }`,
       );

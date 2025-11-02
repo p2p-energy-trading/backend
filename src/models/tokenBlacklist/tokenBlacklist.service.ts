@@ -31,7 +31,7 @@ export class BlacklistService {
   // Blacklist specific token
   async blacklistToken(
     token: string,
-    prosumerId: string,
+    userId: string,
     reason: BlacklistReason = BlacklistReason.LOGOUT,
     ipAddress?: string,
     userAgent?: string,
@@ -41,11 +41,11 @@ export class BlacklistService {
     const expiresAt = new Date(Date.now() + this.getJwtExpirationMs());
 
     // this.logger.debug(
-    //   `Original token: ${token}, Prosumer ID: ${prosumerId}, Reason: ${reason}`,
+    //   `Original token: ${token}, Prosumer ID: ${userId}, Reason: ${reason}`,
     // );
 
     // this.logger.debug(
-    //   `Blacklisting token for prosumer ${prosumerId}: ${tokenHash}`,
+    //   `Blacklisting token for prosumer ${userId}: ${tokenHash}`,
     // );
 
     // Check if token is already blacklisted
@@ -63,7 +63,7 @@ export class BlacklistService {
 
     const blacklistEntry = this.blacklistRepository.create({
       blacklistType: BlacklistType.TOKEN,
-      prosumerId,
+      userId,
       tokenHash,
       reason,
       ipAddress,
@@ -78,7 +78,7 @@ export class BlacklistService {
 
   // Blacklist all tokens for a user (logout from all devices)
   async blacklistUser(
-    prosumerId: string,
+    userId: string,
     reason: BlacklistReason = BlacklistReason.LOGOUT_ALL_DEVICES,
     ipAddress?: string,
     userAgent?: string,
@@ -90,7 +90,7 @@ export class BlacklistService {
     // Check if user is already blacklisted
     const existing = await this.blacklistRepository.findOne({
       where: {
-        prosumerId,
+        userId,
         blacklistType: BlacklistType.USER,
         isActive: true,
       },
@@ -107,7 +107,7 @@ export class BlacklistService {
 
     const blacklistEntry = this.blacklistRepository.create({
       blacklistType: BlacklistType.USER,
-      prosumerId,
+      userId,
       tokenHash: undefined,
       reason,
       ipAddress,
@@ -155,10 +155,10 @@ export class BlacklistService {
   }
 
   // Check if user is blacklisted (all tokens invalid)
-  async isUserBlacklisted(prosumerId: string): Promise<boolean> {
+  async isUserBlacklisted(userId: string): Promise<boolean> {
     const blacklisted = await this.blacklistRepository.findOne({
       where: {
-        prosumerId,
+        userId,
         blacklistType: BlacklistType.USER,
         isActive: true,
         expiresAt: MoreThan(new Date()),
@@ -169,20 +169,20 @@ export class BlacklistService {
   }
 
   // Check if token or user is blacklisted (combined check)
-  async isBlacklisted(token: string, prosumerId: string): Promise<boolean> {
+  async isBlacklisted(token: string, userId: string): Promise<boolean> {
     const [tokenBlacklisted, userBlacklisted] = await Promise.all([
       this.isTokenBlacklisted(token),
-      this.isUserBlacklisted(prosumerId),
+      this.isUserBlacklisted(userId),
     ]);
 
     return tokenBlacklisted || userBlacklisted;
   }
 
   // Clear user from blacklist (allow login again)
-  async clearUserBlacklist(prosumerId: string): Promise<void> {
+  async clearUserBlacklist(userId: string): Promise<void> {
     await this.blacklistRepository.update(
       {
-        prosumerId,
+        userId,
         blacklistType: BlacklistType.USER,
         isActive: true,
       },
@@ -210,11 +210,11 @@ export class BlacklistService {
 
   // Get blacklist history for a user
   async getBlacklistHistory(
-    prosumerId: string,
+    userId: string,
     limit: number = 50,
   ): Promise<TokenBlacklist[]> {
     return this.blacklistRepository.find({
-      where: { prosumerId },
+      where: { userId },
       order: { createdAt: 'DESC' },
       take: limit,
     });
@@ -259,16 +259,16 @@ export class BlacklistService {
 
   // Bulk blacklist tokens (for security incidents)
   async bulkBlacklistTokens(
-    tokenProsumerPairs: Array<{ token: string; prosumerId: string }>,
+    tokenProsumerPairs: Array<{ token: string; userId: string }>,
     reason: BlacklistReason = BlacklistReason.SECURITY_BREACH,
     createdBy: string = 'ADMIN',
   ): Promise<void> {
     const expiresAt = new Date(Date.now() + this.getJwtExpirationMs());
 
-    const blacklistEntries = tokenProsumerPairs.map(({ token, prosumerId }) =>
+    const blacklistEntries = tokenProsumerPairs.map(({ token, userId }) =>
       this.blacklistRepository.create({
         blacklistType: BlacklistType.TOKEN,
-        prosumerId,
+        userId,
         tokenHash: this.hashToken(token),
         reason,
         expiresAt,

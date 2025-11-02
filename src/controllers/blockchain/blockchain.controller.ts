@@ -75,10 +75,10 @@ export class BlockchainController {
     @Body() body: ConvertIDRSDto,
   ) {
     const { walletAddress, amount, direction } = body;
-    const prosumerId = req.user.prosumerId;
+    const userId = req.user.userId;
 
     // Verify wallet ownership
-    const wallets = await this.walletsService.findAll({ prosumerId });
+    const wallets = await this.walletsService.findAll({ userId });
     const wallet = wallets.find(
       (w: { walletAddress: string }) => w.walletAddress === walletAddress,
     );

@@ -6,7 +6,7 @@ export class WalletsArgs {
   walletAddress?: string;
 
   @Field(() => String, { nullable: true })
-  prosumerId?: string;
+  userId?: string;
 
   @Field(() => String, { nullable: true })
   walletName?: string;

@@ -18,7 +18,6 @@ import {
 
 interface AuthenticatedSocket extends Socket {
   userId?: string;
-  prosumerId?: string;
 }
 
 export interface NotificationPayload {
@@ -44,7 +43,7 @@ export class NotificationGateway
   server: Server;
 
   private readonly logger = new Logger(NotificationGateway.name);
-  private userSockets = new Map<string, string[]>(); // prosumerId -> socketIds[]
+  private userSockets = new Map<string, string[]>(); // userId -> socketIds[]
 
   constructor(private jwtService: JwtService) {}
 
@@ -60,21 +59,21 @@ export class NotificationGateway
       }
 
       const payload = this.jwtService.verify(token);
-      client.prosumerId = payload.prosumerId;
+      client.userId = payload.userId;
       client.userId = payload.sub;
 
       // Track user connections
-      if (client.prosumerId) {
-        const existingSockets = this.userSockets.get(client.prosumerId) || [];
+      if (client.userId) {
+        const existingSockets = this.userSockets.get(client.userId) || [];
         existingSockets.push(client.id);
-        this.userSockets.set(client.prosumerId, existingSockets);
+        this.userSockets.set(client.userId, existingSockets);
 
         // Join user-specific room
-        client.join(`user:${client.prosumerId}`);
+        client.join(`user:${client.userId}`);
       }
 
       this.logger.log(
-        `Client connected: ${client.id} (User: ${client.prosumerId})`,
+        `Client connected: ${client.id} (User: ${client.userId})`,
       );
 
       // Send welcome notification
@@ -91,14 +90,14 @@ export class NotificationGateway
   }
 
   handleDisconnect(client: AuthenticatedSocket) {
-    if (client.prosumerId) {
-      const existingSockets = this.userSockets.get(client.prosumerId) || [];
+    if (client.userId) {
+      const existingSockets = this.userSockets.get(client.userId) || [];
       const updatedSockets = existingSockets.filter((id) => id !== client.id);
 
       if (updatedSockets.length > 0) {
-        this.userSockets.set(client.prosumerId, updatedSockets);
+        this.userSockets.set(client.userId, updatedSockets);
       } else {
-        this.userSockets.delete(client.prosumerId);
+        this.userSockets.delete(client.userId);
       }
     }
 
@@ -113,10 +112,7 @@ export class NotificationGateway
     const { channels } = data;
 
     channels.forEach((channel) => {
-      if (
-        client.prosumerId &&
-        this.isValidChannel(channel, client.prosumerId)
-      ) {
+      if (client.userId && this.isValidChannel(channel, client.userId)) {
         client.join(channel);
         this.logger.log(`Client ${client.id} subscribed to ${channel}`);
       }
@@ -139,10 +135,10 @@ export class NotificationGateway
   // Energy Settlement Notifications
   notifySettlementStarted(
     meterId: string,
-    prosumerId: string,
+    userId: string,
     trigger: SettlementTrigger,
   ) {
-    this.sendToUser(prosumerId, {
+    this.sendToUser(userId, {
       type: 'settlement_started',
       message: `Energy settlement started for device ${meterId}`,
       data: { meterId, trigger },
@@ -153,11 +149,11 @@ export class NotificationGateway
 
   notifySettlementCompleted(
     meterId: string,
-    prosumerId: string,
+    userId: string,
     txHash: string,
     netEnergyKwh: number,
   ) {
-    this.sendToUser(prosumerId, {
+    this.sendToUser(userId, {
       type: 'settlement_completed',
       message: `Energy settlement completed for device ${meterId}`,
       data: { meterId, txHash, netEnergyKwh },
@@ -166,8 +162,8 @@ export class NotificationGateway
     });
   }
 
-  notifySettlementFailed(meterId: string, prosumerId: string, error: string) {
-    this.sendToUser(prosumerId, {
+  notifySettlementFailed(meterId: string, userId: string, error: string) {
+    this.sendToUser(userId, {
       type: 'settlement_failed',
       message: `Energy settlement failed for device ${meterId}: ${error}`,
       data: { meterId, error },
@@ -177,8 +173,8 @@ export class NotificationGateway
   }
 
   // Device Status Notifications
-  notifyDeviceOffline(meterId: string, prosumerId: string, lastSeen: string) {
-    this.sendToUser(prosumerId, {
+  notifyDeviceOffline(meterId: string, userId: string, lastSeen: string) {
+    this.sendToUser(userId, {
       type: 'device_offline',
       message: `Device ${meterId} is offline`,
       data: { meterId, lastSeen },
@@ -187,8 +183,8 @@ export class NotificationGateway
     });
   }
 
-  notifyDeviceOnline(meterId: string, prosumerId: string) {
-    this.sendToUser(prosumerId, {
+  notifyDeviceOnline(meterId: string, userId: string) {
+    this.sendToUser(userId, {
       type: 'device_online',
       message: `Device ${meterId} is back online`,
       data: { meterId },
@@ -199,11 +195,11 @@ export class NotificationGateway
 
   notifyDeviceAlert(
     meterId: string,
-    prosumerId: string,
+    userId: string,
     alertType: string,
     message: string,
   ) {
-    this.sendToUser(prosumerId, {
+    this.sendToUser(userId, {
       type: 'device_alert',
       message: `Device Alert: ${message}`,
       data: { meterId, alertType },
@@ -215,12 +211,12 @@ export class NotificationGateway
   // Trading Notifications
   notifyOrderPlaced(
     orderId: string,
-    prosumerId: string,
+    userId: string,
     orderType: string,
     quantity: number,
     price: number,
   ) {
-    this.sendToUser(prosumerId, {
+    this.sendToUser(userId, {
       type: 'order_placed',
       message: `${orderType} order placed: ${quantity} ETK at ${price} IDRS`,
       data: { orderId, orderType, quantity, price },
@@ -231,11 +227,11 @@ export class NotificationGateway
 
   notifyOrderMatched(
     orderId: string,
-    prosumerId: string,
+    userId: string,
     quantity: number,
     price: number,
   ) {
-    this.sendToUser(prosumerId, {
+    this.sendToUser(userId, {
       type: 'order_matched',
       message: `Order matched: ${quantity} ETK at ${price} IDRS`,
       data: { orderId, quantity, price },
@@ -244,8 +240,8 @@ export class NotificationGateway
     });
   }
 
-  notifyOrderCancelled(orderId: string, prosumerId: string) {
-    this.sendToUser(prosumerId, {
+  notifyOrderCancelled(orderId: string, userId: string) {
+    this.sendToUser(userId, {
       type: 'order_cancelled',
       message: `Order ${orderId} has been cancelled`,
       data: { orderId },
@@ -255,8 +251,8 @@ export class NotificationGateway
   }
 
   // Blockchain Transaction Notifications
-  notifyTransactionSuccess(txHash: string, prosumerId: string, type: string) {
-    this.sendToUser(prosumerId, {
+  notifyTransactionSuccess(txHash: string, userId: string, type: string) {
+    this.sendToUser(userId, {
       type: 'transaction_success',
       message: `Transaction confirmed: ${type}`,
       data: { txHash, transactionType: type },
@@ -267,11 +263,11 @@ export class NotificationGateway
 
   notifyTransactionFailed(
     txHash: string,
-    prosumerId: string,
+    userId: string,
     type: string,
     error: string,
   ) {
-    this.sendToUser(prosumerId, {
+    this.sendToUser(userId, {
       type: 'transaction_failed',
       message: `Transaction failed: ${type} - ${error}`,
       data: { txHash, transactionType: type, error },
@@ -283,11 +279,11 @@ export class NotificationGateway
   // Command Acknowledgment Notifications
   notifyCommandAcknowledged(
     meterId: string,
-    prosumerId: string,
+    userId: string,
     commandType: string,
     correlationId: string,
   ) {
-    this.sendToUser(prosumerId, {
+    this.sendToUser(userId, {
       type: 'command_acknowledged',
       message: `Device command acknowledged: ${commandType}`,
       data: { meterId, commandType, correlationId },
@@ -298,11 +294,11 @@ export class NotificationGateway
 
   notifyCommandTimeout(
     meterId: string,
-    prosumerId: string,
+    userId: string,
     commandType: string,
     correlationId: string,
   ) {
-    this.sendToUser(prosumerId, {
+    this.sendToUser(userId, {
       type: 'command_timeout',
       message: `Device command timed out: ${commandType}`,
       data: { meterId, commandType, correlationId },
@@ -312,7 +308,7 @@ export class NotificationGateway
   }
 
   // Energy Data Updates
-  notifyEnergyDataUpdate(meterId: string, prosumerId: string, data: any) {
+  notifyEnergyDataUpdate(meterId: string, userId: string, data: any) {
     this.sendToChannel(`device:${meterId}`, {
       type: 'energy_data_update',
       message: 'New energy data available',
@@ -321,7 +317,7 @@ export class NotificationGateway
       priority: 'low',
     });
 
-    this.sendToUser(prosumerId, {
+    this.sendToUser(userId, {
       type: 'energy_data_update',
       message: `Energy data updated for device ${meterId}`,
       data: { meterId, ...data },
@@ -331,8 +327,8 @@ export class NotificationGateway
   }
 
   // Utility methods
-  private sendToUser(prosumerId: string, notification: NotificationPayload) {
-    this.server.to(`user:${prosumerId}`).emit('notification', notification);
+  private sendToUser(userId: string, notification: NotificationPayload) {
+    this.server.to(`user:${userId}`).emit('notification', notification);
   }
 
   private sendToChannel(channel: string, notification: NotificationPayload) {
@@ -343,10 +339,10 @@ export class NotificationGateway
     this.server.to(clientId).emit('notification', notification);
   }
 
-  private isValidChannel(channel: string, prosumerId: string): boolean {
+  private isValidChannel(channel: string, userId: string): boolean {
     // Allow users to subscribe to their own channels and public channels
     const allowedPatterns = [
-      `user:${prosumerId}`,
+      `user:${userId}`,
       `device:`, // Will be validated further based on device ownership
       'market:trades',
       'market:orders',

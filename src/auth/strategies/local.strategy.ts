@@ -36,7 +36,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
    *
    * @param email - Prosumer email extracted from request body
    * @param password - Prosumer password extracted from request body
-   * @returns ValidatedProsumer object that will be injected to req.user
+   * @returns ValidatedUser object that will be injected to req.user
    * @throws {UnauthorizedException} If credentials are invalid
    *
    * @workflow
@@ -58,7 +58,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
    *
    * // If valid, req.user will contain:
    * {
-   *   prosumerId: "prosumer_123",
+   *   userId: "user_123",
    *   email: "prosumer@enerlink.com",
    *   name: "John Doe",
    *   createdAt: "2025-10-23T...",

@@ -21,7 +21,7 @@ import { SmartMetersModule } from '../models/smartMeter/smartMeter.module';
 // - TradeOrdersCacheModule (replaced by Redis)
 import { MarketTradesModule } from '../models/marketTrade/marketTrade.module';
 import { CommonModule } from '../common/common.module';
-import { ProsumersModule } from 'src/models/user/user.module';
+import { UsersModule } from 'src/models/user/user.module';
 import { TokenBlacklistModule } from 'src/models/tokenBlacklist/tokenBlacklist.module';
 import { TransactionLogsModule } from 'src/models/transactionLog/transactionLog.module';
 import { EnergySettlementsModule } from 'src/models/energySettlement/energySettlement.module';
@@ -39,7 +39,7 @@ import { TelemetryAggregate } from '../models/telemetryAggregate/telemetryAggreg
     // Removed: DeviceCommandsModule, DeviceStatusSnapshotsModule, EnergyReadingsDetailedModule, TradeOrdersCacheModule (replaced by Redis)
     MarketTradesModule,
     CommonModule,
-    ProsumersModule,
+    UsersModule,
     TokenBlacklistModule,
     TransactionLogsModule,
     EnergySettlementsModule,

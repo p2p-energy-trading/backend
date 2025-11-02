@@ -27,8 +27,8 @@ export class SmartMetersService {
     // Simple filter: remove undefined keys
     const where = {};
     if (args && args.meterId !== undefined) where['meterId'] = args.meterId;
-    if (args && args.prosumerId !== undefined)
-      where['prosumerId'] = args.prosumerId;
+    if (args && args.userId !== undefined)
+      where['userId'] = args.userId;
     if (args && args.meterBlockchainAddress !== undefined)
       where['meterBlockchainAddress'] = args.meterBlockchainAddress;
     if (args && args.location !== undefined) where['location'] = args.location;
@@ -70,8 +70,8 @@ export class SmartMetersService {
     return entity;
   }
 
-  async findByProsumerId(prosumerId: string): Promise<SmartMeter[]> {
-    return this.repo.find({ where: { prosumerId } });
+  async findByUserId(userId: string): Promise<SmartMeter[]> {
+    return this.repo.find({ where: { userId } });
   }
 
   async updateLastSeen(meterId: string): Promise<SmartMeter> {
@@ -86,7 +86,7 @@ export class SmartMetersService {
     // Convert input types to match entity types
     const createData: Partial<SmartMeter> = {
       meterId: input.meterId,
-      prosumerId: input.prosumerId,
+      userId: input.userId,
       meterBlockchainAddress: input.meterBlockchainAddress,
       location: input.location,
       status: input.status,
@@ -122,7 +122,7 @@ export class SmartMetersService {
 
     // Convert input types to match entity types
     const updateData: Partial<SmartMeter> = {
-      prosumerId: input.prosumerId,
+      userId: input.userId,
       meterBlockchainAddress: input.meterBlockchainAddress,
       location: input.location,
       status: input.status,

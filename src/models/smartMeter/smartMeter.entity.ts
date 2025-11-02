@@ -20,8 +20,8 @@ export class SmartMeter {
   @PrimaryColumn({ type: 'varchar', name: 'meter_id' })
   meterId: string;
 
-  @Column({ type: 'varchar', name: 'prosumer_id' })
-  prosumerId: string;
+  @Column({ type: 'varchar', name: 'user_id' })
+  userId: string;
 
   @Column({ type: 'varchar', name: 'meter_blockchain_address', nullable: true })
   meterBlockchainAddress: string;
@@ -84,6 +84,6 @@ export class SmartMeter {
   energysettlementsList: EnergySettlement[];
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'prosumer_id' })
-  prosumers: User;
+  @JoinColumn({ name: 'user_id' })
+  users: User;
 }

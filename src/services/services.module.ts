@@ -24,7 +24,7 @@ import { EnergySettlementsModule } from '../models/energySettlement/energySettle
 import { SmartMetersModule } from '../models/smartMeter/smartMeter.module';
 import { CommonModule } from '../common/common.module';
 import { WebSocketModule } from '../websocket/websocket.module';
-import { ProsumersModule } from 'src/models/user/user.module';
+import { UsersModule } from 'src/models/user/user.module';
 import { TelemetryAggregate } from '../models/telemetryAggregate/telemetryAggregate.entity';
 
 @Module({
@@ -44,7 +44,7 @@ import { TelemetryAggregate } from '../models/telemetryAggregate/telemetryAggreg
     // Removed: BlockchainApprovalsModule (not used)
     EnergySettlementsModule,
     SmartMetersModule,
-    ProsumersModule,
+    UsersModule,
   ],
   providers: [
     MqttService,

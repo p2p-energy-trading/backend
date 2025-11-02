@@ -19,11 +19,11 @@ export class MarketTrade {
   @Column({ type: 'varchar', name: 'seller_order_id' })
   sellerOrderId: string;
 
-  @Column({ type: 'varchar', name: 'buyer_prosumer_id' })
-  buyerProsumerId: string;
+  @Column({ type: 'varchar', name: 'buyer_user_id' })
+  buyerUserId: string;
 
-  @Column({ type: 'varchar', name: 'seller_prosumer_id' })
-  sellerProsumerId: string;
+  @Column({ type: 'varchar', name: 'seller_user_id' })
+  sellerUserId: string;
 
   @Column({ type: 'varchar', name: 'buyer_wallet_address' })
   buyerWalletAddress: string;
@@ -53,15 +53,15 @@ export class MarketTrade {
   createdAt: Date;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'buyer_prosumer_id' })
-  prosumers: User;
+  @JoinColumn({ name: 'buyer_user_id' })
+  users: User;
 
   @ManyToOne(() => Wallet)
   @JoinColumn({ name: 'buyer_wallet_address' })
   wallets: Wallet;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'seller_prosumer_id' })
+  @JoinColumn({ name: 'seller_user_id' })
   prosumers2: User;
 
   @ManyToOne(() => Wallet)

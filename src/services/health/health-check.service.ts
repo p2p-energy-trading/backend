@@ -62,7 +62,7 @@ export class HealthCheckService {
         for (const tx of staleTransactions) {
           const txTyped = tx as any;
           await this.transactionLogsService.update(txTyped.transactionId, {
-            prosumerId: txTyped.prosumerId,
+            userId: txTyped.userId,
             transactionType: txTyped.transactionType,
             description: JSON.stringify({
               ...JSON.parse(txTyped.description || '{}'),

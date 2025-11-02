@@ -55,8 +55,8 @@ export class StatController {
   async getStats(
     @Request() req: AuthenticatedUser,
   ): Promise<ApiSuccessResponse<StatStats>> {
-    const prosumerId = req.user.prosumerId;
-    const stats = await this.statService.getStats(prosumerId);
+    const userId = req.user.userId;
+    const stats = await this.statService.getStats(userId);
 
     return ResponseFormatter.success(
       stats,
@@ -84,10 +84,10 @@ export class StatController {
     description: 'Internal server error - Failed to generate recommendations',
   })
   async getSettlementRecommendations(@Request() req: AuthenticatedUser) {
-    const prosumerId = req.user.prosumerId;
+    const userId = req.user.userId;
 
     const recommendations =
-      await this.statService.getSettlementRecommendations(prosumerId);
+      await this.statService.getSettlementRecommendations(userId);
 
     return ResponseFormatter.successWithCount(
       recommendations,
@@ -115,10 +115,10 @@ export class StatController {
     description: 'Internal server error - Failed to check blockchain status',
   })
   async getBlockchainSyncStatus(@Request() req: AuthenticatedUser) {
-    const prosumerId = req.user.prosumerId;
+    const userId = req.user.userId;
 
     const syncStatus =
-      await this.statService.getBlockchainSyncStatus(prosumerId);
+      await this.statService.getBlockchainSyncStatus(userId);
 
     return ResponseFormatter.success(
       syncStatus,
@@ -147,10 +147,10 @@ export class StatController {
   })
   async getSystemOverview(@Request() req: AuthenticatedUser) {
     try {
-      const prosumerId = req.user.prosumerId;
+      const userId = req.user.userId;
 
       // Get comprehensive system overview
-      const stats = await this.statService.getStats(prosumerId);
+      const stats = await this.statService.getStats(userId);
 
       const systemOverview = {
         energy: {

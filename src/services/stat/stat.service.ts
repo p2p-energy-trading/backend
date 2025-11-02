@@ -83,12 +83,12 @@ export class StatService {
     private energySettlementService: EnergySettlementService,
   ) {}
 
-  async getStats(prosumerId: string): Promise<StatStats> {
+  async getStats(userId: string): Promise<StatStats> {
     try {
       // Get prosumer's devices and wallets
       const [devices, wallets] = await Promise.all([
-        this.getProsumeDevices(prosumerId),
-        this.walletsService.findAll({ prosumerId }),
+        this.getUserDevices(userId),
+        this.walletsService.findAll({ userId }),
       ]);
 
       // Parallel fetch all stats including settlement stats
@@ -119,13 +119,13 @@ export class StatService {
     }
   }
 
-  private async getProsumeDevices(prosumerId: string) {
+  private async getUserDevices(userId: string) {
     try {
-      const devices = await this.smartMetersService.findAll({ prosumerId });
+      const devices = await this.smartMetersService.findAll({ userId });
       return devices || [];
     } catch (error) {
       this.logger.warn(
-        `Error fetching devices for prosumer ${prosumerId}:`,
+        `Error fetching devices for prosumer ${userId}:`,
         error,
       );
       return [];
@@ -518,9 +518,9 @@ export class StatService {
   }
 
   // Enhanced method to get settlement recommendations
-  async getSettlementRecommendations(prosumerId: string) {
+  async getSettlementRecommendations(userId: string) {
     try {
-      const devices = await this.getProsumeDevices(prosumerId);
+      const devices = await this.getUserDevices(userId);
       const recommendations: Array<{
         meterId: string;
         netEnergyWh: number;
@@ -633,10 +633,10 @@ export class StatService {
   }
 
   // Enhanced method to get blockchain synchronization status
-  async getBlockchainSyncStatus(prosumerId: string) {
+  async getBlockchainSyncStatus(userId: string) {
     try {
-      const devices = await this.getProsumeDevices(prosumerId);
-      const wallets = await this.walletsService.findAll({ prosumerId });
+      const devices = await this.getUserDevices(userId);
+      const wallets = await this.walletsService.findAll({ userId });
 
       if (wallets.length === 0) {
         return {

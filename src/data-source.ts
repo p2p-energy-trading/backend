@@ -5,7 +5,7 @@ dotenv.config();
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { SeederOptions } from 'typeorm-extension';
 import { FirstSeeder } from './database/seeders/FirstSeeder';
-import { ProsumersFactory } from './database/factories/ProsumersFactory';
+import { UsersFactory } from './database/factories/UsersFactory';
 import { WalletsFactory } from './database/factories/WalletsFactory';
 import { SmartMetersFactory } from './database/factories/SmartMetersFactory';
 import { User } from './models/user/user.entity';
@@ -58,7 +58,7 @@ const dataSourceOptions: DataSourceOptions = {
 export const seederOptions: DataSourceOptions & SeederOptions = {
   ...dataSourceOptions,
   seeds: [FirstSeeder],
-  factories: [ProsumersFactory, WalletsFactory, SmartMetersFactory],
+  factories: [UsersFactory, WalletsFactory, SmartMetersFactory],
 };
 
 // Export DataSource for TypeORM

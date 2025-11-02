@@ -4,7 +4,7 @@ import Redis from 'ioredis';
 
 export interface OrderData {
   orderId: string;
-  prosumerId: string;
+  userId: string;
   walletAddress: string;
   orderType: string; // 'BID' | 'ASK'
   pair: string; // 'ETK/IDRS'
@@ -26,7 +26,7 @@ export interface OrderData {
  * Data Structure:
  * - Hash: orders:{orderId} - Full order details
  * - Sorted Set: orders:by_type:{BID|ASK} - Orders sorted by price (score = price * 100)
- * - Sorted Set: orders:by_prosumer:{prosumerId} - Orders per prosumer
+ * - Sorted Set: orders:by_user:{userId} - Orders per prosumer
  * - Sorted Set: orders:by_status:{status} - Orders by status
  * - Set: orders:all - Set of all order IDs for fast iteration
  *
@@ -81,7 +81,7 @@ export class RedisOrdersService implements OnModuleInit {
     // Store full order data in hash
     pipeline.hset(`orders:${orderId}`, {
       orderId: order.orderId,
-      prosumerId: order.prosumerId,
+      userId: order.userId,
       walletAddress: order.walletAddress,
       orderType: order.orderType,
       pair: order.pair,
@@ -105,7 +105,7 @@ export class RedisOrdersService implements OnModuleInit {
 
     // Add to sorted set by prosumer (score = timestamp)
     const timestamp = new Date(order.createdAtOnChain).getTime();
-    pipeline.zadd(`orders:by_prosumer:${order.prosumerId}`, timestamp, orderId);
+    pipeline.zadd(`orders:by_user:${order.userId}`, timestamp, orderId);
 
     // Add to sorted set by status
     pipeline.zadd(
@@ -129,7 +129,7 @@ export class RedisOrdersService implements OnModuleInit {
 
     return {
       orderId: data.orderId,
-      prosumerId: data.prosumerId,
+      userId: data.userId,
       walletAddress: data.walletAddress,
       orderType: data.orderType,
       pair: data.pair,
@@ -150,7 +150,7 @@ export class RedisOrdersService implements OnModuleInit {
    */
   async getAllOrders(filter?: {
     orderType?: string;
-    prosumerId?: string;
+    userId?: string;
     statusOnChain?: string;
   }): Promise<OrderData[]> {
     let orderIds: string[];
@@ -162,10 +162,10 @@ export class RedisOrdersService implements OnModuleInit {
         0,
         -1,
       );
-    } else if (filter?.prosumerId) {
+    } else if (filter?.userId) {
       // Get orders by prosumer
       orderIds = await this.client.zrange(
-        `orders:by_prosumer:${filter.prosumerId}`,
+        `orders:by_user:${filter.userId}`,
         0,
         -1,
       );
@@ -294,7 +294,7 @@ export class RedisOrdersService implements OnModuleInit {
     // Remove from all sets
     pipeline.srem('orders:all', orderId);
     pipeline.zrem(`orders:by_type:${existing.orderType}`, orderId);
-    pipeline.zrem(`orders:by_prosumer:${existing.prosumerId}`, orderId);
+    pipeline.zrem(`orders:by_user:${existing.userId}`, orderId);
     pipeline.zrem(`orders:by_status:${existing.statusOnChain}`, orderId);
 
     await pipeline.exec();
@@ -363,7 +363,7 @@ export class RedisOrdersService implements OnModuleInit {
     pipeline.del('orders:by_status:CANCELLED');
 
     // Delete prosumer sets (use scan for safety)
-    const prosumerKeys = await this.client.keys('orders:by_prosumer:*');
+    const prosumerKeys = await this.client.keys('orders:by_user:*');
     for (const key of prosumerKeys) {
       pipeline.del(key);
     }

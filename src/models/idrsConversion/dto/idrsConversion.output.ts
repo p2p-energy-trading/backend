@@ -6,7 +6,7 @@ export class IdrsConversions {
   conversionId: string;
 
   @Field(() => String)
-  prosumerId: string;
+  userId: string;
 
   @Field(() => String)
   walletAddress: string;

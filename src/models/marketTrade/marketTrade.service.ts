@@ -26,10 +26,10 @@ export class MarketTradesService {
       where['buyerOrderId'] = args.buyerOrderId;
     if (args && args.sellerOrderId !== undefined)
       where['sellerOrderId'] = args.sellerOrderId;
-    if (args && args.buyerProsumerId !== undefined)
-      where['buyerProsumerId'] = args.buyerProsumerId;
-    if (args && args.sellerProsumerId !== undefined)
-      where['sellerProsumerId'] = args.sellerProsumerId;
+    if (args && args.buyerUserId !== undefined)
+      where['buyerUserId'] = args.buyerUserId;
+    if (args && args.sellerUserId !== undefined)
+      where['sellerUserId'] = args.sellerUserId;
     if (args && args.buyerWalletAddress !== undefined)
       where['buyerWalletAddress'] = args.buyerWalletAddress;
     if (args && args.sellerWalletAddress !== undefined)
@@ -66,8 +66,8 @@ export class MarketTradesService {
     const createData: Partial<MarketTrade> = {
       buyerOrderId: input.buyerOrderId,
       sellerOrderId: input.sellerOrderId,
-      buyerProsumerId: input.buyerProsumerId,
-      sellerProsumerId: input.sellerProsumerId,
+      buyerUserId: input.buyerUserId,
+      sellerUserId: input.sellerUserId,
       buyerWalletAddress: input.buyerWalletAddress,
       sellerWalletAddress: input.sellerWalletAddress,
       tradedEtkAmount: input.tradedEtkAmount,
@@ -96,8 +96,8 @@ export class MarketTradesService {
     const updateData: Partial<MarketTrade> = {
       buyerOrderId: input.buyerOrderId,
       sellerOrderId: input.sellerOrderId,
-      buyerProsumerId: input.buyerProsumerId,
-      sellerProsumerId: input.sellerProsumerId,
+      buyerUserId: input.buyerUserId,
+      sellerUserId: input.sellerUserId,
       buyerWalletAddress: input.buyerWalletAddress,
       sellerWalletAddress: input.sellerWalletAddress,
       tradedEtkAmount: input.tradedEtkAmount,

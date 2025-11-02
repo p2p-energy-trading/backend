@@ -30,8 +30,8 @@ import {
   ProfileResponseDto,
 } from '../common/dto/auth.dto';
 
-interface ValidatedProsumer {
-  prosumerId: string;
+interface ValidatedUser {
+  userId: string;
   email: string;
   name: string;
   createdAt: string;
@@ -64,7 +64,7 @@ export class AuthController {
   /**
    * Login Endpoint
    *
-   * Authenticates a prosumer with email and password.
+   * Authenticates a user with email and password.
    * Returns JWT access token wrapped in ResponseFormatter structure.
    *
    * @param req - Request object containing validated user from LocalAuthGuard
@@ -83,7 +83,11 @@ export class AuthController {
    *   "data": {
    *     "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
    *     "tokenType": "Bearer",
-   *     "expiresIn": 3600
+   *     "expiresIn": 3600,
+   *     "user": {
+   *      "userId": "user_...",
+   *      "email": "john.doe@example.com",
+   *      "name": "John Doe"
    *   },
    *   "metadata": {
    *     "timestamp": "2025-11-01T10:30:00.000Z"
@@ -102,13 +106,13 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Prosumer Login',
+    summary: 'User Login',
     description:
-      'Authenticate prosumer with email and password. Returns JWT access token for API authentication.',
+      'Authenticate user with email and password. Returns JWT access token for API authentication.',
   })
   @ApiBody({
     type: LoginDto,
-    description: 'Prosumer credentials for authentication',
+    description: 'User credentials for authentication',
     examples: {
       standardLogin: {
         summary: 'Login with email and password',
@@ -127,7 +131,7 @@ export class AuthController {
   @ApiUnauthorizedResponse({
     description: 'Invalid credentials - Wrong email or password',
   })
-  login(@Request() req: { user: ValidatedProsumer }) {
+  login(@Request() req: { user: ValidatedUser }) {
     try {
       // User already validated by LocalAuthGuard, available in req.user
       return ResponseFormatter.success(
@@ -146,7 +150,7 @@ export class AuthController {
   /**
    * Register New Account
    *
-   * Creates a new prosumer account in the system.
+   * Creates a new user account in the system.
    * Validates that email is unique (email is used as primary identifier).
    * Automatically hashes password using bcrypt.
    * Generates JWT token for auto-login after registration.
@@ -169,8 +173,8 @@ export class AuthController {
    *     "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
    *     "tokenType": "Bearer",
    *     "expiresIn": 3600,
-   *     "prosumer": {
-   *       "prosumerId": "prosumer_...",
+   *     "user": {
+   *       "userId": "user_...",
    *       "email": "john.doe@example.com",
    *       "name": "John Doe",
    *       "createdAt": "2025-11-01T10:30:00.000Z",
@@ -193,16 +197,16 @@ export class AuthController {
    */
   @Post('register')
   @ApiOperation({
-    summary: 'Register New Prosumer Account',
+    summary: 'Register New User Account',
     description:
-      'Create a new prosumer account with unique email. Password will be securely hashed before storage. Returns JWT token for auto-login. Wallet is automatically generated.',
+      'Create a new user account with unique email. Password will be securely hashed before storage. Returns JWT token for auto-login. Wallet is automatically generated.',
   })
   @ApiBody({
     type: RegisterDto,
-    description: 'Registration information for new prosumer account',
+    description: 'Registration information for new user account',
     examples: {
       basicRegistration: {
-        summary: 'Basic prosumer registration',
+        summary: 'Basic user registration',
         value: {
           email: 'john.doe@example.com',
           password: 'SecurePassword123',
@@ -226,16 +230,16 @@ export class AuthController {
     | ReturnType<typeof ResponseFormatter.error>
   > {
     try {
-      // Register prosumer (returns ValidatedProsumer)
-      const validatedProsumer = await this.authService.register(registerDto);
+      // Register prosumer (returns ValidatedUser)
+      const validatedUser = await this.authService.register(registerDto);
 
       // Generate JWT token for auto-login (same pattern as login endpoint)
-      const loginInfo = this.authService.generateTokens(validatedProsumer);
+      const loginInfo = this.authService.generateTokens(validatedUser);
 
       return ResponseFormatter.success(
         {
           ...loginInfo,
-          prosumer: validatedProsumer,
+          prosumer: validatedUser,
         },
         'User registered successfully',
       );
@@ -252,7 +256,7 @@ export class AuthController {
    * Get User Profile
    *
    * Retrieves the complete profile of the authenticated user including:
-   * - Basic account information (prosumerId, email, name)
+   * - Basic account information (userId, email, name)
    * - Associated wallets with their addresses and metadata
    * - Connected smart meters with operational status
    *
@@ -270,7 +274,7 @@ export class AuthController {
    *   "message": "Profile retrieved successfully",
    *   "data": {
    *     "profile": {
-   *       "prosumerId": "prosumer_...",
+   *       "userId": "user_...",
    *       "email": "john.doe@example.com",
    *       "name": "John Doe",
    *       "primaryWalletAddress": "0xabcd...",
@@ -321,9 +325,9 @@ export class AuthController {
   @ApiUnauthorizedResponse({
     description: 'Invalid or missing JWT token',
   })
-  async getProfile(@Request() req: { user: { prosumerId: string } }) {
+  async getProfile(@Request() req: { user: { userId: string } }) {
     try {
-      const profile = await this.authService.getProfile(req.user.prosumerId);
+      const profile = await this.authService.getProfile(req.user.userId);
       return ResponseFormatter.success(
         profile,
         'Profile retrieved successfully',
@@ -384,12 +388,12 @@ export class AuthController {
     description: 'Invalid or expired JWT token',
   })
   async logout(
-    @Request() req: ExpressRequest & { user: { prosumerId: string } },
+    @Request() req: ExpressRequest & { user: { userId: string } },
   ) {
     try {
       // Token will be extracted automatically from Authorization header
       const result = await this.authService.logout(
-        req.user.prosumerId,
+        req.user.userId,
         undefined,
         req,
       );
@@ -453,10 +457,10 @@ export class AuthController {
     description: 'Invalid or expired JWT token',
   })
   async logoutAll(
-    @Request() req: ExpressRequest & { user: { prosumerId: string } },
+    @Request() req: ExpressRequest & { user: { userId: string } },
   ) {
     try {
-      const result = await this.authService.logoutAll(req.user.prosumerId, req);
+      const result = await this.authService.logoutAll(req.user.userId, req);
       return ResponseFormatter.success(
         result,
         'Logged out from all devices successfully',

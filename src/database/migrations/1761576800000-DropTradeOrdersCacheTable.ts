@@ -9,7 +9,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * The PostgreSQL-based TradeOrdersCacheService has been deprecated and
  * all order data is now stored in Redis for faster read/write operations.
  */
-export class DropTradeOrdersCacheTable1730476800000
+export class DropTradeOrdersCacheTable1761576800000
   implements MigrationInterface
 {
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -25,7 +25,7 @@ export class DropTradeOrdersCacheTable1730476800000
     await queryRunner.query(`
       CREATE TABLE "trade_orders_cache" (
         "orderId" character varying NOT NULL,
-        "prosumerId" character varying NOT NULL,
+        "userId" character varying NOT NULL,
         "walletAddress" character varying NOT NULL,
         "orderType" character varying NOT NULL,
         "pair" character varying NOT NULL,
@@ -44,7 +44,7 @@ export class DropTradeOrdersCacheTable1730476800000
 
     // Recreate indexes
     await queryRunner.query(`
-      CREATE INDEX "IDX_TRADE_ORDERS_PROSUMER" ON "trade_orders_cache" ("prosumerId")
+      CREATE INDEX "IDX_TRADE_ORDERS_PROSUMER" ON "trade_orders_cache" ("userId")
     `);
     await queryRunner.query(`
       CREATE INDEX "IDX_TRADE_ORDERS_STATUS" ON "trade_orders_cache" ("statusOnChain")

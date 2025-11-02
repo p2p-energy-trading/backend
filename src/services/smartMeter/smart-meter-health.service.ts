@@ -20,13 +20,13 @@ export class SmartMeterHealthService {
   ) {}
 
   /**
-   * Get overall device health status for a prosumer
+   * Get overall device health status for a user
    * Returns aggregate health metrics across all devices
    */
-  async getDeviceHealth(prosumerId: string) {
+  async getDeviceHealth(userId: string) {
     try {
       // Get prosumer's meters
-      const devices = await this.smartMetersService.findAll({ prosumerId });
+      const devices = await this.smartMetersService.findAll({ userId });
       const meterIds: string[] = devices.map(
         (d: { meterId: string }) => d.meterId,
       );
@@ -430,10 +430,10 @@ export class SmartMeterHealthService {
   /**
    * Get list of all devices with basic status
    */
-  async getDeviceList(prosumerId: string) {
+  async getDeviceList(userId: string) {
     try {
       // Get prosumer's meters
-      const devices = await this.smartMetersService.findAll({ prosumerId });
+      const devices = await this.smartMetersService.findAll({ userId });
 
       if (devices.length === 0) {
         return [];

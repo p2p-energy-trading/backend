@@ -19,7 +19,7 @@ export class LoggingMiddleware implements NestMiddleware {
       query,
       params,
       ip: request.ip,
-      user: (request as any).user?.prosumerId,
+      user: (request as any).user?.userId,
     });
 
     response.on('finish', () => {
@@ -33,7 +33,7 @@ export class LoggingMiddleware implements NestMiddleware {
           url: originalUrl,
           statusCode,
           duration,
-          user: (request as any).user?.prosumerId,
+          user: (request as any).user?.userId,
         },
       );
     });

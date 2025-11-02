@@ -32,7 +32,7 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
     }
 
     // Use custom logic for rate limiting based on user type, wallet balance, etc.
-    if (user?.prosumerId) {
+    if (user?.userId) {
       // Authenticated users get higher limits
       return super.canActivate(context);
     }
@@ -42,6 +42,6 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
 
   protected async getTracker(req: Record<string, any>): Promise<string> {
     // Use user ID if authenticated, otherwise IP
-    return Promise.resolve(req.user?.prosumerId || req.ip);
+    return Promise.resolve(req.user?.userId || req.ip);
   }
 }

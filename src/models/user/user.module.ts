@@ -1,6 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ProsumersService } from './user.service';
+import { UsersService } from './user.service';
 import { User } from './user.entity';
 // Removed: BlockchainApprovals (not used), DeviceCommands (table dropped), TradeOrdersCache (replaced by Redis)
 import { IdrsConversion } from '../idrsConversion/idrsConversion.entity';
@@ -30,7 +30,7 @@ import { WalletsModule } from '../wallet/wallet.module';
     forwardRef(() => TransactionLogsModule),
     forwardRef(() => WalletsModule),
   ],
-  providers: [ProsumersService],
-  exports: [ProsumersService, TypeOrmModule],
+  providers: [UsersService],
+  exports: [UsersService, TypeOrmModule],
 })
-export class ProsumersModule {}
+export class UsersModule {}

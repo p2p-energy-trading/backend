@@ -13,8 +13,8 @@ export class IdrsConversion {
   @PrimaryGeneratedColumn({ name: 'conversion_id' })
   conversionId: number;
 
-  @Column({ type: 'varchar', name: 'prosumer_id' })
-  prosumerId: string;
+  @Column({ type: 'varchar', name: 'user_id' })
+  userId: string;
 
   @Column({ type: 'varchar', name: 'wallet_address' })
   walletAddress: string;
@@ -47,8 +47,8 @@ export class IdrsConversion {
   confirmedAt: Date;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'prosumer_id' })
-  prosumers: User;
+  @JoinColumn({ name: 'user_id' })
+  users: User;
 
   @ManyToOne(() => Wallet)
   @JoinColumn({ name: 'wallet_address' })

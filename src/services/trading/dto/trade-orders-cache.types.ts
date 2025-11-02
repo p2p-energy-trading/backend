@@ -5,7 +5,7 @@
 
 export interface CreateTradeOrdersCacheInput {
   orderId: string;
-  prosumerId: string;
+  userId: string;
   walletAddress: string;
   orderType: string;
   pair: string;
@@ -22,7 +22,7 @@ export interface CreateTradeOrdersCacheInput {
 
 export interface TradeOrdersCacheArgs {
   orderId?: string;
-  prosumerId?: string;
+  userId?: string;
   walletAddress?: string;
   orderType?: string;
   pair?: string;

@@ -7,7 +7,7 @@ export class SmartMeters {
   meterId: string;
 
   @Field(() => String)
-  prosumerId: string;
+  userId: string;
 
   @Field(() => String, { nullable: true })
   meterBlockchainAddress?: string | null;

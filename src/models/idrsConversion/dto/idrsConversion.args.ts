@@ -6,7 +6,7 @@ export class IdrsConversionsArgs {
   conversionId?: string;
 
   @Field(() => String, { nullable: true })
-  prosumerId?: string;
+  userId?: string;
 
   @Field(() => String, { nullable: true })
   walletAddress?: string;

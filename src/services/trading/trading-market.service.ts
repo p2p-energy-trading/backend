@@ -36,26 +36,26 @@ export class TradingMarketService {
     provider: ethers.JsonRpcProvider,
     config: BlockchainConfig,
     getWalletSignerFn: (address: string) => Promise<ethers.Wallet>,
-    getProsumerIdByWalletFn: (address: string) => Promise<string | null>,
+    getUserIdByWalletFn: (address: string) => Promise<string | null>,
   ) {
     this.provider = provider;
     this.config = config;
     this.getWalletSigner = getWalletSignerFn;
-    this.getProsumerIdByWallet = getProsumerIdByWalletFn;
+    this.getUserIdByWallet = getUserIdByWalletFn;
     this.logger.log('TradingMarketService initialized');
   }
 
   /**
-   * Get wallet signer for a prosumer
+   * Get wallet signer for a user
    * Injected function from BlockchainService
    */
   private getWalletSigner: (walletAddress: string) => Promise<ethers.Wallet>;
 
   /**
-   * Get prosumer ID by wallet address
+   * Get user ID by wallet address
    * Injected function from BlockchainService
    */
-  private getProsumerIdByWallet: (
+  private getUserIdByWallet: (
     walletAddress: string,
   ) => Promise<string | null>;
 
@@ -114,8 +114,8 @@ export class TradingMarketService {
 
       // Log transaction
       await this.transactionLogsService.create({
-        prosumerId:
-          (await this.getProsumerIdByWallet(walletAddress)) || 'UNKNOWN',
+        userId:
+          (await this.getUserIdByWallet(walletAddress)) || 'UNKNOWN',
         transactionType: TransactionType.ORDER_PLACED,
         description: JSON.stringify({
           orderType: isBuy ? OrderType.BID : OrderType.ASK,
@@ -325,7 +325,7 @@ export class TradingMarketService {
       // Update order in cache
       await this.tradeOrdersCacheService.update(orderId, {
         orderId: cachedOrder.orderId,
-        prosumerId: cachedOrder.prosumerId,
+        userId: cachedOrder.userId,
         walletAddress: cachedOrder.walletAddress,
         orderType: cachedOrder.orderType,
         pair: cachedOrder.pair,

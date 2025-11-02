@@ -10,7 +10,7 @@ import { CryptoService } from '../../common/crypto.service';
 import { TransactionType, OrderType } from '../../common/enums';
 import { BlockchainConfig } from '../../common/interfaces';
 import { EnergySettlementService } from '../energy/energy-settlement.service';
-import { ProsumersService } from 'src/models/user/user.service';
+import { UsersService } from 'src/models/user/user.service';
 import { TradingMarketService } from '../trading/trading-market.service';
 
 // Import ABIs from JSON files for cleaner implementation
@@ -42,7 +42,7 @@ export class BlockchainService {
     private cryptoService: CryptoService,
     @Inject(forwardRef(() => EnergySettlementService))
     private energySettlementService: EnergySettlementService,
-    private prosumerService: ProsumersService,
+    private prosumerService: UsersService,
     private tradingMarketService: TradingMarketService,
   ) {
     this.initializeProvider();
@@ -79,7 +79,7 @@ export class BlockchainService {
       this.provider,
       this.config,
       this.getWalletSigner.bind(this),
-      this.getProsumerIdByWallet.bind(this),
+      this.getUserIdByWallet.bind(this),
     );
 
     this.setupEventListeners();
@@ -294,7 +294,7 @@ export class BlockchainService {
           (
             settlementId: string,
             meterId: string,
-            prosumerAddress: string,
+            userAddress: string,
             netEnergyWh: bigint,
             etkAmount: bigint,
             timestamp: bigint,
@@ -303,7 +303,7 @@ export class BlockchainService {
             void this.handleSettlementProcessed(
               settlementId,
               meterId,
-              prosumerAddress,
+              userAddress,
               netEnergyWh,
               etkAmount,
               timestamp,
@@ -369,7 +369,7 @@ export class BlockchainService {
   async processEnergySettlement(
     walletAddress: string,
     meterId: string,
-    prosumerAddress: string,
+    userAddress: string,
     netEnergyWh: number,
     settlementId: string,
     // originalSettlementId?: number,
@@ -389,22 +389,22 @@ export class BlockchainService {
 
       const tx = (await contract.processSettlement(
         meterId,
-        prosumerAddress,
+        userAddress,
         ethers.toBigInt(netEnergyWh),
         settlementIdBytes32,
       )) as ethers.ContractTransactionResponse;
 
       // // Log transaction
       // await this.transactionLogsService.create({
-      //   prosumerId:
-      //     (await this.getProsumerIdByWallet(prosumerAddress)) || 'UNKNOWN',
+      //   userId:
+      //     (await this.getUserIdByWallet(userAddress)) || 'UNKNOWN',
       //   transactionType:
       //     netEnergyWh > 0
       //       ? TransactionType.TOKEN_MINT
       //       : TransactionType.TOKEN_BURN,
       //   description: JSON.stringify({
       //     meterId,
-      //     prosumerAddress,
+      //     userAddress,
       //     netEnergyWh,
       //     settlementId,
       //     txHash: tx.hash,
@@ -447,8 +447,8 @@ export class BlockchainService {
 
       // Log transaction
       await this.transactionLogsService.create({
-        prosumerId:
-          (await this.getProsumerIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
+        userId:
+          (await this.getUserIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
         transactionType: TransactionType.CONTRACT_INTERACTION,
         description: JSON.stringify({
           meterId,
@@ -492,8 +492,8 @@ export class BlockchainService {
 
       // Log transaction
       await this.transactionLogsService.create({
-        prosumerId:
-          (await this.getProsumerIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
+        userId:
+          (await this.getUserIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
         transactionType: TransactionType.CONTRACT_INTERACTION,
         description: JSON.stringify({
           meterId,
@@ -535,8 +535,8 @@ export class BlockchainService {
 
       // Log transaction
       await this.transactionLogsService.create({
-        prosumerId:
-          (await this.getProsumerIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
+        userId:
+          (await this.getUserIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
         transactionType: TransactionType.CONTRACT_INTERACTION,
         description: JSON.stringify({
           newRatio,
@@ -575,8 +575,8 @@ export class BlockchainService {
 
       // Log transaction
       await this.transactionLogsService.create({
-        prosumerId:
-          (await this.getProsumerIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
+        userId:
+          (await this.getUserIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
         transactionType: TransactionType.CONTRACT_INTERACTION,
         description: JSON.stringify({
           newMinWh,
@@ -677,7 +677,7 @@ export class BlockchainService {
 
   async getSettlement(settlementId: string): Promise<{
     meterId: string;
-    prosumerAddress: string;
+    userAddress: string;
     netEnergyWh: number;
     etkAmount: number;
     timestamp: number;
@@ -699,7 +699,7 @@ export class BlockchainService {
 
       return {
         meterId: settlement[0],
-        prosumerAddress: settlement[1],
+        userAddress: settlement[1],
         netEnergyWh: Number(settlement[2]),
         etkAmount: Number(settlement[3]) / 100, // Convert from contract units
         timestamp: Number(settlement[4]),
@@ -844,8 +844,8 @@ export class BlockchainService {
 
       // // Log transaction
       // await this.transactionLogsService.create({
-      //   prosumerId:
-      //     (await this.getProsumerIdByWallet(walletAddress)) || 'UNKNOWN',
+      //   userId:
+      //     (await this.getUserIdByWallet(walletAddress)) || 'UNKNOWN',
       //   transactionType: TransactionType.TOKEN_MINT,
       //   description: JSON.stringify({
       //     amount,
@@ -886,8 +886,8 @@ export class BlockchainService {
 
       // Log transaction
       // await this.transactionLogsService.create({
-      //   prosumerId:
-      //     (await this.getProsumerIdByWallet(walletAddress)) || 'UNKNOWN',
+      //   userId:
+      //     (await this.getUserIdByWallet(walletAddress)) || 'UNKNOWN',
       //   transactionType: TransactionType.TOKEN_BURN,
       //   description: JSON.stringify({
       //     amount,
@@ -928,8 +928,8 @@ export class BlockchainService {
 
       // Log transaction
       await this.transactionLogsService.create({
-        prosumerId:
-          (await this.getProsumerIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
+        userId:
+          (await this.getUserIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
         transactionType: TransactionType.CONTRACT_INTERACTION,
         description: JSON.stringify({
           marketAddress,
@@ -973,8 +973,8 @@ export class BlockchainService {
 
       // // Log transaction
       // await this.transactionLogsService.create({
-      //   prosumerId:
-      //     (await this.getProsumerIdByWallet(walletAddress)) || 'UNKNOWN',
+      //   userId:
+      //     (await this.getUserIdByWallet(walletAddress)) || 'UNKNOWN',
       //   transactionType: TransactionType.TOKEN_MINT,
       //   description: JSON.stringify({
       //     amount,
@@ -1025,8 +1025,8 @@ export class BlockchainService {
 
       // Log transaction
       // await this.transactionLogsService.create({
-      //   prosumerId:
-      //     (await this.getProsumerIdByWallet(walletAddress)) || 'UNKNOWN',
+      //   userId:
+      //     (await this.getUserIdByWallet(walletAddress)) || 'UNKNOWN',
       //   transactionType: TransactionType.TOKEN_BURN,
       //   description: JSON.stringify({
       //     amount,
@@ -1067,8 +1067,8 @@ export class BlockchainService {
 
       // Log transaction
       await this.transactionLogsService.create({
-        prosumerId:
-          (await this.getProsumerIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
+        userId:
+          (await this.getUserIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
         transactionType: TransactionType.CONTRACT_INTERACTION,
         description: JSON.stringify({
           marketAddress,
@@ -1240,24 +1240,24 @@ export class BlockchainService {
     }
   }
 
-  private async getProsumerIdByWallet(
+  private async getUserIdByWallet(
     walletAddress: string,
   ): Promise<string | null> {
     try {
       const prosumers =
         await this.prosumerService.findByWalletAddress(walletAddress);
-      const firstProsumer: unknown =
+      const firstUser: unknown =
         Array.isArray(prosumers) && prosumers.length > 0 ? prosumers[0] : null;
-      return firstProsumer &&
-        typeof firstProsumer === 'object' &&
-        firstProsumer !== null &&
-        'prosumerId' in firstProsumer &&
-        typeof (firstProsumer as { prosumerId: unknown }).prosumerId ===
+      return firstUser &&
+        typeof firstUser === 'object' &&
+        firstUser !== null &&
+        'userId' in firstUser &&
+        typeof (firstUser as { userId: unknown }).userId ===
           'string'
-        ? (firstProsumer as { prosumerId: string }).prosumerId
+        ? (firstUser as { userId: string }).userId
         : null;
     } catch (error: unknown) {
-      this.logger.error('Error getting prosumer ID by wallet:', error);
+      this.logger.error('Error getting user ID by wallet:', error);
       return null;
     }
   }
@@ -1272,8 +1272,8 @@ export class BlockchainService {
     event: ethers.Log,
   ) {
     try {
-      const prosumerId = await this.getProsumerIdByWallet(user);
-      if (!prosumerId) {
+      const userId = await this.getUserIdByWallet(user);
+      if (!userId) {
         this.logger.warn(`No prosumer found for wallet ${user}`);
         return;
       }
@@ -1292,7 +1292,7 @@ export class BlockchainService {
 
       await this.tradeOrdersCacheService.create({
         orderId: id.toString(),
-        prosumerId,
+        userId,
         walletAddress: user,
         orderType: isBuy ? OrderType.BID : OrderType.ASK,
         pair: 'ETK/IDRS',
@@ -1311,7 +1311,7 @@ export class BlockchainService {
       // update log transaction if it exists
       if (logTransaction) {
         await this.transactionLogsService.update(logTransaction.logId, {
-          prosumerId: logTransaction.prosumerId,
+          userId: logTransaction.userId,
           transactionType: logTransaction.transactionType,
           description: logTransaction.description,
           amountPrimary: logTransaction.amountPrimary,
@@ -1347,12 +1347,12 @@ export class BlockchainService {
     event: ethers.Log,
   ) {
     try {
-      const buyerProsumerId = await this.getProsumerIdByWallet(buyer);
-      const sellerProsumerId = await this.getProsumerIdByWallet(seller);
+      const buyerUserId = await this.getUserIdByWallet(buyer);
+      const sellerUserId = await this.getUserIdByWallet(seller);
 
-      if (!buyerProsumerId || !sellerProsumerId) {
+      if (!buyerUserId || !sellerUserId) {
         this.logger.warn(
-          `Missing prosumer IDs for trade: buyer=${buyerProsumerId}, seller=${sellerProsumerId}`,
+          `Missing user IDs for trade: buyer=${buyerUserId}, seller=${sellerUserId}`,
         );
         return;
       }
@@ -1372,8 +1372,8 @@ export class BlockchainService {
       await this.marketTradesService.create({
         buyerOrderId: buyOrderId.toString(),
         sellerOrderId: sellOrderId.toString(),
-        buyerProsumerId,
-        sellerProsumerId,
+        buyerUserId,
+        sellerUserId,
         buyerWalletAddress: buyer,
         sellerWalletAddress: seller,
         tradedEtkAmount: amountEtk,
@@ -1385,7 +1385,7 @@ export class BlockchainService {
       });
 
       await this.transactionLogsService.create({
-        prosumerId: buyerProsumerId,
+        userId: buyerUserId,
         transactionType: TransactionType.TRADE_EXECUTION,
         description: JSON.stringify({
           buyer,
@@ -1489,16 +1489,16 @@ export class BlockchainService {
   private async handleSettlementProcessed(
     settlementId: string,
     meterId: string,
-    prosumerAddress: string,
+    userAddress: string,
     netEnergyWh: bigint,
     etkAmount: bigint,
     timestamp: bigint,
     event: ethers.Log,
   ) {
     try {
-      const prosumerId = await this.getProsumerIdByWallet(prosumerAddress);
-      if (!prosumerId) {
-        this.logger.warn(`No prosumer found for wallet ${prosumerAddress}`);
+      const userId = await this.getUserIdByWallet(userAddress);
+      if (!userId) {
+        this.logger.warn(`No prosumer found for wallet ${userAddress}`);
         return;
       }
 
@@ -1534,7 +1534,7 @@ export class BlockchainService {
           }
 
           // this.logger.debug(
-          //   `txHash: ${txHash}, settlementId: ${settlementId}, meterId: ${meterIdDb}, prosumerAddress: ${prosumerAddress}, netEnergyWh: ${energyWhValue}, etkAmount: ${etkAmountValue}, timestamp: ${timestampDate.toISOString()}`,
+          //   `txHash: ${txHash}, settlementId: ${settlementId}, meterId: ${meterIdDb}, userAddress: ${userAddress}, netEnergyWh: ${energyWhValue}, etkAmount: ${etkAmountValue}, timestamp: ${timestampDate.toISOString()}`,
           // );
 
           // Determine operation type
@@ -1569,13 +1569,13 @@ export class BlockchainService {
 
             // Log settlement confirmation
             await this.transactionLogsService.create({
-              prosumerId,
+              userId,
               transactionType,
               relatedSettlementId: settlementIdDb,
               description: JSON.stringify({
                 settlementId,
                 meterIdDb,
-                prosumerAddress,
+                userAddress,
                 netEnergyWh: energyWhValue,
                 etkAmount: etkAmountValue,
                 operationType,
@@ -1633,7 +1633,7 @@ export class BlockchainService {
 
       // Log transaction for order cancellation
       await this.transactionLogsService.create({
-        prosumerId: (await this.getProsumerIdByWallet(user)) || 'UNKNOWN',
+        userId: (await this.getUserIdByWallet(user)) || 'UNKNOWN',
         transactionType: TransactionType.ORDER_CANCELLED,
         description: JSON.stringify({
           orderId: orderId.toString(),
@@ -1659,7 +1659,7 @@ export class BlockchainService {
 
         await this.tradeOrdersCacheService.update(orderId.toString(), {
           orderId: cachedOrder.orderId,
-          prosumerId: cachedOrder.prosumerId,
+          userId: cachedOrder.userId,
           walletAddress: cachedOrder.walletAddress,
           orderType: cachedOrder.orderType,
           pair: cachedOrder.pair,
@@ -1712,8 +1712,8 @@ export class BlockchainService {
 
       // Log transaction
       await this.transactionLogsService.create({
-        prosumerId:
-          (await this.getProsumerIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
+        userId:
+          (await this.getUserIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
         transactionType: TransactionType.CONTRACT_INTERACTION,
         description: JSON.stringify({
           energyConverterAddress,

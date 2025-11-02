@@ -10,7 +10,7 @@ import { TransactionLogsService } from '../../models/transactionLog/transactionL
 import { SettlementTrigger, TransactionStatus } from '../../common/enums';
 import { DeviceCommandPayload } from '../../common/interfaces';
 import { WalletsService } from 'src/models/wallet/wallet.service';
-import { ProsumersService } from 'src/models/user/user.service';
+import { UsersService } from 'src/models/user/user.service';
 import { StatService } from '../stat/stat.service';
 import { EnergyAnalyticsService } from './energy-analytics.service';
 import { RedisTelemetryService } from '../telemetry/redis-telemetry.service';
@@ -62,7 +62,7 @@ export class EnergySettlementService {
     private blockchainService: BlockchainService,
     private mqttService: MqttService,
     private transactionLogsService: TransactionLogsService,
-    private prosumersService: ProsumersService,
+    private prosumersService: UsersService,
     private readonly WalletsService: WalletsService, // Assuming this is imported correctly
     @Inject(forwardRef(() => StatService))
     private statService: StatService,
@@ -98,13 +98,13 @@ export class EnergySettlementService {
         const prosumers = await this.prosumersService.findByMeterId(meterId);
         if (!prosumers || prosumers.length === 0) continue;
 
-        const prosumer = prosumers[0] as { prosumerId?: string };
-        if (!prosumer.prosumerId) continue;
+        const prosumer = prosumers[0] as { userId?: string };
+        if (!prosumer.userId) continue;
 
         // Get current real-time data
         const realTimeData =
           await this.energyAnalyticsService.getRealTimeEnergyData(
-            prosumer.prosumerId,
+            prosumer.userId,
           );
 
         if (!realTimeData.timeSeries || realTimeData.timeSeries.length === 0)
@@ -121,7 +121,7 @@ export class EnergySettlementService {
         this.addPowerLog(meterId, currentPowerKw);
 
         // Check and auto-shutdown grid import if insufficient balance
-        await this.checkAndAutoShutdownGridImport(meterId, prosumer.prosumerId);
+        await this.checkAndAutoShutdownGridImport(meterId, prosumer.userId);
       }
     } catch (error) {
       this.logger.error('Error logging power data:', error);
@@ -149,11 +149,11 @@ export class EnergySettlementService {
    * Configuration: Can be disabled via AUTO_GRID_SHUTDOWN_ENABLED env variable
    *
    * @param meterId - Smart meter ID to check
-   * @param prosumerId - Prosumer ID who owns the meter
+   * @param userId - Prosumer ID who owns the meter
    */
   private async checkAndAutoShutdownGridImport(
     meterId: string,
-    prosumerId: string,
+    userId: string,
   ): Promise<void> {
     try {
       // Check if auto-shutdown feature is enabled
@@ -176,10 +176,10 @@ export class EnergySettlementService {
 
       // Get user's ETK balance from blockchain
       const primaryWallet =
-        await this.prosumersService.getPrimaryWallet(prosumerId);
+        await this.prosumersService.getPrimaryWallet(userId);
       if (!primaryWallet?.walletAddress) {
         this.logger.warn(
-          `No wallet found for prosumer ${prosumerId}, skipping auto-shutdown check`,
+          `No wallet found for prosumer ${userId}, skipping auto-shutdown check`,
         );
         return;
       }
@@ -224,7 +224,7 @@ export class EnergySettlementService {
 
         // Optional: Log to database for audit trail
         // Uncomment if you want to track auto-shutdown events
-        // await this.logAutoShutdownEvent(meterId, prosumerId, estimator.estimatedEtkAtSettlement, etkBalance);
+        // await this.logAutoShutdownEvent(meterId, userId, estimator.estimatedEtkAtSettlement, etkBalance);
       }
     } catch (error) {
       this.logger.error(
@@ -317,28 +317,28 @@ export class EnergySettlementService {
       // );
 
       const prosumer = prosumers[0] as {
-        prosumerId?: string;
+        userId?: string;
       };
 
       // const wallets = await this.WalletsService.findAll({
-      //   prosumerId: prosumer.prosumerId,
+      //   userId: prosumer.userId,
       // });
 
       // this.logger.debug(
-      //   `Using prosumer Id ${prosumer.prosumerId} with wallet address ${wallets[0]?.walletAddress} for settlement`,
+      //   `Using prosumer Id ${prosumer.userId} with wallet address ${wallets[0]?.walletAddress} for settlement`,
       // );
 
-      if (!prosumer.prosumerId) {
-        this.logger.warn(`No prosumer ID found for meter ${meterId}`);
+      if (!prosumer.userId) {
+        this.logger.warn(`No user ID found for meter ${meterId}`);
         return null;
       }
 
       const primaryWallet = await this.prosumersService.getPrimaryWallet(
-        prosumer.prosumerId,
+        prosumer.userId,
       );
 
       const walletAddress: string = primaryWallet?.walletAddress || '';
-      const prosumerAddress: string = walletAddress; // Prosumer address same as wallet for now
+      const userAddress: string = walletAddress; // Prosumer address same as wallet for now
 
       if (!walletAddress) {
         this.logger.warn(`No wallet address found for meter ${meterId}`);
@@ -410,7 +410,7 @@ export class EnergySettlementService {
         txHash = await this.blockchainService.processEnergySettlement(
           walletAddress,
           meterId,
-          prosumerAddress,
+          userAddress,
           netEnergyWhInt, // Use Wh directly as the contract expects
           settlementId,
         );
@@ -586,7 +586,7 @@ export class EnergySettlementService {
 
   async manualSettlement(
     meterId: string,
-    prosumerId: string,
+    userId: string,
   ): Promise<string | null> {
     try {
       // Verify that the prosumer owns this meter
@@ -594,7 +594,7 @@ export class EnergySettlementService {
 
       if (
         !meterProsumers.find(
-          (p: any) => (p as { prosumerId?: string })?.prosumerId === prosumerId,
+          (p: any) => (p as { userId?: string })?.userId === userId,
         )
       ) {
         throw new Error('Unauthorized: Prosumer does not own this meter');
@@ -666,13 +666,13 @@ export class EnergySettlementService {
 
   async getSettlementHistory(
     meterId?: string,
-    prosumerId?: string,
+    userId?: string,
     limit: number = 50,
     scope: 'own' | 'public' | 'all' = 'own',
   ): Promise<any[]> {
     try {
       // this.logger.debug(
-      //   `Getting settlement history for meterId: ${meterId}, prosumerId: ${prosumerId}, limit: ${limit}, scope: ${scope}`,
+      //   `Getting settlement history for meterId: ${meterId}, userId: ${userId}, limit: ${limit}, scope: ${scope}`,
       // );
 
       let settlements: any[] = [];
@@ -691,20 +691,20 @@ export class EnergySettlementService {
         settlements = allSettlements || [];
       } else {
         // Default: Get only user's own settlements (scope === 'own')
-        if (!prosumerId) {
+        if (!userId) {
           throw new Error('Prosumer ID is required for own settlements');
         }
 
         // Get all meters owned by prosumer
-        const meters = await this.smartMetersService.findAll({ prosumerId });
+        const meters = await this.smartMetersService.findAll({ userId });
 
         if (!meters || meters.length === 0) {
-          this.logger.warn(`No meters found for prosumer ${prosumerId}`);
+          this.logger.warn(`No meters found for prosumer ${userId}`);
           return [];
         }
 
         // this.logger.debug(
-        //   `Found ${meters.length} meters for prosumer ${prosumerId}`,
+        //   `Found ${meters.length} meters for prosumer ${userId}`,
         // );
 
         // If specific meterId is provided, filter by that meter
@@ -715,7 +715,7 @@ export class EnergySettlementService {
           );
           if (!userMeter) {
             this.logger.warn(
-              `Meter ${meterId} not found for prosumer ${prosumerId}`,
+              `Meter ${meterId} not found for prosumer ${userId}`,
             );
             return [];
           }
@@ -835,15 +835,15 @@ export class EnergySettlementService {
     try {
       // this.logger.debug(`Getting settlement estimator for meter ${meterId}`);
 
-      // Get prosumer ID from meter to use optimized getRealTimeEnergyData
+      // Get user ID from meter to use optimized getRealTimeEnergyData
       const prosumers = await this.prosumersService.findByMeterId(meterId);
       if (!prosumers || prosumers.length === 0) {
         this.logger.warn(`No prosumer found for meter ${meterId}`);
         return null;
       }
 
-      const prosumer = prosumers[0] as { prosumerId?: string };
-      if (!prosumer.prosumerId) {
+      const prosumer = prosumers[0] as { userId?: string };
+      if (!prosumer.userId) {
         this.logger.warn(`Invalid prosumer data for meter ${meterId}`);
         return null;
       }
@@ -851,7 +851,7 @@ export class EnergySettlementService {
       // Use optimized getRealTimeEnergyData for fast power data retrieval
       const realTimeData =
         await this.energyAnalyticsService.getRealTimeEnergyData(
-          prosumer.prosumerId,
+          prosumer.userId,
         );
 
       if (!realTimeData.timeSeries || realTimeData.timeSeries.length === 0) {

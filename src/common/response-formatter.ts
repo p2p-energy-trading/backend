@@ -37,12 +37,9 @@ export class ResponseFormatter {
   ): ApiSuccessResponse<T> {
     const response: ApiSuccessResponse<T> = {
       success: true,
+      message: message || 'Success',
       data,
     };
-
-    if (message) {
-      response.message = message;
-    }
 
     if (metadata) {
       response.metadata = metadata;
@@ -83,13 +80,10 @@ export class ResponseFormatter {
 
     const response: ApiPaginatedResponse<T> = {
       success: true,
+      message: message || 'Success',
       data,
       metadata,
     };
-
-    if (message) {
-      response.message = message;
-    }
 
     return response;
   }

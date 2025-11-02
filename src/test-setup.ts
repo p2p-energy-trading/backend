@@ -60,7 +60,7 @@ export const createMockRepository = () => ({
 });
 
 export const createMockUser = () => ({
-  prosumerId: 'test-prosumer-1',
+  userId: 'test-prosumer-1',
   username: 'testuser',
   email: 'test@example.com',
   passwordHash: 'hashed-password',
@@ -69,7 +69,7 @@ export const createMockUser = () => ({
 
 export const createMockWallet = () => ({
   walletAddress: '0x742d35Cc6643C0532925a3b8D0B5a9d5E5b8e8C9',
-  prosumerId: 'test-prosumer-1',
+  userId: 'test-prosumer-1',
   walletName: 'Test Wallet',
   encryptedPrivateKey: 'encrypted-private-key',
   importMethod: 'GENERATED',
@@ -81,7 +81,7 @@ export const createMockWallet = () => ({
 export const createMockSmartMeter = () => ({
   meterId: 'meter-001',
   meterName: 'Test Smart Meter',
-  prosumerId: 'test-prosumer-1',
+  userId: 'test-prosumer-1',
   location: 'Test Location',
   meterBlockchainAddress: '0x742d35Cc6643C0532925a3b8D0B5a9d5E5b8e8C9',
   isActive: true,
@@ -193,7 +193,7 @@ export const createMockDeviceStatus = () => ({
 
 export const createMockTradeOrder = () => ({
   orderId: 'order-001',
-  prosumerId: 'test-prosumer-1',
+  userId: 'test-prosumer-1',
   walletAddress: '0x742d35Cc6643C0532925a3b8D0B5a9d5E5b8e8C9',
   orderType: 'ASK',
   pair: 'ETK/IDRS',
@@ -209,8 +209,8 @@ export const createMockMarketTrade = () => ({
   tradeId: 'trade-001',
   buyOrderId: 'buy-order-001',
   sellOrderId: 'sell-order-001',
-  buyerProsumerId: 'buyer-prosumer-1',
-  sellerProsumerId: 'seller-prosumer-1',
+  buyerUserId: 'buyer-prosumer-1',
+  sellerUserId: 'seller-prosumer-1',
   buyerWalletAddress: '0x742d35Cc6643C0532925a3b8D0B5a9d5E5b8e8C9',
   sellerWalletAddress: '0x8d12A197cB00D4747a1fe03395095ce2A5CC6819',
   tradedEtkAmount: 5.0,
@@ -237,7 +237,7 @@ export const createMockEnergySettlement = () => ({
 });
 
 export const mockJwtUser = {
-  prosumerId: 'test-prosumer-1',
+  userId: 'test-prosumer-1',
   username: 'testuser',
   sub: 'test-prosumer-1',
   iat: Math.floor(Date.now() / 1000),

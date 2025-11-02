@@ -23,13 +23,13 @@ export class EnergyAnalyticsService {
   ) {}
 
   /**
-   * Get energy statistics for a prosumer
+   * Get energy statistics for a user
    * Calculates today's and total generation/consumption from TimescaleDB
    */
-  async getEnergyStats(prosumerId: string) {
+  async getEnergyStats(userId: string) {
     try {
       // Get prosumer's meters
-      const devices = await this.smartMetersService.findAll({ prosumerId });
+      const devices = await this.smartMetersService.findAll({ userId });
       const meterIds: string[] = devices.map(
         (d: { meterId: string }) => d.meterId,
       );
@@ -128,10 +128,10 @@ export class EnergyAnalyticsService {
    * Get energy chart data for time-series visualization
    * Retrieves hourly aggregated data from TimescaleDB
    */
-  async getEnergyChartData(prosumerId: string, days: number = 7) {
+  async getEnergyChartData(userId: string, days: number = 7) {
     try {
       // Get prosumer's meters
-      const devices = await this.smartMetersService.findAll({ prosumerId });
+      const devices = await this.smartMetersService.findAll({ userId });
       const meterIds: string[] = devices.map(
         (d: { meterId: string }) => d.meterId,
       );
@@ -212,10 +212,10 @@ export class EnergyAnalyticsService {
    * Get real-time energy data from Redis
    * Returns latest measurements from all smart meters
    */
-  async getRealTimeEnergyData(prosumerId: string) {
+  async getRealTimeEnergyData(userId: string) {
     try {
       // Get prosumer's meters
-      const devices = await this.smartMetersService.findAll({ prosumerId });
+      const devices = await this.smartMetersService.findAll({ userId });
       const meterIds: string[] = devices.map(
         (d: { meterId: string }) => d.meterId,
       );
@@ -294,16 +294,16 @@ export class EnergyAnalyticsService {
    * Combines stats, chart data, and settlement information
    */
   async getEnergySummary(
-    prosumerId: string,
+    userId: string,
     period: 'daily' | 'weekly' | 'monthly' = 'daily',
   ) {
     try {
       const days = period === 'daily' ? 1 : period === 'weekly' ? 7 : 30;
 
       const [stats, chartData, settlements] = await Promise.all([
-        this.getEnergyStats(prosumerId),
-        this.getEnergyChartData(prosumerId, days),
-        this.getSettlementStats(prosumerId),
+        this.getEnergyStats(userId),
+        this.getEnergyChartData(userId, days),
+        this.getSettlementStats(userId),
       ]);
 
       return {
@@ -339,10 +339,10 @@ export class EnergyAnalyticsService {
   /**
    * Get settlement statistics
    */
-  async getSettlementStats(prosumerId: string) {
+  async getSettlementStats(userId: string) {
     try {
       // Get prosumer's meters
-      const devices = await this.smartMetersService.findAll({ prosumerId });
+      const devices = await this.smartMetersService.findAll({ userId });
       const meterIds: string[] = devices.map(
         (d: { meterId: string }) => d.meterId,
       );
@@ -447,7 +447,7 @@ export class EnergyAnalyticsService {
    * Returns empty array as hourly data should come from TelemetryAggregate
    */
   async getHourlyEnergyHistory(
-    prosumerId: string,
+    userId: string,
     hours: number = 24,
     meterId?: string,
   ): Promise<
@@ -464,7 +464,7 @@ export class EnergyAnalyticsService {
   > {
     try {
       // Get prosumer's meters
-      const devices = await this.smartMetersService.findAll({ prosumerId });
+      const devices = await this.smartMetersService.findAll({ userId });
       let meterIds: string[] = devices.map(
         (d: { meterId: string }) => d.meterId,
       );
@@ -473,7 +473,7 @@ export class EnergyAnalyticsService {
         // Verify meter belongs to prosumer
         if (!meterIds.includes(meterId)) {
           this.logger.warn(
-            `Meter ${meterId} does not belong to prosumer ${prosumerId}`,
+            `Meter ${meterId} does not belong to prosumer ${userId}`,
           );
           return [];
         }

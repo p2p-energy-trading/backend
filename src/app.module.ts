@@ -17,7 +17,7 @@ import { IdrsConversionsModule } from './models/idrsConversion/idrsConversion.mo
 import { IdrsConversion } from './models/idrsConversion/idrsConversion.entity';
 import { MarketTradesModule } from './models/marketTrade/marketTrade.module';
 import { MarketTrade } from './models/marketTrade/marketTrade.entity';
-import { ProsumersModule } from './models/user/user.module';
+import { UsersModule } from './models/user/user.module';
 import { User } from './models/user/user.entity';
 import { SmartMetersModule } from './models/smartMeter/smartMeter.module';
 import { SmartMeter } from './models/smartMeter/smartMeter.entity';
@@ -76,7 +76,7 @@ import { TelemetryAggregate } from './models/telemetryAggregate/telemetryAggrega
     EnergySettlementsModule,
     IdrsConversionsModule,
     MarketTradesModule,
-    ProsumersModule,
+    UsersModule,
     SmartMetersModule,
     SystemConfigModule,
     TransactionLogsModule,

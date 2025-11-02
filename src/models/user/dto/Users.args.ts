@@ -1,9 +1,9 @@
 import { ArgsType, Field } from '@nestjs/graphql';
 
 @ArgsType()
-export class ProsumersArgs {
+export class UsersArgs {
   @Field(() => String, { nullable: true })
-  prosumerId?: string;
+  userId?: string;
 
   @Field(() => String, { nullable: true })
   email?: string;

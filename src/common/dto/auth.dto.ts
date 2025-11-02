@@ -4,7 +4,7 @@ import { WalletInfoDto } from './wallet.dto';
 
 export class RegisterDto {
   @ApiProperty({
-    description: 'Username for the prosumer account',
+    description: 'Username for the user account',
     example: 'john_doe',
     minLength: 3,
   })
@@ -42,12 +42,12 @@ export class RegisterDto {
 
 export class LoginDto {
   @ApiProperty({
-    description: 'Username or email',
-    example: 'john_doe',
+    description: 'Email',
+    example: 'john_doe@example.com',
   })
   @IsString()
   @IsNotEmpty()
-  username: string;
+  email: string;
 
   @ApiProperty({
     description: 'Account password',
@@ -79,6 +79,20 @@ export class LoginDataDto {
     example: 3600,
   })
   expiresIn: number;
+
+  @ApiProperty({
+    description: 'User information',
+    example: {
+      userId: 'user_...',
+      email: 'john.doe@example.com',
+      name: 'John Doe',
+    },
+  })
+  prosumer: {
+    userId: string;
+    email: string;
+    name: string;
+  };
 }
 
 /**
@@ -103,6 +117,11 @@ export class LoginResponseDto {
       access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
       tokenType: 'Bearer',
       expiresIn: 3600,
+      prosumer: {
+        userId: 'user_...',
+        email: 'john.doe@example.com',
+        name: 'John Doe',
+      },
     },
   })
   data: LoginDataDto;
@@ -143,7 +162,7 @@ export class RegisterDataDto {
   @ApiProperty({
     description: 'Registered prosumer information',
     example: {
-      prosumerId: 'prosumer_...',
+      userId: 'user_...',
       email: 'john.doe@example.com',
       name: 'John Doe',
       createdAt: '2025-11-01T10:30:00.000Z',
@@ -151,7 +170,7 @@ export class RegisterDataDto {
     },
   })
   prosumer: {
-    prosumerId: string;
+    userId: string;
     email: string;
     name: string;
     createdAt: string;
@@ -194,9 +213,9 @@ export class RegisterResponseDto {
 class ProfileInfoDto {
   @ApiProperty({
     description: 'Prosumer ID',
-    example: 'prosumer_...',
+    example: 'user_...',
   })
-  prosumerId: string;
+  userId: string;
 
   @ApiProperty({
     description: 'Email address',
@@ -205,7 +224,7 @@ class ProfileInfoDto {
   email: string;
 
   @ApiProperty({
-    description: 'Prosumer name',
+    description: 'User name',
     example: 'John Doe',
   })
   name: string;
@@ -296,7 +315,7 @@ export class ProfileResponseDto {
     description: 'Profile data with account, wallets, and meters information',
     example: {
       profile: {
-        prosumerId: 'prosumer_...',
+        userId: 'user_...',
         email: 'john.doe@example.com',
         name: 'John Doe',
         primaryWalletAddress: '0xabcd...',

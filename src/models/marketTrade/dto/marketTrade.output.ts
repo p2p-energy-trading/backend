@@ -12,10 +12,10 @@ export class MarketTrades {
   sellerOrderId: string;
 
   @Field(() => String)
-  buyerProsumerId: string;
+  buyerUserId: string;
 
   @Field(() => String)
-  sellerProsumerId: string;
+  sellerUserId: string;
 
   @Field(() => String)
   buyerWalletAddress: string;

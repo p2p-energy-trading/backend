@@ -3,7 +3,7 @@ import { InputType, Field, Float } from '@nestjs/graphql';
 @InputType()
 export class CreateIdrsConversionsInput {
   @Field(() => String)
-  prosumerId: string;
+  userId: string;
 
   @Field(() => String)
   walletAddress: string;

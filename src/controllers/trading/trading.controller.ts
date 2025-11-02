@@ -26,7 +26,7 @@ import { WalletsService } from '../../models/wallet/wallet.service';
 import { TradeOrdersCacheRedisService } from '../../services/trading/trade-orders-cache-redis.service';
 import { MarketTradesService } from '../../models/marketTrade/marketTrade.service';
 import { JwtAuthGuard } from '../../auth/guards/auth.guards';
-import { ProsumersService } from 'src/models/user/user.service';
+import { UsersService } from 'src/models/user/user.service';
 import { PriceCacheService } from '../../services/trading/price-cache.service';
 import {
   ApiSuccessResponse,
@@ -53,7 +53,7 @@ import {
 
 interface User extends Request {
   user: {
-    prosumerId: string;
+    userId: string;
   };
 }
 
@@ -71,7 +71,7 @@ export class TradingController {
     private walletsService: WalletsService,
     private tradeOrdersCacheService: TradeOrdersCacheRedisService,
     private marketTradesService: MarketTradesService,
-    private prosumersService: ProsumersService,
+    private prosumersService: UsersService,
     private priceCacheService: PriceCacheService,
   ) {}
 
@@ -94,14 +94,14 @@ export class TradingController {
   private anonymizeOrderData(order: any): any {
     const orderData = order as {
       walletAddress?: string;
-      prosumerId?: string;
+      userId?: string;
       blockchainTxHash?: string;
     };
 
     return {
       ...order,
       walletAddress: this.anonymizeString(orderData.walletAddress, 10),
-      prosumerId: this.anonymizeString(orderData.prosumerId, 8),
+      userId: this.anonymizeString(orderData.userId, 8),
       blockchainTxHash: this.anonymizeString(orderData.blockchainTxHash, 12),
     };
   }
@@ -160,10 +160,10 @@ export class TradingController {
     description: 'Unauthorized - Invalid or missing JWT token',
   })
   async placeOrder(@Body() body: PlaceOrderDto, @Request() req: User) {
-    const prosumerId = req.user.prosumerId;
+    const userId = req.user.userId;
 
     // Verify wallet ownership
-    await this.verifyWalletOwnership(body.walletAddress, prosumerId);
+    await this.verifyWalletOwnership(body.walletAddress, userId);
 
     // Check if user has sufficient balance before placing order
     await this.checkSufficientBalance(body);
@@ -229,7 +229,7 @@ export class TradingController {
     @Query('scope') scope?: 'own' | 'public' | 'all',
     @Query('limit') limit?: string,
   ) {
-    const prosumerId = req.user.prosumerId;
+    const userId = req.user.userId;
     const validScope = scope || 'own'; // Default to 'own' if not specified
     const maxLimit = limit ? parseInt(limit) : 50; // Default limit to 50
 
@@ -243,14 +243,14 @@ export class TradingController {
 
       // Log admin scope access
       if (validScope === 'all') {
-        this.logger.warn(`User ${prosumerId} requested 'all' scope for orders`);
+        this.logger.warn(`User ${userId} requested 'all' scope for orders`);
       }
 
       let allOrders: any[] = [];
 
       if (validScope === 'own') {
         // Get user's own orders only
-        const wallets = await this.walletsService.findAll({ prosumerId });
+        const wallets = await this.walletsService.findAll({ userId });
         const walletAddresses = wallets.map((w) => w.walletAddress);
 
         // Get orders for all user's wallets
@@ -296,7 +296,7 @@ export class TradingController {
         sortedOrders,
         {
           scope: validScope,
-          prosumerId: validScope === 'own' ? prosumerId : 'multiple',
+          userId: validScope === 'own' ? userId : 'multiple',
           status: status || 'all',
           limit: maxLimit,
           count: sortedOrders.length,
@@ -479,7 +479,7 @@ export class TradingController {
     @Query('limit') limit?: string,
     @Query('scope') scope?: 'own' | 'public' | 'all',
   ) {
-    const prosumerId = req.user.prosumerId;
+    const userId = req.user.userId;
     const maxLimit = limit ? parseInt(limit) : 50;
     const validScope = scope || 'own'; // Default to 'own' if not specified
 
@@ -493,14 +493,14 @@ export class TradingController {
 
       // Log admin scope access
       if (validScope === 'all') {
-        this.logger.warn(`User ${prosumerId} requested 'all' scope for trades`);
+        this.logger.warn(`User ${userId} requested 'all' scope for trades`);
       }
 
       let allTrades: any[] = [];
 
       if (validScope === 'own') {
         // Get user's own trades only
-        const wallets = await this.walletsService.findAll({ prosumerId });
+        const wallets = await this.walletsService.findAll({ userId });
         const walletAddresses = wallets.map((w) => w.walletAddress);
 
         // Get trades involving user's wallets
@@ -549,7 +549,7 @@ export class TradingController {
         uniqueTrades,
         {
           scope: validScope,
-          prosumerId: validScope === 'own' ? prosumerId : 'multiple',
+          userId: validScope === 'own' ? userId : 'multiple',
           limit: maxLimit,
           count: uniqueTrades.length,
         },
@@ -646,7 +646,7 @@ export class TradingController {
     @Body() body: { orderId: string; isBuyOrder: boolean },
     @Request() req: User,
   ) {
-    const prosumerId = req.user.prosumerId;
+    const userId = req.user.userId;
 
     try {
       // Get order from cache to verify ownership
@@ -654,7 +654,7 @@ export class TradingController {
         body.orderId,
       );
 
-      if (cachedOrder.prosumerId !== prosumerId) {
+      if (cachedOrder.userId !== userId) {
         throw new BadRequestException(
           'Unauthorized: You do not own this order',
         );
@@ -667,7 +667,7 @@ export class TradingController {
       }
 
       // Verify wallet ownership
-      await this.verifyWalletOwnership(cachedOrder.walletAddress, prosumerId);
+      await this.verifyWalletOwnership(cachedOrder.walletAddress, userId);
 
       // Call blockchain cancel order function
       const txHash = await this.blockchainService.cancelOrder(
@@ -715,10 +715,10 @@ export class TradingController {
     @Param('walletAddress') walletAddress: string,
     @Request() req: User,
   ) {
-    const prosumerId = req.user.prosumerId;
+    const userId = req.user.userId;
 
     // Verify wallet ownership
-    await this.verifyWalletOwnership(walletAddress, prosumerId);
+    await this.verifyWalletOwnership(walletAddress, userId);
 
     const balances = await this.getWalletBalances(walletAddress);
 
@@ -1032,14 +1032,14 @@ export class TradingController {
 
   private async verifyWalletOwnership(
     walletAddress: string,
-    prosumerId: string,
+    userId: string,
   ) {
     try {
       // Verify wallet exists and user owns it
       const prosumers =
         await this.prosumersService.findByWalletAddress(walletAddress);
 
-      if (!prosumers.find((p) => p.prosumerId === prosumerId)) {
+      if (!prosumers.find((p) => p.userId === userId)) {
         throw new BadRequestException(
           'Unauthorized: You do not own this wallet',
         );
@@ -1167,12 +1167,12 @@ export class TradingController {
     @Request() req: User,
     @Query('days') days?: number,
   ) {
-    const prosumerId = req.user.prosumerId;
+    const userId = req.user.userId;
     const analysisDays = days ? Number(days) : 30;
 
     const performance =
       await this.tradingAnalyticsService.getTradingPerformance(
-        prosumerId,
+        userId,
         analysisDays,
       );
 

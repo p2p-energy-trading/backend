@@ -7,7 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ethers } from 'ethers';
-import { ProsumersService } from '../models/user/user.service';
+import { UsersService } from '../models/user/user.service';
 import { WalletsService } from '../models/wallet/wallet.service';
 import { CryptoService } from '../common/crypto.service';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
@@ -18,8 +18,8 @@ import { BlacklistReason } from 'src/models/tokenBlacklist/tokenBlacklist.entity
 import { Request } from 'express';
 import { SmartMetersService } from '../models/smartMeter/smartMeter.service';
 
-interface ValidatedProsumer {
-  prosumerId: string;
+interface ValidatedUser {
+  userId: string;
   email: string;
   name: string;
   createdAt: string;
@@ -31,7 +31,7 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
-    private prosumersService: ProsumersService,
+    private prosumersService: UsersService,
     private walletsService: WalletsService,
     private jwtService: JwtService,
     private configService: ConfigService,
@@ -49,7 +49,7 @@ export class AuthService {
    *
    * @param email - Prosumer email address
    * @param password - Plain text password from login request
-   * @returns ValidatedProsumer object if credentials are valid, null otherwise
+   * @returns ValidatedUser object if credentials are valid, null otherwise
    *
    * @workflow
    * 1. Find prosumer by email in database
@@ -62,7 +62,7 @@ export class AuthService {
   async validateProsumer(
     email: string,
     password: string,
-  ): Promise<ValidatedProsumer | null> {
+  ): Promise<ValidatedUser | null> {
     try {
       // Find prosumer by email
       const prosumers = await this.prosumersService.findAll({ email });
@@ -86,9 +86,9 @@ export class AuthService {
         return null;
       }
 
-      // Return prosumer without sensitive data
+      // Return user without sensitive data
       const result = {
-        prosumerId: prosumer.prosumerId,
+        userId: prosumer.userId,
         email: prosumer.email,
         name: prosumer.name,
         createdAt: prosumer.createdAt.toISOString(),
@@ -99,7 +99,7 @@ export class AuthService {
       return result;
     } catch (error) {
       this.logger.error(
-        `Error validating prosumer with email ${email}: ${error instanceof Error ? error.message : String(error)}`,
+        `Error validating user with email ${email}: ${error instanceof Error ? error.message : String(error)}`,
       );
       return null;
     }
@@ -117,28 +117,28 @@ export class AuthService {
    * @security
    * - Token signed with JWT_SECRET from environment
    * - Default expiration: 24 hours (configurable via JWT_EXPIRATION)
-   * - Payload contains: prosumerId, email, sub (subject)
+   * - Payload contains: userId, email, sub (subject)
    *
    * @see JwtStrategy.validate() - Verifies this token on protected endpoints
    * @see AuthController.login() - Returns this to client after successful authentication
    */
-  generateTokens(prosumer: ValidatedProsumer) {
+  generateTokens(prosumer: ValidatedUser) {
     const payload = {
-      prosumerId: prosumer.prosumerId,
+      userId: prosumer.userId,
       email: prosumer.email,
-      sub: prosumer.prosumerId, // JWT standard: subject identifier
+      sub: prosumer.userId, // JWT standard: subject identifier
     };
 
     const accessToken = this.jwtService.sign(payload);
 
-    this.logger.log(`JWT token generated for prosumer: ${prosumer.prosumerId}`);
+    this.logger.log(`JWT token generated for prosumer: ${prosumer.userId}`);
 
     return {
       access_token: accessToken,
       tokenType: 'Bearer',
       expiresIn: this.getJwtExpirationSeconds(),
       prosumer: {
-        prosumerId: prosumer.prosumerId,
+        userId: prosumer.userId,
         email: prosumer.email,
         name: prosumer.name,
       },
@@ -166,13 +166,13 @@ export class AuthService {
   }
 
   /**
-   * Register New Prosumer
+   * Register New User
    *
-   * Creates a new prosumer account with wallet generation.
+   * Creates a new user account with wallet generation.
    * Returns validated prosumer object (without generating JWT).
    *
    * @param registerDto - Registration data (email, password, name)
-   * @returns ValidatedProsumer object for token generation in controller
+   * @returns ValidatedUser object for token generation in controller
    *
    * @workflow
    * 1. Check if email already exists
@@ -192,13 +192,13 @@ export class AuthService {
    * @see AuthController.register() - Calls generateTokens() after registration
    * @see generateTokens() - JWT token generation
    */
-  async register(registerDto: RegisterDto): Promise<ValidatedProsumer> {
+  async register(registerDto: RegisterDto): Promise<ValidatedUser> {
     try {
       // Check if prosumer already exists
-      const existingProsumers = await this.prosumersService.findAll({
+      const existingUsers = await this.prosumersService.findAll({
         email: registerDto.email,
       });
-      if (existingProsumers.length > 0) {
+      if (existingUsers.length > 0) {
         throw new BadRequestException('Email already registered');
       }
 
@@ -207,12 +207,12 @@ export class AuthService {
         registerDto.password,
       );
 
-      // Generate prosumer ID
-      const prosumerId = `prosumer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Generate user ID
+      const userId = `prosumer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
       // Create prosumer
       const prosumer = await this.prosumersService.create({
-        prosumerId,
+        userId,
         email: registerDto.email,
         passwordHash: hashedPassword,
         name: registerDto.name,
@@ -222,13 +222,13 @@ export class AuthService {
 
       // Generate wallet for the prosumer
       const wallet = await this.generateWalletForProsumer(
-        prosumer.prosumerId,
+        prosumer.userId,
         `${registerDto.name}'s Wallet`,
       );
 
       // Log registration
       await this.transactionLogsService.create({
-        prosumerId: prosumer.prosumerId,
+        userId: prosumer.userId,
         transactionType: TransactionType.WALLET_CREATED,
         description: JSON.stringify({
           message: 'Prosumer registered and wallet created',
@@ -240,19 +240,19 @@ export class AuthService {
       });
 
       this.logger.log(
-        `New prosumer registered: ${prosumer.prosumerId} (${prosumer.email})`,
+        `New prosumer registered: ${prosumer.userId} (${prosumer.email})`,
       );
 
       // Return validated prosumer (no token generation here)
-      const validatedProsumer: ValidatedProsumer = {
-        prosumerId: prosumer.prosumerId,
+      const validatedUser: ValidatedUser = {
+        userId: prosumer.userId,
         email: prosumer.email,
         name: prosumer.name,
         createdAt: prosumer.createdAt.toISOString(),
         updatedAt: prosumer.updatedAt.toISOString(),
       };
 
-      return validatedProsumer;
+      return validatedUser;
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
@@ -267,7 +267,7 @@ export class AuthService {
   }
 
   private async generateWalletForProsumer(
-    prosumerId: string,
+    userId: string,
     walletName: string,
   ) {
     // Generate Ethereum wallet
@@ -282,7 +282,7 @@ export class AuthService {
     // Create wallet record
     return this.walletsService.create({
       walletAddress: wallet.address,
-      prosumerId: prosumerId,
+      userId: userId,
       walletName,
       encryptedPrivateKey,
       importMethod: WalletImportMethod.GENERATED,
@@ -293,12 +293,12 @@ export class AuthService {
     });
   }
 
-  async getProfile(prosumerId: string) {
+  async getProfile(userId: string) {
     try {
-      const prosumer = await this.prosumersService.findOne(prosumerId);
+      const prosumer = await this.prosumersService.findOne(userId);
       // const { passwordHash, ...profile } = prosumer;
       const profile = {
-        prosumerId: prosumer.prosumerId,
+        userId: prosumer.userId,
         email: prosumer.email,
         name: prosumer.name,
         primaryWalletAddress: prosumer.primaryWalletAddress,
@@ -307,8 +307,8 @@ export class AuthService {
       };
 
       // Get associated wallets
-      const wallets = await this.walletsService.findByProsumerId(prosumerId);
-      const meters = await this.smartMetersService.findByProsumerId(prosumerId);
+      const wallets = await this.walletsService.findByUserId(userId);
+      const meters = await this.smartMetersService.findByUserId(userId);
 
       return {
         profile,
@@ -330,7 +330,7 @@ export class AuthService {
       };
     } catch (error) {
       this.logger.error(
-        `Error fetching profile for prosumerId ${prosumerId}: ${
+        `Error fetching profile for userId ${userId}: ${
           error instanceof Error ? error.message : String(error)
         }`,
       );
@@ -338,7 +338,7 @@ export class AuthService {
     }
   }
 
-  async logout(prosumerId: string, accessToken?: string, request?: Request) {
+  async logout(userId: string, accessToken?: string, request?: Request) {
     try {
       // Extract request metadata
       const ipAddress: string =
@@ -357,7 +357,7 @@ export class AuthService {
       if (accessToken) {
         await this.blacklistService.blacklistToken(
           accessToken,
-          prosumerId,
+          userId,
           BlacklistReason.LOGOUT,
           ipAddress,
           userAgent,
@@ -367,7 +367,7 @@ export class AuthService {
 
       // Log logout activity
       await this.transactionLogsService.create({
-        prosumerId: prosumerId,
+        userId: userId,
         transactionType: TransactionType.DEVICE_COMMAND,
         description: JSON.stringify({
           message: 'User logged out',
@@ -380,7 +380,7 @@ export class AuthService {
         transactionTimestamp: new Date().toISOString(),
       });
 
-      this.logger.log(`Prosumer ${prosumerId} logged out successfully`);
+      this.logger.log(`Prosumer ${userId} logged out successfully`);
 
       return {
         message: 'Logged out successfully',
@@ -388,7 +388,7 @@ export class AuthService {
       };
     } catch (error) {
       this.logger.error(
-        `Error during logout for prosumerId ${prosumerId}: ${
+        `Error during logout for userId ${userId}: ${
           error instanceof Error ? error.message : String(error)
         }`,
       );
@@ -396,7 +396,7 @@ export class AuthService {
     }
   }
 
-  async logoutAll(prosumerId: string, request?: Request) {
+  async logoutAll(userId: string, request?: Request) {
     try {
       // Extract request metadata
       const ipAddress: string =
@@ -405,7 +405,7 @@ export class AuthService {
 
       // Blacklist all tokens for this user
       await this.blacklistService.blacklistUser(
-        prosumerId,
+        userId,
         BlacklistReason.LOGOUT_ALL_DEVICES,
         ipAddress,
         userAgent,
@@ -415,7 +415,7 @@ export class AuthService {
 
       // Log logout from all devices
       await this.transactionLogsService.create({
-        prosumerId: prosumerId,
+        userId: userId,
         transactionType: TransactionType.DEVICE_COMMAND,
         description: JSON.stringify({
           message: 'User logged out from all devices',
@@ -428,7 +428,7 @@ export class AuthService {
         transactionTimestamp: new Date().toISOString(),
       });
 
-      this.logger.log(`Prosumer ${prosumerId} logged out from all devices`);
+      this.logger.log(`Prosumer ${userId} logged out from all devices`);
 
       return {
         message: 'Logged out from all devices successfully',
@@ -436,7 +436,7 @@ export class AuthService {
       };
     } catch (error) {
       this.logger.error(
-        `Error during logout all for prosumerId ${prosumerId}: ${
+        `Error during logout all for userId ${userId}: ${
           error instanceof Error ? error.message : String(error)
         }`,
       );

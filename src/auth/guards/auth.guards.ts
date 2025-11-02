@@ -8,7 +8,7 @@ import { BlacklistService } from '../../models/tokenBlacklist/tokenBlacklist.ser
 import { Request } from 'express';
 
 interface UserPayload {
-  prosumerId: string;
+  userId: string;
   email: string;
   name: string;
 }
@@ -33,14 +33,14 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     const token = this.extractTokenFromHeader(request);
     const user = request.user;
 
-    if (!token || !user?.prosumerId) {
+    if (!token || !user?.userId) {
       throw new UnauthorizedException('Invalid token or user data');
     }
 
     // Check if token or user is blacklisted
     const isBlacklisted = await this.blacklistService.isBlacklisted(
       token,
-      user.prosumerId,
+      user.userId,
     );
     if (isBlacklisted) {
       throw new UnauthorizedException(

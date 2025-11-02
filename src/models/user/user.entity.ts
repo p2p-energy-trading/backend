@@ -10,10 +10,10 @@ import { Wallet } from '../wallet/wallet.entity';
 // - BlockchainApprovals (not used)
 // - DeviceCommands (replaced by Redis)
 
-@Entity('prosumer')
+@Entity('user')
 export class User {
-  @PrimaryColumn({ type: 'varchar', name: 'prosumer_id' })
-  prosumerId: string;
+  @PrimaryColumn({ type: 'varchar', name: 'user_id' })
+  userId: string;
 
   @Column({ type: 'varchar', name: 'email' })
   email: string;
@@ -37,29 +37,23 @@ export class User {
   // - BlockchainApprovals (not used)
   // - DeviceCommands (replaced by Redis)
 
-  @OneToMany(
-    () => IdrsConversion,
-    (IdrsConversions) => IdrsConversions.prosumers,
-  )
+  @OneToMany(() => IdrsConversion, (IdrsConversions) => IdrsConversions.users)
   idrsconversionsList: IdrsConversion[];
 
-  @OneToMany(() => MarketTrade, (MarketTrades) => MarketTrades.prosumers)
+  @OneToMany(() => MarketTrade, (MarketTrades) => MarketTrades.users)
   markettradesList: MarketTrade[];
 
-  @OneToMany(() => MarketTrade, (MarketTrades) => MarketTrades.prosumers)
+  @OneToMany(() => MarketTrade, (MarketTrades) => MarketTrades.users)
   markettradesList2: MarketTrade[];
 
-  @OneToMany(() => SmartMeter, (SmartMeters) => SmartMeters.prosumers)
+  @OneToMany(() => SmartMeter, (SmartMeters) => SmartMeters.users)
   smartmetersList: SmartMeter[];
 
   // Removed: tradeorderscacheList (replaced by Redis)
 
-  @OneToMany(
-    () => TransactionLog,
-    (TransactionLogs) => TransactionLogs.prosumers,
-  )
+  @OneToMany(() => TransactionLog, (TransactionLogs) => TransactionLogs.users)
   transactionlogsList: TransactionLog[];
 
-  @OneToMany(() => Wallet, (Wallets) => Wallets.prosumers)
+  @OneToMany(() => Wallet, (Wallets) => Wallets.users)
   walletsList: Wallet[];
 }

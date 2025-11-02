@@ -13,7 +13,7 @@ export const SmartMetersFactory = setSeederFactory(SmartMeter, (faker) => {
   smartMeter.createdAt = new Date();
   smartMeter.updatedAt = new Date();
 
-  // Note: prosumerId will be set in seeder
+  // Note: userId will be set in seeder
 
   return smartMeter;
 });

@@ -23,8 +23,8 @@ export class IdrsConversionsService {
     const where = {};
     if (args && args.conversionId !== undefined)
       where['conversionId'] = args.conversionId;
-    if (args && args.prosumerId !== undefined)
-      where['prosumerId'] = args.prosumerId;
+    if (args && args.userId !== undefined)
+      where['userId'] = args.userId;
     if (args && args.walletAddress !== undefined)
       where['walletAddress'] = args.walletAddress;
     if (args && args.conversionType !== undefined)
@@ -78,7 +78,7 @@ export class IdrsConversionsService {
   async create(input: CreateIdrsConversionsInput): Promise<IdrsConversion> {
     // Convert input types to match entity types
     const createData: Partial<IdrsConversion> = {
-      prosumerId: input.prosumerId,
+      userId: input.userId,
       walletAddress: input.walletAddress,
       conversionType: input.conversionType,
       idrAmount: input.idrAmount,
@@ -104,7 +104,7 @@ export class IdrsConversionsService {
 
     // Convert input types to match entity types
     const updateData: Partial<IdrsConversion> = {
-      prosumerId: input.prosumerId,
+      userId: input.userId,
       walletAddress: input.walletAddress,
       conversionType: input.conversionType,
       idrAmount: input.idrAmount,

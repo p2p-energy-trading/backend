@@ -6,7 +6,7 @@ export class CreateWalletsInput {
   walletAddress: string;
 
   @Field(() => String)
-  prosumerId: string;
+  userId: string;
 
   @Field(() => String, { nullable: true })
   walletName?: string | undefined;

@@ -1,7 +1,7 @@
 // Authentication
 export interface AuthenticatedUser {
   user: {
-    prosumerId: string;
+    userId: string;
   };
 }
 

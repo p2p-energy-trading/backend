@@ -10,13 +10,13 @@ import { SmartMeter } from './smartMeter.entity';
 import { EnergySettlement } from '../energySettlement/energySettlement.entity';
 import { EnergySettlementsModule } from '../energySettlement/energySettlement.module';
 import { User } from '../user/user.entity';
-import { ProsumersModule } from '../user/user.module';
+import { UsersModule } from '../user/user.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([SmartMeter, EnergySettlement, User]),
     forwardRef(() => EnergySettlementsModule),
-    forwardRef(() => ProsumersModule),
+    forwardRef(() => UsersModule),
   ],
   providers: [SmartMetersService],
   exports: [SmartMetersService, TypeOrmModule],

@@ -12,10 +12,10 @@ export class MarketTradesArgs {
   sellerOrderId?: string;
 
   @Field(() => String, { nullable: true })
-  buyerProsumerId?: string;
+  buyerUserId?: string;
 
   @Field(() => String, { nullable: true })
-  sellerProsumerId?: string;
+  sellerUserId?: string;
 
   @Field(() => String, { nullable: true })
   buyerWalletAddress?: string;

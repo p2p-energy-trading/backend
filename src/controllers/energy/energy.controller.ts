@@ -103,7 +103,7 @@ export class EnergyController {
     @Query('scope') scope?: 'own' | 'public' | 'all',
   ) {
     try {
-      const prosumerId = req.user.prosumerId;
+      const userId = req.user.userId;
       const validScope = scope || 'own'; // Default to 'own' if not specified
 
       // Validate scope parameter
@@ -119,14 +119,14 @@ export class EnergyController {
         // TODO: Add admin role check here
         // For now, we'll allow it but log it
         this.logger.warn(
-          `User ${prosumerId} requested 'all' scope for settlement history`,
+          `User ${userId} requested 'all' scope for settlement history`,
         );
       }
 
       const settlements: any[] =
         await this.energySettlementService.getSettlementHistory(
           meterId,
-          prosumerId,
+          userId,
           limit ? parseInt(limit) : 50,
           validScope,
         );
@@ -199,13 +199,13 @@ export class EnergyController {
 
       // Verify the settlement belongs to the user's meter
       // This requires checking if the meter belongs to the prosumer
-      const prosumerId = req.user.prosumerId;
+      const userId = req.user.userId;
 
       // Get settlement history to verify ownership (reusing existing logic)
       const userSettlements: any[] =
         await this.energySettlementService.getSettlementHistory(
           settlement.meterId,
-          prosumerId,
+          userId,
           1000, // Large limit to check if this settlement is in user's settlements
           'own', // Use 'own' scope to get only user's settlements
         );
@@ -272,13 +272,13 @@ export class EnergyController {
     @Query('meterId') meterId?: string,
   ) {
     try {
-      const prosumerId = req.user.prosumerId;
+      const userId = req.user.userId;
 
       // If no meterId provided, get the first meter from user profile
       let targetMeterId = meterId;
       if (!targetMeterId) {
         // Get user profile to retrieve meters
-        const profile = await this.authService.getProfile(prosumerId);
+        const profile = await this.authService.getProfile(userId);
 
         if (!profile.meters || profile.meters.length === 0) {
           throw new NotFoundException('No meters found for this prosumer');
@@ -289,7 +289,7 @@ export class EnergyController {
       }
 
       // Verify the meter belongs to the prosumer by checking profile
-      const profile = await this.authService.getProfile(prosumerId);
+      const profile = await this.authService.getProfile(userId);
       const userMeter = profile.meters?.find(
         (m) => m.meterId === targetMeterId,
       );
@@ -373,7 +373,7 @@ export class EnergyController {
     @Query('meterId') meterId?: string,
   ) {
     try {
-      const prosumerId = req.user.prosumerId;
+      const userId = req.user.userId;
       const hoursCount = hours ? parseInt(hours) : 24; // Default 24 hours
 
       if (hoursCount > 168) {
@@ -384,7 +384,7 @@ export class EnergyController {
       // Get hourly energy history
       const historyData =
         await this.telemetryAggregationService.getHourlyHistory(
-          prosumerId,
+          userId,
           hoursCount,
           meterId,
         );
@@ -443,11 +443,11 @@ export class EnergyController {
     @Query('days') days?: string,
   ) {
     try {
-      const prosumerId = req.user.prosumerId;
+      const userId = req.user.userId;
       const dayCount = days ? parseInt(days) : 7;
 
       const chartData = await this.energyAnalyticsService.getEnergyChartData(
-        prosumerId,
+        userId,
         dayCount,
       );
 
@@ -485,10 +485,10 @@ export class EnergyController {
   })
   async getRealTimeEnergy(@Request() req: AuthenticatedUser) {
     try {
-      const prosumerId = req.user.prosumerId;
+      const userId = req.user.userId;
 
       const data =
-        await this.energyAnalyticsService.getRealTimeEnergyData(prosumerId);
+        await this.energyAnalyticsService.getRealTimeEnergyData(userId);
 
       return ResponseFormatter.success(
         data,
@@ -534,11 +534,11 @@ export class EnergyController {
     @Query('period') period?: 'daily' | 'weekly' | 'monthly',
   ) {
     try {
-      const prosumerId = req.user.prosumerId;
+      const userId = req.user.userId;
       const summaryPeriod = period || 'daily';
 
       const data = await this.energyAnalyticsService.getEnergySummary(
-        prosumerId,
+        userId,
         summaryPeriod,
       );
 

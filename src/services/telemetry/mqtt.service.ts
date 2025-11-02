@@ -228,7 +228,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   sendCommand(
     meterId: string,
     command: DeviceCommandPayload,
-    // prosumerId?: string,
+    // userId?: string,
   ): string {
     try {
       const correlationId = this.cryptoService.generateCorrelationId();

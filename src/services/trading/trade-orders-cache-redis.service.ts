@@ -34,9 +34,9 @@ export class TradeOrdersCacheRedisService {
         orders = await this.redisOrdersService.getAllOrders({
           orderType: args.orderType,
         });
-      } else if (args?.prosumerId) {
+      } else if (args?.userId) {
         orders = await this.redisOrdersService.getAllOrders({
-          prosumerId: args.prosumerId,
+          userId: args.userId,
         });
       } else if (args?.statusOnChain) {
         orders = await this.redisOrdersService.getAllOrders({
@@ -106,7 +106,7 @@ export class TradeOrdersCacheRedisService {
     try {
       const orderData: OrderData = {
         orderId: input.orderId,
-        prosumerId: input.prosumerId,
+        userId: input.userId,
         walletAddress: input.walletAddress,
         orderType: input.orderType,
         pair: input.pair,
@@ -143,7 +143,7 @@ export class TradeOrdersCacheRedisService {
       // Build updates object with only defined values
       const updates: Partial<OrderData> = {};
 
-      if (input.prosumerId !== undefined) updates.prosumerId = input.prosumerId;
+      if (input.userId !== undefined) updates.userId = input.userId;
       if (input.walletAddress !== undefined)
         updates.walletAddress = input.walletAddress;
       if (input.orderType !== undefined) updates.orderType = input.orderType;

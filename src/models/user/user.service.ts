@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
-import { CreateProsumersInput } from './dto/Prosumers.input';
-import { ProsumersArgs } from './dto/Prosumers.args';
+import { CreateUsersInput } from './dto/Users.input';
+import { UsersArgs } from './dto/Users.args';
 // Removed: BlockchainApprovals (not used), DeviceCommands (table dropped), TradeOrdersCache (replaced by Redis)
 import { IdrsConversion } from '../idrsConversion/idrsConversion.entity';
 import { MarketTrade } from '../marketTrade/marketTrade.entity';
@@ -12,7 +12,7 @@ import { TransactionLog } from '../transactionLog/transactionLog.entity';
 import { Wallet } from '../wallet/wallet.entity';
 
 @Injectable()
-export class ProsumersService {
+export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly repo: Repository<User>,
@@ -29,11 +29,10 @@ export class ProsumersService {
     private readonly WalletsRepo: Repository<Wallet>,
   ) {}
 
-  async findAll(args?: ProsumersArgs): Promise<User[]> {
+  async findAll(args?: UsersArgs): Promise<User[]> {
     // Simple filter: remove undefined keys
     const where = {};
-    if (args && args.prosumerId !== undefined)
-      where['prosumerId'] = args.prosumerId;
+    if (args && args.userId !== undefined) where['userId'] = args.userId;
     if (args && args.email !== undefined) where['email'] = args.email;
     if (args && args.passwordHash !== undefined)
       where['passwordHash'] = args.passwordHash;
@@ -49,43 +48,43 @@ export class ProsumersService {
   async findByMeterId(meterId: string): Promise<User[]> {
     const smartMeters = await this.SmartMetersRepo.find({
       where: { meterId },
-      relations: ['prosumers'],
+      relations: ['users'],
     });
 
     if (!smartMeters || smartMeters.length === 0) {
       throw new Error(`No smart meters found for meterId ${meterId}`);
     }
 
-    return smartMeters.map((meter) => meter.prosumers);
+    return smartMeters.map((meter) => meter.users);
   }
 
   async findByWalletAddress(walletAddress: string): Promise<User[]> {
     const wallets = await this.WalletsRepo.find({
       where: { walletAddress },
-      relations: ['prosumers'],
+      relations: ['users'],
     });
 
     if (!wallets || wallets.length === 0) {
       throw new Error(`No wallets found for walletAddress ${walletAddress}`);
     }
 
-    return wallets.map((wallet) => wallet.prosumers);
+    return wallets.map((wallet) => wallet.users);
   }
 
-  async findOne(prosumerId: string): Promise<User> {
+  async findOne(userId: string): Promise<User> {
     const entity = await this.repo.findOne({
-      where: { prosumerId },
+      where: { userId },
     });
     if (!entity) {
-      throw new Error(`Prosumers with prosumerId ${'$'}{prosumerId} not found`);
+      throw new Error(`User with userId ${'$'}{userId} not found`);
     }
     return entity;
   }
 
-  async create(input: CreateProsumersInput): Promise<User> {
+  async create(input: CreateUsersInput): Promise<User> {
     // Convert input types to match entity types
     const createData: Partial<User> = {
-      prosumerId: input.prosumerId,
+      userId: input.userId,
       email: input.email,
       passwordHash: input.passwordHash,
       name: input.name,
@@ -95,23 +94,23 @@ export class ProsumersService {
 
     const entity = this.repo.create(createData);
     const savedEntity = await this.repo.save(entity);
-    return this.findOne(savedEntity.prosumerId);
+    return this.findOne(savedEntity.userId);
   }
 
   async updatePrimaryWalletAddress(
-    prosumerId: string,
+    userId: string,
     primaryWalletAddress: string,
   ): Promise<User> {
-    const existing = await this.findOne(prosumerId);
+    const existing = await this.findOne(userId);
     existing.primaryWalletAddress = primaryWalletAddress;
 
     await this.repo.save(existing);
-    return this.findOne(prosumerId);
+    return this.findOne(userId);
   }
 
-  async getPrimaryWallet(prosumerId: string): Promise<Wallet | null> {
-    const prosumer = await this.findOne(prosumerId);
-    const primaryWalletAddress = prosumer.primaryWalletAddress;
+  async getPrimaryWallet(userId: string): Promise<Wallet | null> {
+    const user = await this.findOne(userId);
+    const primaryWalletAddress = user.primaryWalletAddress;
     if (!primaryWalletAddress) {
       return null;
     }
@@ -120,8 +119,8 @@ export class ProsumersService {
     });
   }
 
-  async update(prosumerId: string, input: CreateProsumersInput): Promise<User> {
-    const existing = await this.findOne(prosumerId);
+  async update(userId: string, input: CreateUsersInput): Promise<User> {
+    const existing = await this.findOne(userId);
 
     // Convert input types to match entity types
     const updateData: Partial<User> = {
@@ -134,11 +133,11 @@ export class ProsumersService {
     };
 
     await this.repo.save({ ...existing, ...updateData });
-    return this.findOne(prosumerId);
+    return this.findOne(userId);
   }
 
-  async remove(prosumerId: string): Promise<boolean> {
-    const result = await this.repo.delete({ prosumerId });
+  async remove(userId: string): Promise<boolean> {
+    const result = await this.repo.delete({ userId });
     return (result.affected ?? 0) > 0;
   }
 }

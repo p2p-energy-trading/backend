@@ -24,7 +24,7 @@ export enum BlacklistReason {
 }
 
 @Entity('token_blacklist')
-@Index(['prosumerId'])
+@Index(['userId'])
 @Index(['blacklistType'])
 @Index(['tokenHash'])
 @Index(['expiresAt'])
@@ -40,8 +40,8 @@ export class TokenBlacklist {
   })
   blacklistType: BlacklistType;
 
-  @Column({ name: 'prosumer_id', length: 255 })
-  prosumerId: string;
+  @Column({ name: 'user_id', length: 255 })
+  userId: string;
 
   @Column({ name: 'token_hash', length: 255, nullable: true })
   tokenHash: string;
@@ -75,6 +75,6 @@ export class TokenBlacklist {
   notes: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'prosumer_id' })
+  @JoinColumn({ name: 'user_id' })
   prosumer: User;
 }

@@ -394,13 +394,13 @@ export class TelemetryAggregationService {
   }
 
   /**
-   * Get hourly energy history for a prosumer
-   * @param prosumerId Prosumer ID (not directly used, filtered by meterId)
+   * Get hourly energy history for a user
+   * @param userId Prosumer ID (not directly used, filtered by meterId)
    * @param hours Number of hours to retrieve
    * @param meterId Optional specific meter ID to filter
    */
   async getHourlyHistory(
-    prosumerId: string,
+    userId: string,
     hours: number = 24,
     meterId?: string,
   ): Promise<

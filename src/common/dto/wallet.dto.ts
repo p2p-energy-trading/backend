@@ -420,7 +420,7 @@ export class IdrsConversionRecordDto {
     description: 'Prosumer ID',
     example: 'PROS001',
   })
-  prosumerId: string;
+  userId: string;
 
   @ApiProperty({
     description: 'Wallet address',
@@ -508,7 +508,7 @@ export class IdrsConversionListResponseDto {
     example: [
       {
         conversionId: 123,
-        prosumerId: 'PROS001',
+        userId: 'PROS001',
         walletAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
         conversionType: 'ON_RAMP',
         idrAmount: 100000,
@@ -523,7 +523,7 @@ export class IdrsConversionListResponseDto {
       },
       {
         conversionId: 124,
-        prosumerId: 'PROS001',
+        userId: 'PROS001',
         walletAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
         conversionType: 'OFF_RAMP',
         idrAmount: 50000,
@@ -678,7 +678,7 @@ export class IdrsTransactionDto {
     example: 'PROS001',
     required: false,
   })
-  prosumerId?: string;
+  userId?: string;
 }
 
 /**

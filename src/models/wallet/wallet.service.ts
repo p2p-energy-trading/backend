@@ -28,8 +28,8 @@ export class WalletsService {
     const where = {};
     if (args && args.walletAddress !== undefined)
       where['walletAddress'] = args.walletAddress;
-    if (args && args.prosumerId !== undefined)
-      where['prosumerId'] = args.prosumerId;
+    if (args && args.userId !== undefined)
+      where['userId'] = args.userId;
     if (args && args.walletName !== undefined)
       where['walletName'] = args.walletName;
     if (args && args.encryptedPrivateKey !== undefined)
@@ -57,12 +57,12 @@ export class WalletsService {
     return entity;
   }
 
-  async findByProsumerId(prosumerId: string): Promise<Wallet[]> {
+  async findByUserId(userId: string): Promise<Wallet[]> {
     const entities = await this.repo.find({
-      where: { prosumerId },
+      where: { userId },
     });
     if (!entities || entities.length === 0) {
-      throw new Error(`No wallets found for prosumerId ${'$'}{prosumerId}`);
+      throw new Error(`No wallets found for userId ${'$'}{userId}`);
     }
     return entities;
   }
@@ -71,7 +71,7 @@ export class WalletsService {
     // Convert input types to match entity types
     const createData: Partial<Wallet> = {
       walletAddress: input.walletAddress,
-      prosumerId: input.prosumerId,
+      userId: input.userId,
       walletName: input.walletName,
       encryptedPrivateKey: input.encryptedPrivateKey,
       importMethod: input.importMethod,
@@ -94,7 +94,7 @@ export class WalletsService {
     // Convert input types to match entity types
     const updateData: Partial<Wallet> = {
       walletAddress: input.walletAddress,
-      prosumerId: input.prosumerId,
+      userId: input.userId,
       walletName: input.walletName,
       encryptedPrivateKey: input.encryptedPrivateKey,
       importMethod: input.importMethod,

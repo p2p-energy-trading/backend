@@ -24,8 +24,8 @@ export class TransactionLogsService {
     // Simple filter: remove undefined keys
     const where = {};
     if (args && args.logId !== undefined) where['logId'] = args.logId;
-    if (args && args.prosumerId !== undefined)
-      where['prosumerId'] = args.prosumerId;
+    if (args && args.userId !== undefined)
+      where['userId'] = args.userId;
     if (args && args.relatedOrderId !== undefined)
       where['relatedOrderId'] = args.relatedOrderId;
     if (args && args.relatedSettlementId !== undefined)
@@ -68,7 +68,7 @@ export class TransactionLogsService {
   async create(input: CreateTransactionLogsInput): Promise<TransactionLog> {
     // Convert input types to match entity types
     const createData: Partial<TransactionLog> = {
-      prosumerId: input.prosumerId,
+      userId: input.userId,
       relatedOrderId: input.relatedOrderId,
       relatedSettlementId: input.relatedSettlementId,
       transactionType: input.transactionType,
@@ -96,7 +96,7 @@ export class TransactionLogsService {
 
     // Convert input types to match entity types
     const updateData: Partial<TransactionLog> = {
-      prosumerId: input.prosumerId,
+      userId: input.userId,
       relatedOrderId: input.relatedOrderId,
       relatedSettlementId: input.relatedSettlementId,
       transactionType: input.transactionType,

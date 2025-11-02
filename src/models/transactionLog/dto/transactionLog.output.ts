@@ -6,7 +6,7 @@ export class TransactionLogs {
   logId: string;
 
   @Field(() => String)
-  prosumerId: string;
+  userId: string;
 
   @Field(() => String, { nullable: true })
   relatedOrderId?: string | null;

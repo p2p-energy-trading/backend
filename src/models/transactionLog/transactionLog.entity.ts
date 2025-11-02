@@ -14,8 +14,8 @@ export class TransactionLog {
   @PrimaryGeneratedColumn({ name: 'log_id' })
   logId: number;
 
-  @Column({ type: 'varchar', name: 'prosumer_id' })
-  prosumerId: string;
+  @Column({ type: 'varchar', name: 'user_id' })
+  userId: string;
 
   @Column({ type: 'varchar', name: 'related_order_id', nullable: true })
   relatedOrderId: string;
@@ -51,8 +51,8 @@ export class TransactionLog {
   // related_order_id remains as a simple column for reference
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'prosumer_id' })
-  prosumers: User;
+  @JoinColumn({ name: 'user_id' })
+  users: User;
 
   @ManyToOne(() => EnergySettlement)
   @JoinColumn({ name: 'related_settlement_id' })
