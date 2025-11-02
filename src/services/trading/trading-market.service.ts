@@ -55,9 +55,7 @@ export class TradingMarketService {
    * Get user ID by wallet address
    * Injected function from BlockchainService
    */
-  private getUserIdByWallet: (
-    walletAddress: string,
-  ) => Promise<string | null>;
+  private getUserIdByWallet: (walletAddress: string) => Promise<string | null>;
 
   /**
    * Place a buy order on the market
@@ -114,8 +112,7 @@ export class TradingMarketService {
 
       // Log transaction
       await this.transactionLogsService.create({
-        userId:
-          (await this.getUserIdByWallet(walletAddress)) || 'UNKNOWN',
+        userId: (await this.getUserIdByWallet(walletAddress)) || 'UNKNOWN',
         transactionType: TransactionType.ORDER_PLACED,
         description: JSON.stringify({
           orderType: isBuy ? OrderType.BID : OrderType.ASK,

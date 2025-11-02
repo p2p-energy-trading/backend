@@ -447,8 +447,7 @@ export class BlockchainService {
 
       // Log transaction
       await this.transactionLogsService.create({
-        userId:
-          (await this.getUserIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
+        userId: (await this.getUserIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
         transactionType: TransactionType.CONTRACT_INTERACTION,
         description: JSON.stringify({
           meterId,
@@ -492,8 +491,7 @@ export class BlockchainService {
 
       // Log transaction
       await this.transactionLogsService.create({
-        userId:
-          (await this.getUserIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
+        userId: (await this.getUserIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
         transactionType: TransactionType.CONTRACT_INTERACTION,
         description: JSON.stringify({
           meterId,
@@ -535,8 +533,7 @@ export class BlockchainService {
 
       // Log transaction
       await this.transactionLogsService.create({
-        userId:
-          (await this.getUserIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
+        userId: (await this.getUserIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
         transactionType: TransactionType.CONTRACT_INTERACTION,
         description: JSON.stringify({
           newRatio,
@@ -575,8 +572,7 @@ export class BlockchainService {
 
       // Log transaction
       await this.transactionLogsService.create({
-        userId:
-          (await this.getUserIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
+        userId: (await this.getUserIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
         transactionType: TransactionType.CONTRACT_INTERACTION,
         description: JSON.stringify({
           newMinWh,
@@ -928,8 +924,7 @@ export class BlockchainService {
 
       // Log transaction
       await this.transactionLogsService.create({
-        userId:
-          (await this.getUserIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
+        userId: (await this.getUserIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
         transactionType: TransactionType.CONTRACT_INTERACTION,
         description: JSON.stringify({
           marketAddress,
@@ -1067,8 +1062,7 @@ export class BlockchainService {
 
       // Log transaction
       await this.transactionLogsService.create({
-        userId:
-          (await this.getUserIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
+        userId: (await this.getUserIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
         transactionType: TransactionType.CONTRACT_INTERACTION,
         description: JSON.stringify({
           marketAddress,
@@ -1244,16 +1238,14 @@ export class BlockchainService {
     walletAddress: string,
   ): Promise<string | null> {
     try {
-      const users =
-        await this.userService.findByWalletAddress(walletAddress);
+      const users = await this.userService.findByWalletAddress(walletAddress);
       const firstUser: unknown =
         Array.isArray(users) && users.length > 0 ? users[0] : null;
       return firstUser &&
         typeof firstUser === 'object' &&
         firstUser !== null &&
         'userId' in firstUser &&
-        typeof (firstUser as { userId: unknown }).userId ===
-          'string'
+        typeof (firstUser as { userId: unknown }).userId === 'string'
         ? (firstUser as { userId: string }).userId
         : null;
     } catch (error: unknown) {
@@ -1712,8 +1704,7 @@ export class BlockchainService {
 
       // Log transaction
       await this.transactionLogsService.create({
-        userId:
-          (await this.getUserIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
+        userId: (await this.getUserIdByWallet(ownerWalletAddress)) || 'UNKNOWN',
         transactionType: TransactionType.CONTRACT_INTERACTION,
         description: JSON.stringify({
           energyConverterAddress,

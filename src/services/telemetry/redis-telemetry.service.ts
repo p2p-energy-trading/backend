@@ -365,6 +365,29 @@ export class RedisTelemetryService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
+   * Get latest N snapshots for a meter (for real-time charting)
+   * Returns most recent data points in descending order (newest first)
+   */
+  async getLatestSnapshots(
+    meterId: string,
+    count: number = 20,
+  ): Promise<TelemetrySnapshot[]> {
+    try {
+      const key = `${this.TIMESERIES_KEY}:${meterId}`;
+      // Use ZREVRANGE to get latest entries (highest scores = most recent timestamps)
+      const results = await this.redisClient.zrevrange(key, 0, count - 1);
+
+      return results.map((item) => JSON.parse(item));
+    } catch (error) {
+      this.logger.error(
+        `Failed to get latest snapshots for meter ${meterId}:`,
+        error,
+      );
+      return [];
+    }
+  }
+
+  /**
    * Delete time-series data older than a specific timestamp
    * Used after successful aggregation to free memory
    */

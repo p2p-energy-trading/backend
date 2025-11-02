@@ -103,9 +103,7 @@ export class EnergySettlementService {
 
         // Get current real-time data
         const realTimeData =
-          await this.energyAnalyticsService.getRealTimeEnergyData(
-            user.userId,
-          );
+          await this.energyAnalyticsService.getRealTimeEnergyData(user.userId);
 
         if (!realTimeData.timeSeries || realTimeData.timeSeries.length === 0)
           continue;
@@ -175,8 +173,7 @@ export class EnergySettlementService {
       }
 
       // Get user's ETK balance from blockchain
-      const primaryWallet =
-        await this.usersService.getPrimaryWallet(userId);
+      const primaryWallet = await this.usersService.getPrimaryWallet(userId);
       if (!primaryWallet?.walletAddress) {
         this.logger.warn(
           `No wallet found for user ${userId}, skipping auto-shutdown check`,
@@ -425,6 +422,7 @@ export class EnergySettlementService {
         );
 
         // Update settlement status to failed
+        // Don't set confirmedAtOnChain because transaction was never confirmed on blockchain
         await this.energySettlementsService.update(settlement.settlementId, {
           meterId: settlement.meterId,
           periodStartTime:
@@ -442,7 +440,7 @@ export class EnergySettlementService {
             settlement.createdAtBackend instanceof Date
               ? settlement.createdAtBackend.toISOString()
               : settlement.createdAtBackend,
-          confirmedAtOnChain: new Date().toISOString(),
+          // confirmedAtOnChain is intentionally NOT set for failed transactions
         });
         return null;
       }
@@ -714,9 +712,7 @@ export class EnergySettlementService {
             (m: any) => (m as { meterId?: string })?.meterId === meterId,
           );
           if (!userMeter) {
-            this.logger.warn(
-              `Meter ${meterId} not found for user ${userId}`,
-            );
+            this.logger.warn(`Meter ${meterId} not found for user ${userId}`);
             return [];
           }
 
@@ -850,9 +846,7 @@ export class EnergySettlementService {
 
       // Use optimized getRealTimeEnergyData for fast power data retrieval
       const realTimeData =
-        await this.energyAnalyticsService.getRealTimeEnergyData(
-          user.userId,
-        );
+        await this.energyAnalyticsService.getRealTimeEnergyData(user.userId);
 
       if (!realTimeData.timeSeries || realTimeData.timeSeries.length === 0) {
         this.logger.warn(`No real-time data found for meter ${meterId}`);
@@ -1054,6 +1048,7 @@ export class EnergySettlementService {
     periodEndTime: string | Date | null;
     netWhFromGrid: number | null;
     etkAmountCredited: number | null;
+    blockchainTxHash: string | null;
     status: string | null;
     createdAtBackend: string | Date | null;
   } {
@@ -1064,6 +1059,7 @@ export class EnergySettlementService {
       periodEndTime?: string | Date;
       netWhFromGrid?: number;
       etkAmountCredited?: number;
+      blockchainTxHash?: string | null;
       status?: string;
       createdAtBackend?: string | Date;
     };
@@ -1075,6 +1071,7 @@ export class EnergySettlementService {
       periodEndTime: settlementData.periodEndTime || null,
       netWhFromGrid: settlementData.netWhFromGrid || null,
       etkAmountCredited: settlementData.etkAmountCredited || null,
+      blockchainTxHash: settlementData.blockchainTxHash || null,
       status: settlementData.status || null,
       createdAtBackend: settlementData.createdAtBackend || null,
     };

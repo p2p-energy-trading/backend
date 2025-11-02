@@ -28,6 +28,7 @@ import {
   LoginResponseDto,
   RegisterResponseDto,
   ProfileResponseDto,
+  LogoutResponseDto,
 } from '../common/dto/auth.dto';
 
 interface ValidatedUser {
@@ -383,6 +384,7 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'Logout successful - Token invalidated',
+    type: LogoutResponseDto,
   })
   @ApiUnauthorizedResponse({
     description: 'Invalid or expired JWT token',
@@ -390,83 +392,15 @@ export class AuthController {
   async logout(@Request() req: ExpressRequest & { user: { userId: string } }) {
     try {
       // Token will be extracted automatically from Authorization header
-      const result = await this.authService.logout(
-        req.user.userId,
-        undefined,
-        req,
-      );
-      return ResponseFormatter.success(result, 'Logged out successfully');
+      await this.authService.logout(req.user.userId, undefined, req);
+      return {
+        success: true,
+        message: 'Logged out successfully',
+      };
     } catch (error) {
       this.logger.error('Logout error:', error);
       return ResponseFormatter.error(
         'Logout failed',
-        error instanceof Error ? error.message : 'Unknown error',
-      );
-    }
-  }
-
-  /**
-   * Logout from All Sessions
-   *
-   * Invalidates all JWT tokens for the authenticated user across all devices.
-   * This is useful for security purposes when user suspects unauthorized access.
-   *
-   * @param req - Request object containing authenticated user
-   * @returns ResponseFormatter with success confirmation
-   *
-   * @example
-   * POST /auth/logout-all
-   * Headers: { "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
-   *
-   * Response: {
-   *   "success": true,
-   *   "message": "Logged out from all devices successfully",
-   *   "data": {
-   *     "message": "All sessions logged out successfully",
-   *     "devicesLoggedOut": 5
-   *   },
-   *   "metadata": {
-   *     "timestamp": "2025-11-01T10:30:00.000Z"
-   *   }
-   * }
-   *
-   * @remarks
-   * This endpoint adds a user-level blacklist entry that invalidates all existing tokens.
-   * User will need to login again from all devices to get new tokens.
-   * Useful for security incidents or when user changes password.
-   *
-   * @throws {UnauthorizedException} Invalid or expired JWT token
-   */
-  @UseGuards(JwtAuthGuard)
-  @Post('logout-all')
-  @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({
-    summary: 'Logout from All Sessions',
-    description:
-      'Invalidate all JWT tokens for the user across all devices. User will need to re-authenticate from all devices. Recommended for security incidents.',
-  })
-  @ApiResponse({
-    status: 200,
-    description:
-      'All sessions logged out successfully - All tokens invalidated',
-  })
-  @ApiUnauthorizedResponse({
-    description: 'Invalid or expired JWT token',
-  })
-  async logoutAll(
-    @Request() req: ExpressRequest & { user: { userId: string } },
-  ) {
-    try {
-      const result = await this.authService.logoutAll(req.user.userId, req);
-      return ResponseFormatter.success(
-        result,
-        'Logged out from all devices successfully',
-      );
-    } catch (error) {
-      this.logger.error('Logout all error:', error);
-      return ResponseFormatter.error(
-        'Logout all failed',
         error instanceof Error ? error.message : 'Unknown error',
       );
     }

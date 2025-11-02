@@ -27,8 +27,7 @@ export class SmartMetersService {
     // Simple filter: remove undefined keys
     const where = {};
     if (args && args.meterId !== undefined) where['meterId'] = args.meterId;
-    if (args && args.userId !== undefined)
-      where['userId'] = args.userId;
+    if (args && args.userId !== undefined) where['userId'] = args.userId;
     if (args && args.meterBlockchainAddress !== undefined)
       where['meterBlockchainAddress'] = args.meterBlockchainAddress;
     if (args && args.location !== undefined) where['location'] = args.location;

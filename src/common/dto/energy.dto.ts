@@ -556,6 +556,72 @@ export class EnergyChartResponseDto {
 }
 
 /**
+ * Battery Detail Data
+ */
+export class BatteryDetailDto {
+  @ApiProperty({
+    description:
+      'Battery power in W (negative = discharging, positive = charging)',
+    example: 152.5,
+  })
+  power: number;
+
+  @ApiProperty({
+    description: 'Battery voltage in V',
+    example: 12.8,
+  })
+  voltage: number;
+
+  @ApiProperty({
+    description: 'State of Charge in percentage (0-100)',
+    example: 75.5,
+  })
+  soc: number;
+
+  @ApiProperty({
+    description: 'Charge rate in W',
+    example: 152.5,
+  })
+  chargeRate: number;
+
+  @ApiProperty({
+    description: 'Is battery currently charging',
+    example: true,
+  })
+  isCharging: boolean;
+
+  @ApiProperty({
+    description: 'Estimated battery capacity in Wh',
+    example: 5000,
+  })
+  estimatedCapacity: number;
+
+  @ApiProperty({
+    description: 'Low battery alert threshold percentage',
+    example: 20,
+  })
+  alertThreshold: number;
+
+  @ApiProperty({
+    description: 'Is low battery alert active',
+    example: false,
+  })
+  alertActive: boolean;
+
+  @ApiProperty({
+    description: 'Is battery connected',
+    example: true,
+  })
+  connected: boolean;
+
+  @ApiProperty({
+    description: 'Is battery data valid',
+    example: true,
+  })
+  valid: boolean;
+}
+
+/**
  * Real-time Energy Time Series Data
  */
 export class RealTimeEnergyTimeSeriesDto {
@@ -584,10 +650,10 @@ export class RealTimeEnergyTimeSeriesDto {
   consumption: number;
 
   @ApiProperty({
-    description: 'Battery power in kW',
-    example: 0.5,
+    description: 'Battery detailed information',
+    type: BatteryDetailDto,
   })
-  battery: number;
+  battery: BatteryDetailDto;
 
   @ApiProperty({
     description: 'Grid export power in kW',
@@ -625,10 +691,16 @@ export class RealTimeEnergyAggregatedDto {
   totalConsumption: number;
 
   @ApiProperty({
-    description: 'Total battery power in kW',
-    example: 1.5,
+    description: 'Total battery power in W',
+    example: 152.5,
   })
-  totalBattery: number;
+  totalBatteryPower: number;
+
+  @ApiProperty({
+    description: 'Average battery State of Charge in percentage',
+    example: 75.5,
+  })
+  averageBatterySoc: number;
 
   @ApiProperty({
     description: 'Total grid export power in kW',

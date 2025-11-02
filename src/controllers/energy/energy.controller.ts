@@ -466,9 +466,24 @@ export class EnergyController {
 
   @Get('real-time')
   @ApiOperation({
-    summary: 'Get real-time energy data',
+    summary: 'Get real-time energy data with historical snapshots',
     description:
-      'Retrieve latest real-time energy measurements from all smart meters',
+      'Retrieve latest real-time energy measurements and historical snapshots from a single smart meter for real-time charting. Defaults to first meter if meterId not specified.',
+  })
+  @ApiQuery({
+    name: 'dataPoints',
+    required: false,
+    type: Number,
+    description: 'Number of historical data points to include (default: 20)',
+    example: 20,
+  })
+  @ApiQuery({
+    name: 'meterId',
+    required: false,
+    type: String,
+    description:
+      'Specific meter ID to query (default: first meter owned by user)',
+    example: 'METER001',
   })
   @ApiResponse({
     status: 200,
@@ -483,12 +498,20 @@ export class EnergyController {
     status: 404,
     description: 'Not found - No smart meters found for user',
   })
-  async getRealTimeEnergy(@Request() req: AuthenticatedUser) {
+  async getRealTimeEnergy(
+    @Request() req: AuthenticatedUser,
+    @Query('dataPoints') dataPoints?: number,
+    @Query('meterId') meterId?: string,
+  ) {
     try {
       const userId = req.user.userId;
+      const points = dataPoints ? parseInt(String(dataPoints), 10) : 20;
 
-      const data =
-        await this.energyAnalyticsService.getRealTimeEnergyData(userId);
+      const data = await this.energyAnalyticsService.getRealTimeEnergyData(
+        userId,
+        points,
+        meterId,
+      );
 
       return ResponseFormatter.success(
         data,

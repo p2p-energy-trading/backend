@@ -210,6 +210,20 @@ export class RegisterResponseDto {
   };
 }
 
+export class LogoutResponseDto {
+  @ApiProperty({
+    description: 'Success status',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Logged out successfully',
+  })
+  message: string;
+}
+
 class ProfileInfoDto {
   @ApiProperty({
     description: 'User ID',

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan } from 'typeorm';
+import { Repository } from 'typeorm';
 import {
   RedisTelemetryService,
   TelemetrySnapshot,
@@ -421,11 +421,11 @@ export class TelemetryAggregationService {
 
     const query = this.telemetryAggregateRepository
       .createQueryBuilder('ta')
-      .where('ta.hour_start >= :hourStart', { hourStart })
-      .orderBy('ta.hour_start', 'ASC');
+      .where('ta.hourStart >= :hourStart', { hourStart })
+      .orderBy('ta.hourStart', 'ASC');
 
     if (meterId) {
-      query.andWhere('ta.meter_id = :meterId', { meterId });
+      query.andWhere('ta.meterId = :meterId', { meterId });
     }
 
     const aggregates = await query.getMany();

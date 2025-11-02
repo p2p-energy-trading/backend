@@ -376,9 +376,7 @@ describe('AuthService - Unit Tests', () => {
       expect(result.meters).toHaveLength(1);
       expect(usersService.findOne).toHaveBeenCalledWith(userId);
       expect(walletsService.findByProsumerId).toHaveBeenCalledWith(userId);
-      expect(smartMetersService.findByProsumerId).toHaveBeenCalledWith(
-        userId,
-      );
+      expect(smartMetersService.findByProsumerId).toHaveBeenCalledWith(userId);
     });
 
     it('should throw UnauthorizedException if user not found', async () => {
@@ -411,11 +409,7 @@ describe('AuthService - Unit Tests', () => {
       transactionLogsService.create.mockResolvedValue({} as any);
 
       // Act
-      const result = await authService.logout(
-        userId,
-        accessToken,
-        mockRequest,
-      );
+      const result = await authService.logout(userId, accessToken, mockRequest);
 
       // Assert
       expect(result).toBeDefined();
@@ -446,11 +440,7 @@ describe('AuthService - Unit Tests', () => {
       transactionLogsService.create.mockResolvedValue({} as any);
 
       // Act
-      const result = await authService.logout(
-        userId,
-        undefined,
-        mockRequest,
-      );
+      const result = await authService.logout(userId, undefined, mockRequest);
 
       // Assert
       expect(result).toBeDefined();

@@ -24,8 +24,7 @@ export class TransactionLogsService {
     // Simple filter: remove undefined keys
     const where = {};
     if (args && args.logId !== undefined) where['logId'] = args.logId;
-    if (args && args.userId !== undefined)
-      where['userId'] = args.userId;
+    if (args && args.userId !== undefined) where['userId'] = args.userId;
     if (args && args.relatedOrderId !== undefined)
       where['relatedOrderId'] = args.relatedOrderId;
     if (args && args.relatedSettlementId !== undefined)

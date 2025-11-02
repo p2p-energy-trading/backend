@@ -28,8 +28,7 @@ export class WalletsService {
     const where = {};
     if (args && args.walletAddress !== undefined)
       where['walletAddress'] = args.walletAddress;
-    if (args && args.userId !== undefined)
-      where['userId'] = args.userId;
+    if (args && args.userId !== undefined) where['userId'] = args.userId;
     if (args && args.walletName !== undefined)
       where['walletName'] = args.walletName;
     if (args && args.encryptedPrivateKey !== undefined)

@@ -458,9 +458,9 @@ describe('EnergySettlementService', () => {
 
       usersService.findByMeterId.mockResolvedValue(mockProsumers as any);
 
-      await expect(
-        service.manualSettlement(meterId, userId),
-      ).rejects.toThrow('Unauthorized: Prosumer does not own this meter');
+      await expect(service.manualSettlement(meterId, userId)).rejects.toThrow(
+        'Unauthorized: Prosumer does not own this meter',
+      );
     });
 
     it('should handle errors during manual settlement', async () => {

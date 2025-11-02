@@ -210,9 +210,16 @@ export class EnergyAnalyticsService {
 
   /**
    * Get real-time energy data from Redis
-   * Returns latest measurements from all smart meters
+   * Returns latest measurements and historical snapshots for real-time charting
+   * @param userId User ID
+   * @param dataPoints Number of historical data points to include (default: 20)
+   * @param meterId Optional specific meter ID (default: first meter)
    */
-  async getRealTimeEnergyData(userId: string) {
+  async getRealTimeEnergyData(
+    userId: string,
+    dataPoints: number = 20,
+    meterId?: string,
+  ) {
     try {
       // Get user's meters
       const devices = await this.smartMetersService.findAll({ userId });
@@ -224,30 +231,53 @@ export class EnergyAnalyticsService {
         return { timeSeries: [], aggregated: this.getEmptyRealTimeData() };
       }
 
-      // Get latest data from Redis for all meters
-      const metersData = await Promise.all(
-        meterIds.map(async (meterId) => {
-          const meterData =
-            await this.redisTelemetryService.getLatestData(meterId);
-          return { meterId, data: meterData };
-        }),
+      // Determine which meter to use
+      let targetMeterId: string;
+      if (meterId) {
+        // Verify meter belongs to user
+        if (!meterIds.includes(meterId)) {
+          this.logger.warn(
+            `Meter ${meterId} does not belong to user ${userId}`,
+          );
+          return { timeSeries: [], aggregated: this.getEmptyRealTimeData() };
+        }
+        targetMeterId = meterId;
+      } else {
+        // Use first meter as default
+        targetMeterId = meterIds[0];
+      }
+
+      // Get latest snapshots from Redis for the selected meter only
+      const snapshots = await this.redisTelemetryService.getLatestSnapshots(
+        targetMeterId,
+        dataPoints,
       );
 
-      // Build time series data
-      const timeSeries = metersData
-        .filter((m) => m.data && m.data.data)
-        .map((m) => {
-          const meterData = m.data!; // Non-null assertion after filter
-          const data = meterData.data;
+      // Build time series data from snapshots
+      const timeSeries = snapshots
+        .filter((snapshot) => snapshot.meterData?.data) // Only snapshots with valid data
+        .map((snapshot) => {
+          const data = snapshot.meterData!.data;
           return {
-            meterId: m.meterId,
-            timestamp: meterData.datetime || new Date().toISOString(),
+            meterId: targetMeterId,
+            timestamp: snapshot.datetime || new Date().toISOString(),
             solar: Number(data.solar_output?.power || 0) / 1000, // Convert W to kW
             consumption:
               (Number(data.load_smart_mtr?.power || 0) +
                 Number(data.load_home?.power || 0)) /
               1000,
-            battery: 0, // Battery power not directly available in current data structure
+            battery: {
+              power: Number(data.battery?.charge_rate || 0), // Power in W (negative = discharging, positive = charging)
+              voltage: Number(data.battery?.voltage || 0), // Voltage in V
+              soc: Number(data.battery?.soc || 0), // State of Charge in percentage (0-100)
+              chargeRate: Number(data.battery?.charge_rate || 0), // Charge rate in W
+              isCharging: Boolean(data.battery?.is_charging || false), // Charging status
+              estimatedCapacity: Number(data.battery?.estimated_capacity || 0), // Estimated capacity in Wh
+              alertThreshold: Number(data.battery?.alert_threshold || 0), // Low battery alert threshold
+              alertActive: Boolean(data.battery?.alert_active || false), // Alert status
+              connected: Boolean(data.battery?.connected || false), // Battery connection status
+              valid: Boolean(data.battery?.valid || false), // Data validity
+            },
             gridExport: Number(data.export?.power || 0) / 1000,
             gridImport: Number(data.import?.power || 0) / 1000,
             netFlow:
@@ -262,22 +292,34 @@ export class EnergyAnalyticsService {
           };
         });
 
-      // Calculate aggregated totals
-      const aggregated = {
-        totalSolar: timeSeries.reduce((sum, d) => sum + d.solar, 0),
-        totalConsumption: timeSeries.reduce((sum, d) => sum + d.consumption, 0),
-        totalBattery: timeSeries.reduce((sum, d) => sum + d.battery, 0),
-        totalGridExport: timeSeries.reduce((sum, d) => sum + d.gridExport, 0),
-        totalGridImport: timeSeries.reduce((sum, d) => sum + d.gridImport, 0),
-        totalNetFlow: timeSeries.reduce((sum, d) => sum + d.netFlow, 0),
-      };
+      // Sort by timestamp descending (newest first)
+      timeSeries.sort(
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+      );
+
+      // Calculate aggregated totals from latest data point
+      const latestData = timeSeries.length > 0 ? timeSeries[0] : null;
+      const aggregated = latestData
+        ? {
+            totalSolar: latestData.solar,
+            totalConsumption: latestData.consumption,
+            totalBatteryPower: latestData.battery.power,
+            averageBatterySoc: latestData.battery.soc,
+            totalGridExport: latestData.gridExport,
+            totalGridImport: latestData.gridImport,
+            totalNetFlow: latestData.netFlow,
+          }
+        : this.getEmptyRealTimeData();
 
       return {
         timeSeries,
         aggregated: {
           totalSolar: Math.round(aggregated.totalSolar * 100) / 100,
           totalConsumption: Math.round(aggregated.totalConsumption * 100) / 100,
-          totalBattery: Math.round(aggregated.totalBattery * 100) / 100,
+          totalBatteryPower:
+            Math.round(aggregated.totalBatteryPower * 100) / 100,
+          averageBatterySoc: Math.round(aggregated.averageBatterySoc * 10) / 10,
           totalGridExport: Math.round(aggregated.totalGridExport * 100) / 100,
           totalGridImport: Math.round(aggregated.totalGridImport * 100) / 100,
           totalNetFlow: Math.round(aggregated.totalNetFlow * 100) / 100,
@@ -577,7 +619,8 @@ export class EnergyAnalyticsService {
     return {
       totalSolar: 0,
       totalConsumption: 0,
-      totalBattery: 0,
+      totalBatteryPower: 0,
+      averageBatterySoc: 0,
       totalGridExport: 0,
       totalGridImport: 0,
       totalNetFlow: 0,

@@ -541,10 +541,7 @@ describe('AuthController', () => {
         undefined,
         mockRequest,
       );
-      expect(authService.logoutAll).toHaveBeenCalledWith(
-        userId,
-        mockRequest,
-      );
+      expect(authService.logoutAll).toHaveBeenCalledWith(userId, mockRequest);
     });
   });
 });

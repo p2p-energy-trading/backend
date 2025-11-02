@@ -23,8 +23,7 @@ export class IdrsConversionsService {
     const where = {};
     if (args && args.conversionId !== undefined)
       where['conversionId'] = args.conversionId;
-    if (args && args.userId !== undefined)
-      where['userId'] = args.userId;
+    if (args && args.userId !== undefined) where['userId'] = args.userId;
     if (args && args.walletAddress !== undefined)
       where['walletAddress'] = args.walletAddress;
     if (args && args.conversionType !== undefined)
